@@ -1,0 +1,15 @@
+[package]
+name = "license-fetcher"
+description = "Fetch licenses of dependencies at build time and embed them into your program."
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/WyvernIXTL/license-fetcher"
+license = "BSL-1.0"
+keywords = ["license", "embed", "fetch", "about", "find"]
+
+
+
+[dependencies]
+bincode = "=2.0.0-rc.3"
+lz4_flex = "0.11.3"
