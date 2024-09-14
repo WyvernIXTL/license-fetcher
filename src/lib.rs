@@ -6,9 +6,21 @@
 
 use std::env;
 use std::fmt;
+use std::concat;
+use std::include_bytes;
+use std::error::Error;
+use std::fs::File;
 
 use bincode::{config, Decode, Encode};
-use lz4_flex::block::{compress_prepend_size, decompress_size_prepended};
+
+#[cfg(feature = "compress")]
+use lz4_flex::block::decompress_size_prepended;
+
+#[cfg(all(feature = "compress", feature = "build"))]
+use lz4_flex::block::compress_prepend_size;
+
+#[cfg(feature = "build")]
+use std::fs::write;
 
 
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
@@ -66,4 +78,35 @@ impl fmt::Display for PackageList {
     }
 }
 
+
+pub fn get_package_list() -> Result<PackageList, Box<dyn Error + 'static>> {
+    let bytes = include_bytes!(concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY"));
+
+    #[cfg(feature = "compress")]
+    let uncompressed_bytes = decompress_size_prepended(bytes)?;
+
+    #[cfg(not(feature = "compress"))]
+    let uncompressed_bytes = bytes;
+
+    let (package_list, _) = bincode::decode_from_slice(&uncompressed_bytes[..], config::standard())?;
+    Ok(package_list)
+}
+
+#[cfg(feature = "build")]
+fn write_package_list(package_list: PackageList) {
+    let mut path = env::var_os("OUT_DIR").unwrap();
+    path.push("/LICENSE-3RD-PARTY");
+
+    let data = bincode::encode_to_vec(package_list, config::standard()).unwrap();
+
+    #[cfg(feature = "compress")]
+    let compressed_data = compress_prepend_size(&data);
+
+    #[cfg(not(feature = "compress"))]
+    let compressed_data = data;
+
+    write(path, compressed_data).unwrap();
+
+    println!("cargo::rerun-if-changed=Cargo.lock");
+}
 
