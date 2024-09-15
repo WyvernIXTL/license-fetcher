@@ -3,6 +3,9 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+
+use std::cmp;
+
 use serde::Deserialize;
 
 // Compatible json decode of `cargo metadata --format-version 1`
@@ -10,51 +13,51 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub(super) struct MetadataDependencies {
-    name: String,
-    kind: Option<String>,
+    pub name: String,
+    pub kind: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 pub(super) struct MetadataPackage {
-    name: String,
-    version: String,
-    id: String,
-    license: Option<String>,
-    license_file: Option<String>,
-    description: Option<String>,
-    dependencies: Vec<MetadataDependencies>,
-    authors: Vec<String>,
-    repository: Option<String>,
-    homepage: Option<String>,
+    pub name: String,
+    pub version: String,
+    pub id: String,
+    pub license: Option<String>,
+    pub license_file: Option<String>,
+    pub description: Option<String>,
+    pub dependencies: Vec<MetadataDependencies>,
+    pub authors: Vec<String>,
+    pub repository: Option<String>,
+    pub homepage: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, cmp::PartialEq, cmp::Eq, cmp::PartialOrd, cmp::Ord)]
 pub(super) struct MetadataResolveNodeDepsKind {
-    kind: Option<String>,
+    pub kind: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, cmp::PartialEq, cmp::PartialOrd, cmp::Eq, cmp::Ord)]
 pub(super) struct MetadataResolveNodeDeps {
-    pkg: String,
-    dep_kinds: Vec<MetadataResolveNodeDepsKind>,
+    pub pkg: String,
+    pub dep_kinds: Vec<MetadataResolveNodeDepsKind>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, cmp::PartialEq, cmp::PartialOrd, cmp::Eq, cmp::Ord)]
 pub(super) struct MetadataResolveNode {
-    id: String,
-    deps: Vec<MetadataResolveNodeDeps>,
+    pub id: String,
+    pub deps: Vec<MetadataResolveNodeDeps>,
 }
 
 #[derive(Deserialize, Debug)]
 pub(super) struct MetadataResolve {
-    nodes: Vec<MetadataResolveNode>,
-    root: Option<String>
+    pub nodes: Vec<MetadataResolveNode>,
+    pub root: Option<String>
 }
 
 #[derive(Deserialize, Debug)]
 pub(super) struct Metadata {
-    packages: Vec<MetadataPackage>,
-    resolve: MetadataResolve
+    pub packages: Vec<MetadataPackage>,
+    pub resolve: MetadataResolve
 }
 
 
