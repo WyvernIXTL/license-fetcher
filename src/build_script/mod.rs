@@ -127,3 +127,12 @@ fn generate_package_list() -> PackageList {
     PackageList(package_list)
 }
 
+
+pub fn generate_package_list_with_licenses() {
+    let package_list = generate_package_list();
+
+    //TODO get licenses
+
+    write_package_list(package_list);
+}
+
