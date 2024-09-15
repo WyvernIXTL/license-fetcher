@@ -57,13 +57,22 @@ fn generate_package_list() -> PackageList {
 
     let mut used_packages_tree: Option<BTreeSet<String>> = None;
 
-    let output = Command::new(&cargo_path)
+    let mut output = Command::new(&cargo_path)
                             .current_dir(&manifest_path)
                             .args(["tree", "-e", "normal", "-f", "{p}", "--prefix", "none", "--frozen", "--color", "never", "--no-dedupe"])
-                            .output();
+                            .output()
+                            .unwrap();
+    
+    if !output.status.success() {
+        output = Command::new(&cargo_path)
+                            .current_dir(&manifest_path)
+                            .args(["tree", "-e", "normal", "-f", "{p}", "--prefix", "none", "--color", "never", "--no-dedupe"])
+                            .output()
+                            .unwrap();
+    }
 
-    if let Ok(outp) = output {
-        let tree_string = String::from_utf8(outp.stdout).unwrap();
+    if output.status.success() {
+        let tree_string = String::from_utf8(output.stdout).unwrap();
         let mut used_package_set = BTreeSet::new();
 
         for package in tree_string.lines() {
@@ -81,11 +90,20 @@ fn generate_package_list() -> PackageList {
     // This also finds packages which are not compiled.
     // See: <https://github.com/rust-lang/cargo/issues/10801>
 
-    let metadata_output = Command::new(cargo_path)
-                                        .current_dir(manifest_path)
-                                        .args(["metadata", "--format-version", "1", "--color", "never", "--frozen"])
+    let mut metadata_output = Command::new(&cargo_path)
+                                        .current_dir(&manifest_path)
+                                        .args(["metadata", "--format-version", "1", "--frozen", "--color", "never"])
                                         .output()
                                         .unwrap();
+
+    if !metadata_output.status.success() {
+        metadata_output = Command::new(&cargo_path)
+                            .current_dir(&manifest_path)
+                            .args(["metadata", "--format-version", "1", "--color", "never"])
+                            .output()
+                            .unwrap();
+    }
+
     let metadata_parsed: Metadata = from_slice(&metadata_output.stdout).unwrap();
 
     let packages = metadata_parsed.packages;
@@ -125,6 +143,10 @@ fn generate_package_list() -> PackageList {
 
     PackageList(package_list)
 }
+
+/* fn get_license_text_from_git(package_list: &mut PackageList) {
+
+} */
 
 
 pub fn generate_package_list_with_licenses() {
