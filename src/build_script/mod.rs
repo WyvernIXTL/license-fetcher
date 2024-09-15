@@ -10,7 +10,7 @@ use std::collections::BTreeSet;
 #[cfg(feature = "compress")]
 use lz4_flex::block::compress_prepend_size;
 
-use serde_json::{from_slice, Value};
+use serde_json::from_slice;
 
 
 mod metadata;
@@ -21,7 +21,7 @@ use crate::build_script::metadata::*;
 
 fn write_package_list(package_list: PackageList) {
     let mut path = env::var_os("OUT_DIR").unwrap();
-    path.push("/LICENSE-3RD-PARTY");
+    path.push("/LICENSE-3RD-PARTY.bincode");
 
     let data = bincode::encode_to_vec(package_list, config::standard()).unwrap();
 
@@ -32,8 +32,6 @@ fn write_package_list(package_list: PackageList) {
     let compressed_data = data;
 
     write(path, compressed_data).unwrap();
-
-    println!("cargo::rerun-if-changed=Cargo.lock");
 }
 
 fn walk_dependencies<'a>(used_dependencies: &mut BTreeSet<&'a String>, dependencies: &'a Vec<MetadataResolveNode>, root: &String) {
@@ -43,7 +41,7 @@ fn walk_dependencies<'a>(used_dependencies: &mut BTreeSet<&'a String>, dependenc
     };
     used_dependencies.insert(&package.id);
     for dep in package.deps.iter() {
-        if dep.dep_kinds.iter().map(|d| &d.kind).all(|o| o.is_none()) {
+        if dep.dep_kinds.iter().map(|d| &d.kind).any(|o| o.is_none()) {
             walk_dependencies(used_dependencies, dependencies, &dep.pkg);
         }
     }
@@ -61,7 +59,7 @@ fn generate_package_list() -> PackageList {
 
     let output = Command::new(&cargo_path)
                             .current_dir(&manifest_path)
-                            .args(["tree", "-e", "normal", "-f", "'{p}'", "--prefix", "none", "--frozen", "--color", "never", "--no-dedupe"])
+                            .args(["tree", "-e", "normal", "-f", "{p}", "--prefix", "none", "--frozen", "--color", "never", "--no-dedupe"])
                             .output();
 
     if let Ok(outp) = output {
@@ -77,6 +75,7 @@ fn generate_package_list() -> PackageList {
 
         used_packages_tree = Some(used_package_set);
     }
+
 
     // Walk dependencies.
     // This also finds packages which are not compiled.
@@ -112,7 +111,7 @@ fn generate_package_list() -> PackageList {
         if is_used && used_packages.contains(&package.id) {
             package_list.push(Package {
                 license_text: None,
-                authors: Some(package.authors),
+                authors: package.authors,
                 license_identifier: package.license,
                 name: package.name,
                 version: package.version,

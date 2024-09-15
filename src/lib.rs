@@ -23,7 +23,7 @@ pub mod build_script;
 pub struct Package {
     name: String,
     version: String,
-    authors: Option<Vec<String>>,
+    authors: Vec<String>,
     description: Option<String>,
     homepage: Option<String>,
     repository: Option<String>,
@@ -47,11 +47,12 @@ impl fmt::Display for PackageList {
             if let Some(description) = &package.description {
                 writeln!(f, "Description: {}", description)?;
             }
-            if let Some(authors) = &package.authors {
-                writeln!(f, "Authors:")?;
-                for author in authors.iter() {
-                    writeln!(f, " - {}", author)?;
+            if !package.authors.is_empty() {
+                writeln!(f, "Authors:     - {}", package.authors.get(0).unwrap_or(&"".to_owned()))?;
+                for author in package.authors.iter().skip(1) {
+                writeln!(f, "             - {}", author)?;
                 }
+                writeln!(f, "")?;
             }
             if let Some(homepage) = &package.homepage {
                 writeln!(f, "Homepage:    {}", homepage)?;
@@ -75,9 +76,7 @@ impl fmt::Display for PackageList {
 }
 
 
-pub fn get_package_list() -> Result<PackageList, Box<dyn Error + 'static>> {
-    let bytes = include_bytes!(concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY"));
-
+pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'static>> {
     #[cfg(feature = "compress")]
     let uncompressed_bytes = decompress_size_prepended(bytes)?;
 
