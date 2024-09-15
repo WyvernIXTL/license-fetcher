@@ -16,7 +16,7 @@ use bincode::{config, Decode, Encode};
 use lz4_flex::block::decompress_size_prepended;
 
 #[cfg(feature = "build")]
-mod build_script;
+pub mod build_script;
 
 
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
