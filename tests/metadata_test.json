@@ -1,0 +1,114 @@
+{
+  "packages": [
+    {
+      "name": "license-fetcher",
+      "version": "0.1.0",
+      "id": "path+file:///license-fetcher#0.1.0",
+      "license": "BSL-1.0",
+      "license_file": null,
+      "description": "Fetch licenses of dependencies at build time and embed them into your program.",
+      "source": null,
+      "dependencies": [
+        {
+          "name": "bincode",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "=2.0.0-rc.3",
+          "kind": null,
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [],
+          "target": null,
+          "registry": null
+        }
+      ],
+      "targets": [
+        {
+          "kind": [
+            "lib"
+          ],
+          "crate_types": [
+            "lib"
+          ],
+          "name": "license_fetcher",
+          "src_path": "license-fetcher\\src\\lib.rs",
+          "edition": "2021",
+          "doc": true,
+          "doctest": true,
+          "test": true
+        }
+      ],
+      "features": {
+        "build": [
+          "dep:serde_json",
+          "dep:serde"
+        ],
+        "compress": [
+          "dep:lz4_flex"
+        ],
+        "default": [
+          "compress"
+        ]
+      },
+      "manifest_path": "license-fetcher\\Cargo.toml",
+      "metadata": null,
+      "publish": null,
+      "authors": [
+        "Adam"
+      ],
+      "categories": [],
+      "keywords": [
+        "license",
+        "embed",
+        "fetch",
+        "about",
+        "find"
+      ],
+      "readme": "README.md",
+      "repository": "https://github.com/WyvernIXTL/license-fetcher",
+      "homepage": null,
+      "documentation": null,
+      "edition": "2021",
+      "links": null,
+      "default_run": null,
+      "rust_version": null
+    }
+  ],
+  "workspace_members": [
+    "path+file:///license-fetcher#0.1.0"
+  ],
+  "workspace_default_members": [
+    "path+file:///license-fetcher#0.1.0"
+  ],
+  "resolve": {
+    "nodes": [
+      {
+        "id": "path+file:///license-fetcher#0.1.0",
+        "dependencies": [
+          "registry+https://github.com/rust-lang/crates.io-index#bincode@2.0.0-rc.3"
+        ],
+        "deps": [
+          {
+            "name": "bincode",
+            "pkg": "registry+https://github.com/rust-lang/crates.io-index#bincode@2.0.0-rc.3",
+            "dep_kinds": [
+              {
+                "kind": null,
+                "target": null
+              }
+            ]
+          }
+        ],
+        "features": [
+          "compress",
+          "default"
+        ]
+      }
+    ],
+    "root": "path+file:///license-fetcher#0.1.0"
+  },
+  "target_directory": "license-fetcher\\target",
+  "version": 1,
+  "workspace_root": "license-fetcher",
+  "metadata": null
+}

@@ -13,9 +13,16 @@ keywords = ["license", "embed", "fetch", "about", "find"]
 [dependencies]
 bincode = "=2.0.0-rc.3"
 lz4_flex = {version = "0.11.3", optional = true}
+serde = { version = "1.0.210", features = ["derive"], optional = true }
+serde_json = { version = "1.0.128", optional = true }
 
 
 [features]
 default = ["compress"]
 compress = ["dep:lz4_flex"]
-build = []
+build = ["dep:serde_json", "dep:serde"]
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
