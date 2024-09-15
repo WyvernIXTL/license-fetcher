@@ -19,12 +19,14 @@ serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
 
 
-[features]
-default = ["compress"]
-compress = ["dep:lz4_flex"]
-build = ["dep:serde_json", "dep:serde", "dep:reqwest", "dep:git2"]
-
 [dev-dependencies]
 pretty_assertions = "1.4.0"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
+
+
+[features]
+default = ["compress"]
+compress = ["dep:lz4_flex"]
+build = ["dep:serde_json", "dep:serde", "dep:reqwest", "dep:git2"]
+frozen = []

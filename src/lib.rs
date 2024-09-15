@@ -6,8 +6,6 @@
 
 use std::env;
 use std::fmt;
-use std::concat;
-use std::include_bytes;
 use std::error::Error;
 
 use bincode::{config, Decode, Encode};
@@ -91,7 +89,7 @@ pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'st
 #[macro_export]
 macro_rules! get_package_list_macro {
     () => {
-        license_fetcher::get_package_list(include_bytes!(concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY.bincode"))).unwrap()
+        license_fetcher::get_package_list(std::include_bytes!(std::concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY.bincode"))).unwrap()
     };
 }
 

@@ -63,12 +63,18 @@ fn generate_package_list() -> PackageList {
                             .output()
                             .unwrap();
     
+    #[cfg(not(feature = "frozen"))]
     if !output.status.success() {
         output = Command::new(&cargo_path)
                             .current_dir(&manifest_path)
                             .args(["tree", "-e", "normal", "-f", "{p}", "--prefix", "none", "--color", "never", "--no-dedupe"])
                             .output()
                             .unwrap();
+    }
+
+    #[cfg(feature = "frozen")]
+    if !output.status.success() {
+        panic!("Failed executing cargo tree with:\n{}", String::from_utf8_lossy(&output.stderr));
     }
 
     if output.status.success() {
@@ -96,12 +102,17 @@ fn generate_package_list() -> PackageList {
                                         .output()
                                         .unwrap();
 
+    #[cfg(not(feature = "frozen"))]
     if !metadata_output.status.success() {
         metadata_output = Command::new(&cargo_path)
                             .current_dir(&manifest_path)
                             .args(["metadata", "--format-version", "1", "--color", "never"])
                             .output()
                             .unwrap();
+    }
+
+    if !metadata_output.status.success() {
+        panic!("Failed executing cargo metadata with:\n{}", String::from_utf8_lossy(&metadata_output.stderr));
     }
 
     let metadata_parsed: Metadata = from_slice(&metadata_output.stdout).unwrap();
