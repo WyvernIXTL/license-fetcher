@@ -39,6 +39,7 @@ impl fmt::Display for PackageList {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         const SEPERATOR_WIDTH: usize = 80;
         let separator: String = "=".repeat(SEPERATOR_WIDTH);
+        let separator_light: String = "-".repeat(SEPERATOR_WIDTH);
 
         writeln!(f, "{}\n", separator)?;
 
@@ -52,7 +53,7 @@ impl fmt::Display for PackageList {
                 for author in package.authors.iter().skip(1) {
                 writeln!(f, "             - {}", author)?;
                 }
-                writeln!(f, "")?;
+                //writeln!(f, "")?;
             }
             if let Some(homepage) = &package.homepage {
                 writeln!(f, "Homepage:    {}", homepage)?;
@@ -61,14 +62,14 @@ impl fmt::Display for PackageList {
                 writeln!(f, "Repository:  {}", repository)?;
             }
             if let Some(license_identifier) = &package.license_identifier {
-                writeln!(f, "SPDX Ident.: {}", license_identifier)?;
+                writeln!(f, "SPDX Ident:  {}", license_identifier)?;
+            }
+            
+            if let Some(license_text) = &package.license_text {
+                writeln!(f, "\n{}\n{}", separator_light, license_text)?;
             }
 
             writeln!(f, "\n{}\n", separator)?;
-            
-            if let Some(license_text) = &package.license_text {
-                writeln!(f, "{}\n{}\n", license_text, separator)?;
-            }
         }
 
         Ok(())
