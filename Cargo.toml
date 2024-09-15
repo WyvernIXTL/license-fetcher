@@ -14,9 +14,10 @@ keywords = ["license", "embed", "fetch", "about", "find"]
 bincode = "=2.0.0-rc.3"
 git2 = { version = "0.19.0", optional = true }
 lz4_flex = {version = "0.11.3", optional = true}
-reqwest = { version = "0.12.7", features = ["blocking"], optional = true }
+octocrab = { version = "0.39.0", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
+tokio = { version = "1.40.0", optional = true, features = ["rt"] }
 
 
 [dev-dependencies]
@@ -28,5 +29,5 @@ serde_json = "1.0.128"
 [features]
 default = ["compress"]
 compress = ["dep:lz4_flex"]
-build = ["dep:serde_json", "dep:serde", "dep:reqwest", "dep:git2"]
+build = ["dep:serde_json", "dep:serde", "dep:git2", "dep:octocrab", "dep:tokio"]
 frozen = []

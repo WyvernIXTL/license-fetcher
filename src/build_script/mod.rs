@@ -11,6 +11,9 @@ use std::collections::BTreeSet;
 use lz4_flex::block::compress_prepend_size;
 
 use serde_json::from_slice;
+use tokio::runtime::{Runtime, Builder};
+use tokio::task::JoinSet;
+use octocrab::{instance, Octocrab, repos::RepoHandler};
 
 
 mod metadata;
@@ -155,15 +158,63 @@ fn generate_package_list() -> PackageList {
     PackageList(package_list)
 }
 
-/* fn get_license_text_from_git(package_list: &mut PackageList) {
+async fn get_license_text_from_github(url: &String) -> Option<String> {
+    let split_url: Vec<&str> = url.split("/").collect();
+    let length = split_url.len();
 
-} */
+    if length < 3 {
+        return None;        
+    }
+
+    let owner = split_url[length-2];
+    let mut repo_str = split_url[length-1];
+    if let Some(repo_str_stripped) = repo_str.strip_suffix(".git") {
+        repo_str = repo_str_stripped;
+    }
+    let octo = instance();
+    let repo = octo.repos(owner, repo_str);
+
+    if let Ok(content) = repo.license().await {
+        content.decoded_content()
+    } else {
+        None
+    }
+}
+
+async fn get_license_text_from_git_for_package_list(package_list: PackageList) -> PackageList {
+    let mut set = JoinSet::new();
+
+    for package in package_list.0.into_iter() {
+        if let Some(repo_url) = &package.repository {
+            if repo_url.contains("github") {
+                set.spawn(async move {
+                    let mut pack = package;
+                    pack.license_text = get_license_text_from_github(pack.repository.as_ref().unwrap()).await;
+                    pack
+                });
+            }
+        }
+    }
+
+    let mut packages_with_license = PackageList(vec![]);
+
+    while let Some(pack_res) = set.join_next().await {
+        if let Ok(pack) = pack_res {
+            packages_with_license.0.push(pack)
+        }
+    }
+
+    packages_with_license
+}
 
 
 pub fn generate_package_list_with_licenses() {
-    let package_list = generate_package_list();
+    let mut package_list = generate_package_list();
 
-    //TODO get licenses
+    let rt: Runtime  = Builder::new_current_thread().enable_all().build().unwrap();
+    package_list = rt.block_on(async move {
+        get_license_text_from_git_for_package_list(package_list).await
+    });
 
     write_package_list(package_list);
 }
