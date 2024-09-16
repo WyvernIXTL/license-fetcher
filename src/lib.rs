@@ -20,7 +20,7 @@
 //! 
 //! ### `src/main.rs`
 //! 
-//! ```
+//! ```ignore
 //! use license_fetcher::get_package_list_macro;
 //! fn main() {
 //!     let package_list = get_package_list_macro!();
@@ -28,7 +28,7 @@
 //! 
 //! ```
 //! ### `build.rs`
-//! ```
+//! ```ignore
 //! use license_fetcher::build_script::generate_package_list_with_licenses;
 //!
 //! fn main() {
@@ -66,19 +66,19 @@ pub mod build_script;
 /// This struct holds information like package name, authors and of course license text.
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
 pub struct Package {
-    name: String,
-    version: String,
-    authors: Vec<String>,
-    description: Option<String>,
-    homepage: Option<String>,
-    repository: Option<String>,
-    license_identifier: Option<String>,
-    license_text: Option<String>,
+    pub name: String,
+    pub version: String,
+    pub authors: Vec<String>,
+    pub description: Option<String>,
+    pub homepage: Option<String>,
+    pub repository: Option<String>,
+    pub license_identifier: Option<String>,
+    pub license_text: Option<String>,
 }
 
 /// Holds information of all crates and licenses used for release build.
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
-pub struct PackageList(Vec<Package>);
+pub struct PackageList(pub Vec<Package>);
 
 
 impl fmt::Display for PackageList {
