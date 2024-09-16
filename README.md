@@ -33,7 +33,7 @@ The data is then serialized and compressed.
 
 ### Include Dependency
 
-> ![WARNING]
+> ![WARNING] 
 > Include this library as build dependency and as normal dependeny!
 
 ```
