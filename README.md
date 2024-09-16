@@ -9,11 +9,11 @@
 
 </div>
 
-## Aim
+## Aspirations
 
-1. Fetch licenses
-2. Few bundled dependencies
-3. Fast
+1. Fetch licenses!
+2. Fast!
+3. Do it in the build step!
 
 
 ## Workings
@@ -86,3 +86,10 @@ fn main() {
 
 #### Cons
 - Is not a library to access said data but rather a command line tool.
+
+
+## Screenshots
+
+*Display trait included* 😉
+
+![Screenshot](./img/example_print.png)

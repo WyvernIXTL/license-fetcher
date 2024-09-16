@@ -208,6 +208,28 @@ async fn get_license_text_from_git_for_package_list(package_list: PackageList) -
 }
 
 
+/// Generates a package list with package name, authors and license text.
+/// 
+/// This function:
+/// 1. Calls `cargo tree -e normal --frozen`. *(After error tries again online if not `frozen` feature is set.)*
+/// 2. Calls `cargo metadata --frozen`. *(After error tries again online if not `frozen` feature is set.)*
+/// 3. Takes the packages gotten from `cargo tree` with the metadata of `cargo metadata`.
+/// 4. Fetches the licenses from github with the `repository` link if it includes `github` in name.
+/// 5. Serializes, copmresses and writes said package list to `OUT_DIR/LICENSE-3RD-PARTY.bincode` file.
+/// 
+/// Needs the feature `build` and is only meant to be used in build scripts.
+/// 
+/// # Example
+/// In `build.rs`:
+/// ```no_run
+/// use license_fetcher::build_script::generate_package_list_with_licenses;
+///
+/// fn main() {
+///     generate_package_list_with_licenses();
+///     println!("cargo::rerun-if-changed=build.rs");
+///     println!("cargo::rerun-if-changed=Cargo.lock");
+/// }
+/// ```
 pub fn generate_package_list_with_licenses() {
     let mut package_list = generate_package_list();
 

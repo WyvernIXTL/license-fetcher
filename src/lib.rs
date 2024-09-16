@@ -4,6 +4,50 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 
+//! Fetch licenses of dependencies at build time and embed them into your program.
+//! 
+//! `license-fetcher` is a crate for fetching actual license texts from github for
+//! crates that are compiled with your project. It does this in the build step
+//! in a build script. This means that the heavy dependencies of `license-fetcher`
+//! aren't your dependencies!
+//! 
+//! ## Example
+//! Don't forget to import `license-fetcher` as a normal AND as a build dependency!
+//! ```sh
+//! cargo add --build --features build license-fetcher
+//! cargo add license-fetcher
+//! ```
+//! 
+//! ### `src/main.rs`
+//! 
+//! ```
+//! use license_fetcher::get_package_list_macro;
+//! fn main() {
+//!     let package_list = get_package_list_macro!();
+//! }
+//! 
+//! ```
+//! ### `build.rs`
+//! ```
+//! use license_fetcher::build_script::generate_package_list_with_licenses;
+//!
+//! fn main() {
+//!     generate_package_list_with_licenses();
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//! }
+//! ```
+//! 
+//! ## Feature Flags
+//! | Feature    | Description                                                             |
+//! | ---------- | ----------------------------------------------------------------------- |
+//! | `compress` | *(default)* Enables compression.                                        |
+//! | `build`    | Used for build script component.                                        |
+//! | `frozen`   | Panics if `Cargo.lock` needs to be updated for `cargo metadata` to run. |
+//! 
+
+
+
 use std::env;
 use std::fmt;
 use std::error::Error;
@@ -17,6 +61,9 @@ use lz4_flex::block::decompress_size_prepended;
 pub mod build_script;
 
 
+/// Information regarding a crate.
+/// 
+/// This struct holds information like package name, authors and of course license text.
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
 pub struct Package {
     name: String,
@@ -29,6 +76,7 @@ pub struct Package {
     license_text: Option<String>,
 }
 
+/// Holds information of all crates and licenses used for release build.
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
 pub struct PackageList(Vec<Package>);
 
@@ -74,7 +122,24 @@ impl fmt::Display for PackageList {
     }
 }
 
-
+/// Decopresses and deserializes the crate and license information.
+/// 
+/// Thise function decompresses the input, if `compress` feature was not disabled and
+/// then deserializes the input. The input should be the embeded license information from
+/// the build step.
+/// 
+/// # Example
+/// Called from within main program:
+/// ```no_run
+/// use license_fetcher::get_package_list;
+/// fn main() {
+///     let package_list = get_package_list(
+///                             std::include_bytes!(
+///                                 std::concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY.bincode")
+///                             )
+///                         ).unwrap();
+/// }
+/// ```
 pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'static>> {
     #[cfg(feature = "compress")]
     let uncompressed_bytes = decompress_size_prepended(bytes)?;
@@ -86,6 +151,15 @@ pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'st
     Ok(package_list)
 }
 
+/// Calls [get_package_list] with parameters expected from a call from `main.rs`.
+/// 
+/// # Example
+/// ```no_run
+/// use license_fetcher::get_package_list_macro;
+/// fn main() {
+///     let package_list = get_package_list_macro!();
+/// }
+/// ```
 #[macro_export]
 macro_rules! get_package_list_macro {
     () => {
