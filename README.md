@@ -25,14 +25,16 @@ The `repository` field of the crates is used for fetching the license files.
 Licenses from github are fetched directly via its api!
 The data is then serialized and compressed.
 
-> [!CAUTION] License fetching is only implemented for github currently. (Though a git fallback is planned.)
+> [!CAUTION] 
+> License fetching is only implemented for github currently. (Though a git fallback is planned.)
 
 
 ## Usage
 
 ### Include Dependency
 
-> ![WARNING] Include this library as build dependency and as normal dependeny!
+> ![WARNING]
+> Include this library as build dependency and as normal dependeny!
 
 ```
 cargo add --build --features build license-fetcher
