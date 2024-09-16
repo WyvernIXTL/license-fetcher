@@ -13,7 +13,7 @@ use lz4_flex::block::compress_prepend_size;
 use serde_json::from_slice;
 use tokio::runtime::{Runtime, Builder};
 use tokio::task::JoinSet;
-use octocrab::{instance, Octocrab, repos::RepoHandler};
+use octocrab::instance;
 
 
 mod metadata;

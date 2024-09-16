@@ -12,20 +12,13 @@ use serde::Deserialize;
 // https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 
 #[derive(Deserialize, Debug)]
-pub(super) struct MetadataDependencies {
-    pub name: String,
-    pub kind: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
 pub(super) struct MetadataPackage {
     pub name: String,
     pub version: String,
     pub id: String,
     pub license: Option<String>,
-    pub license_file: Option<String>,
+    // pub license_file: Option<String>,
     pub description: Option<String>,
-    pub dependencies: Vec<MetadataDependencies>,
     pub authors: Vec<String>,
     pub repository: Option<String>,
     pub homepage: Option<String>,
