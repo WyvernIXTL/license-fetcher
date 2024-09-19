@@ -26,6 +26,9 @@ Licenses from github are fetched directly via its api!
 All licenses that aren't fetched via api are fetched with `git`.
 The data is then serialized and compressed.
 
+> [!NOTE]  
+> Octocrab (github api) does not support rate limits.
+
 
 ## Usage
 
