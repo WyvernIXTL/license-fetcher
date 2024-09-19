@@ -12,19 +12,17 @@ use lz4_flex::block::compress_prepend_size;
 
 use serde_json::from_slice;
 use tokio::runtime::{Runtime, Builder};
-use tokio::task::JoinSet;
-use octocrab::instance;
 
 mod metadata;
+mod github;
 
 #[cfg(feature = "git")]
 mod git;
 
 #[cfg(feature = "git")]
-use git::{
-    git_installed,
-    get_license_text_from_git_repository
-};
+use git::get_license_text_from_git_repository_for_package_list;
+
+use github::get_license_text_from_github_for_package_list;
 
 use crate::*;
 use crate::build_script::metadata::*;
@@ -166,70 +164,14 @@ fn generate_package_list() -> PackageList {
     PackageList(package_list)
 }
 
-async fn get_license_text_from_github(url: &String) -> Option<String> {
-    let split_url: Vec<&str> = url.split("/").collect();
-    let length = split_url.len();
+async fn get_license_text_for_package_list(package_list: PackageList) -> PackageList {
+    let mut packages_with_license = package_list;
 
-    if length < 3 {
-        return None;        
-    }
-
-    let owner = split_url[length-2];
-    let mut repo_str = split_url[length-1];
-    if let Some(repo_str_stripped) = repo_str.strip_suffix(".git") {
-        repo_str = repo_str_stripped;
-    }
-    let octo = instance();
-    let repo = octo.repos(owner, repo_str);
-
-    let rate_limit_handler = octo.ratelimit();
-    dbg!(rate_limit_handler.get().await.unwrap());
-
-    if let Ok(content) = repo.license().await {
-        content.decoded_content()
-    } else {
-        None
-    }
-}
-
-async fn get_license_text_from_git_for_package_list(package_list: PackageList) -> PackageList {
-    let mut set = JoinSet::new();
+    packages_with_license = get_license_text_from_github_for_package_list(packages_with_license).await;
 
     #[cfg(feature = "git")]
-    let git_exe_found = git_installed().await;
-
-    #[cfg(not(feature = "ignore-git-missing"))]
-    assert!(git_exe_found);
-
-    for package in package_list.0.into_iter() {
-        if let Some(repo_url) = &package.repository {
-            if repo_url.contains("github") {
-                set.spawn(async move {
-                    let mut pack = package;
-                    pack.license_text = get_license_text_from_github(pack.repository.as_ref().unwrap()).await;
-                    pack
-                });
-                continue;
-            } 
-            
-            #[cfg(feature = "git")]
-            if git_exe_found {
-                set.spawn(async move {
-                    let mut pack = package;
-                    pack.license_text = get_license_text_from_git_repository(pack.repository.as_ref().unwrap(), &pack.version.clone()).await;
-                    pack
-                });
-                continue;
-            }
-        }
-    }
-
-    let mut packages_with_license = PackageList(vec![]);
-
-    while let Some(pack_res) = set.join_next().await {
-        if let Ok(pack) = pack_res {
-            packages_with_license.0.push(pack)
-        }
+    {
+        packages_with_license = get_license_text_from_git_repository_for_package_list(packages_with_license).await;
     }
 
     packages_with_license
@@ -263,7 +205,7 @@ pub fn generate_package_list_with_licenses() {
 
     let rt: Runtime  = Builder::new_current_thread().enable_all().build().unwrap();
     package_list = rt.block_on(async move {
-        get_license_text_from_git_for_package_list(package_list).await
+        get_license_text_for_package_list(package_list).await
     });
 
     write_package_list(package_list);

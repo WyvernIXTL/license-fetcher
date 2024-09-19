@@ -23,10 +23,8 @@ This is needed to circumvent a [cargo bug](https://github.com/rust-lang/cargo/is
 Afterwards it fetches the metadata of said packages with `cargo metadata`.
 The `repository` field of the crates is used for fetching the license files.
 Licenses from github are fetched directly via its api!
+All licenses that aren't fetched via api are fetched with `git`.
 The data is then serialized and compressed.
-
-> [!CAUTION] 
-> License fetching is only implemented for github currently. (Though a git fallback is planned.)
 
 
 ## Usage

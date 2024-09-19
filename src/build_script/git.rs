@@ -9,20 +9,23 @@ use async_process::Command;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tempfile::TempDir;
+use tokio::task::JoinSet;
 
-pub(super) async fn git_installed() -> bool {
+use crate::PackageList;
+
+async fn git_installed() -> bool {
     match Command::new("git").arg("--version").status().await {
         Ok(status) => status.success(),
         Err(_) => false,
     }
 }
 
-async fn get_git_tags(url: &String) -> Vec<String> {
+async fn get_git_tags(url: &String) -> Result<Vec<String>, &'static str> {
     let output = Command::new("git")
                                 .args(["ls-remote", "--tags", url.as_str()])
                                 .output().await.expect("Failed executing git.");
     if !output.status.success() {
-        return vec![];
+        return Err("Failed executing git ls-remote.");
     }
 
     static TAG_REGEX: Lazy<Regex> = Lazy::new(|| {
@@ -39,24 +42,33 @@ async fn get_git_tags(url: &String) -> Vec<String> {
         }
     }
     
-    tag_list
+    Ok(tag_list)
 }
 
-async fn tag_of_repo(url: &String, tag_sub_str: &String) -> Option<String> {
-    let tags = get_git_tags(url).await;
-    for tag in tags {
-        if tag.contains(tag_sub_str) {
-            return Some(tag);
-        }
+async fn tag_of_repo(url: &String, tag_sub_str: &String) -> Result<Option<String>, &'static str> {
+    match get_git_tags(url).await {
+        Ok(tags) => {
+            for tag in tags {
+                if tag.contains(tag_sub_str) {
+                    return Ok(Some(tag));
+                }
+            }
+            Ok(None)
+        },
+        Err(s) => Err(s),
     }
-    None
 }
 
-pub(super) async fn get_license_text_from_git_repository(url: &String, tag_sub_str: &String) ->  Option<String> {
+async fn get_license_text_from_git_repository(url: &String, tag_sub_str: &String) ->  Option<String> {
     let tmp_dir = TempDir::new().unwrap();
     let path = tmp_dir.path();
 
-    let output = if let Some(tag) = tag_of_repo(url, tag_sub_str).await {
+    let tag_option = match tag_of_repo(url, tag_sub_str).await {
+        Ok(tag_option) => tag_option,
+        Err(_) => return None,
+    };
+
+    let output = if let Some(tag) = tag_option {
         Command::new("git")
             .current_dir(path)
             .args(["clone", "--branch", tag.as_str(), "--depth", "1", url.as_str()])
@@ -111,3 +123,44 @@ pub(super) async fn get_license_text_from_git_repository(url: &String, tag_sub_s
     Some(license_text_vec.join("\n\n"))
 }
 
+
+#[cfg(feature = "git")]
+pub(super) async fn get_license_text_from_git_repository_for_package_list(package_list: PackageList) -> PackageList {
+    let mut set = JoinSet::new();
+
+    if !git_installed().await {
+        #[cfg(not(feature = "ignore-git-missing"))]
+        panic!("Git not able to be executed.");
+
+        return package_list;
+    }
+
+    let mut packages_with_license = PackageList(vec![]);
+
+    for package in package_list.0.into_iter() {
+        if !package.license_text.is_none() {
+            packages_with_license.0.push(package);
+            continue;
+        }
+
+        if let Some(_) = &package.repository {
+            set.spawn(async move {
+                let mut pack = package;
+                pack.license_text = get_license_text_from_git_repository(pack.repository.as_ref().unwrap(), &pack.version.clone()).await;
+                pack
+            });
+            continue;
+        }
+
+        packages_with_license.0.push(package);
+    }
+
+    while let Some(pack_res) = set.join_next().await {
+        if let Ok(pack) = pack_res {
+            packages_with_license.0.push(pack)
+        }
+    }
+
+    packages_with_license
+
+}
