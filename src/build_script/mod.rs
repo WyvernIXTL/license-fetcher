@@ -15,8 +15,16 @@ use tokio::runtime::{Runtime, Builder};
 use tokio::task::JoinSet;
 use octocrab::instance;
 
-
 mod metadata;
+
+#[cfg(feature = "git")]
+mod git;
+
+#[cfg(feature = "git")]
+use git::{
+    git_installed,
+    get_license_text_from_git_repository
+};
 
 use crate::*;
 use crate::build_script::metadata::*;
@@ -174,6 +182,9 @@ async fn get_license_text_from_github(url: &String) -> Option<String> {
     let octo = instance();
     let repo = octo.repos(owner, repo_str);
 
+    let rate_limit_handler = octo.ratelimit();
+    dbg!(rate_limit_handler.get().await.unwrap());
+
     if let Ok(content) = repo.license().await {
         content.decoded_content()
     } else {
@@ -184,6 +195,12 @@ async fn get_license_text_from_github(url: &String) -> Option<String> {
 async fn get_license_text_from_git_for_package_list(package_list: PackageList) -> PackageList {
     let mut set = JoinSet::new();
 
+    #[cfg(feature = "git")]
+    let git_exe_found = git_installed().await;
+
+    #[cfg(not(feature = "ignore-git-missing"))]
+    assert!(git_exe_found);
+
     for package in package_list.0.into_iter() {
         if let Some(repo_url) = &package.repository {
             if repo_url.contains("github") {
@@ -192,6 +209,17 @@ async fn get_license_text_from_git_for_package_list(package_list: PackageList) -
                     pack.license_text = get_license_text_from_github(pack.repository.as_ref().unwrap()).await;
                     pack
                 });
+                continue;
+            } 
+            
+            #[cfg(feature = "git")]
+            if git_exe_found {
+                set.spawn(async move {
+                    let mut pack = package;
+                    pack.license_text = get_license_text_from_git_repository(pack.repository.as_ref().unwrap(), &pack.version.clone()).await;
+                    pack
+                });
+                continue;
             }
         }
     }
