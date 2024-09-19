@@ -44,6 +44,8 @@
 //! | `compress` | *(default)* Enables compression.                                        |
 //! | `build`    | Used for build script component.                                        |
 //! | `frozen`   | Panics if `Cargo.lock` needs to be updated for `cargo metadata` to run. |
+//! | `git`      | Enables asnyc `git clone` fallback for license fetching. `git` required.|
+//! | `ignore-git-missing` | Disables panic when git cannot be executed.                   |
 //! 
 
 
