@@ -24,6 +24,7 @@ Afterwards it fetches the metadata of said packages with `cargo metadata`.
 The `repository` field of the crates is used for fetching the license files.
 Licenses from github are fetched directly via its api!
 All licenses that aren't fetched via api are fetched with `git`.
+Licenses that are fetched are cached between runs.
 The data is then serialized and compressed.
 
 > [!NOTE]  
@@ -38,7 +39,7 @@ The data is then serialized and compressed.
 > Include this library as build dependency and as normal dependeny!
 
 ```
-cargo add --build --features build license-fetcher
+cargo add --build --features "build github git cache" license-fetcher
 cargo add license-fetcher
 ```
 
@@ -53,6 +54,7 @@ fn main() {
     generate_package_list_with_licenses();
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=Cargo.lock");
+    println!("cargo::rerun-if-changed=Cargo.toml");
 }
 ```
 
