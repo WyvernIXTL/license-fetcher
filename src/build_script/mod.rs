@@ -3,6 +3,7 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+use env::var_os;
 use std::fs::write;
 use std::process::Command;
 use std::collections::BTreeSet;
@@ -12,16 +13,24 @@ use lz4_flex::block::compress_prepend_size;
 
 use serde_json::from_slice;
 use tokio::runtime::{Runtime, Builder};
+use log::info;
+use simplelog::{TermLogger, LevelFilter, Config, TerminalMode, ColorChoice};
 
 mod metadata;
+
+#[cfg(feature = "github")]
 mod github;
 
 #[cfg(feature = "git")]
 mod git;
 
+#[cfg(feature = "cache")]
+mod cache;
+
 #[cfg(feature = "git")]
 use git::get_license_text_from_git_repository_for_package_list;
 
+#[cfg(feature = "github")]
 use github::get_license_text_from_github_for_package_list;
 
 use crate::*;
@@ -29,10 +38,12 @@ use crate::build_script::metadata::*;
 
 
 fn write_package_list(package_list: PackageList) {
-    let mut path = env::var_os("OUT_DIR").unwrap();
+    let mut path = var_os("OUT_DIR").unwrap();
     path.push("/LICENSE-3RD-PARTY.bincode");
 
     let data = bincode::encode_to_vec(package_list, config::standard()).unwrap();
+
+    info!("License data size: {} Bytes", data.len());
 
     #[cfg(feature = "compress")]
     let compressed_data = compress_prepend_size(&data);
@@ -40,6 +51,9 @@ fn write_package_list(package_list: PackageList) {
     #[cfg(not(feature = "compress"))]
     let compressed_data = data;
 
+    info!("Compressed data size: {} Bytes", compressed_data.len());
+
+    info!("Writing to file: {:?}", &path);
     write(path, compressed_data).unwrap();
 }
 
@@ -57,8 +71,8 @@ fn walk_dependencies<'a>(used_dependencies: &mut BTreeSet<&'a String>, dependenc
 }
 
 fn generate_package_list() -> PackageList {
-    let cargo_path = env::var_os("CARGO").unwrap();
-    let manifest_path = env::var_os("CARGO_MANIFEST_DIR").unwrap();
+    let cargo_path = var_os("CARGO").unwrap();
+    let manifest_path = var_os("CARGO_MANIFEST_DIR").unwrap();
 
     // Workaround: Get dependencies with `cargo tree`.
     // These are dependencies, which are compiled.
@@ -167,7 +181,10 @@ fn generate_package_list() -> PackageList {
 async fn get_license_text_for_package_list(package_list: PackageList) -> PackageList {
     let mut packages_with_license = package_list;
 
-    packages_with_license = get_license_text_from_github_for_package_list(packages_with_license).await;
+    #[cfg(feature = "github")]
+    {
+        packages_with_license = get_license_text_from_github_for_package_list(packages_with_license).await;
+    }
 
     #[cfg(feature = "git")]
     {
@@ -201,6 +218,8 @@ async fn get_license_text_for_package_list(package_list: PackageList) -> Package
 /// }
 /// ```
 pub fn generate_package_list_with_licenses() {
+    TermLogger::init(LevelFilter::Trace, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
+
     let mut package_list = generate_package_list();
 
     let rt: Runtime  = Builder::new_current_thread().enable_all().build().unwrap();

@@ -5,6 +5,7 @@
 
 use tokio::task::JoinSet;
 use octocrab::instance;
+use log::warn;
 
 use crate::*;
 
@@ -13,6 +14,7 @@ async fn get_license_text_from_github(url: &String) -> Option<String> {
     let length = split_url.len();
 
     if length < 3 {
+        warn!("Invalid github url ignored: {}", url);
         return None;        
     }
 
@@ -27,6 +29,7 @@ async fn get_license_text_from_github(url: &String) -> Option<String> {
     if let Ok(content) = repo.license().await {
         content.decoded_content()
     } else {
+        warn!("Failed fetching license for: {}", url);
         None
     }
 }
@@ -47,9 +50,6 @@ pub(super) async fn get_license_text_from_github_for_package_list(package_list: 
                 set.spawn(async move {
                     let mut pack = package;
                     pack.license_text = get_license_text_from_github(pack.repository.as_ref().unwrap()).await;
-
-                    
-
                     pack
                 });
                 continue;

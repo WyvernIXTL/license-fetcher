@@ -10,13 +10,14 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use tempfile::TempDir;
 use tokio::task::JoinSet;
+use log::warn;
 
 use crate::PackageList;
 
 async fn git_installed() -> bool {
     match Command::new("git").arg("--version").status().await {
         Ok(status) => status.success(),
-        Err(_) => false,
+        Err(_) => {warn!("git does not seem to be installed"); false},
     }
 }
 
@@ -25,6 +26,7 @@ async fn get_git_tags(url: &String) -> Result<Vec<String>, &'static str> {
                                 .args(["ls-remote", "--tags", url.as_str()])
                                 .output().await.expect("Failed executing git.");
     if !output.status.success() {
+        warn!("Failed executing git ls-remote on: {}", url);
         return Err("Failed executing git ls-remote.");
     }
 
@@ -74,6 +76,8 @@ async fn get_license_text_from_git_repository(url: &String, tag_sub_str: &String
             .args(["clone", "--branch", tag.as_str(), "--depth", "1", url.as_str()])
             .output().await.unwrap()
     } else {
+        warn!("No tag similar to version {} found for: {}", tag_sub_str, url);
+        warn!("Proceed to fetch current license info for: {}", url);
         Command::new("git")
             .current_dir(path)
             .args(["clone", "--depth", "1", url.as_str()])
@@ -81,6 +85,7 @@ async fn get_license_text_from_git_repository(url: &String, tag_sub_str: &String
     };
 
     if !output.status.success() {
+        warn!("Failed git clone for: {}", url);
         return None;
     }
 
@@ -117,6 +122,7 @@ async fn get_license_text_from_git_repository(url: &String, tag_sub_str: &String
     }
 
     if license_text_vec.is_empty() {
+        warn!("Found no licenses in git repository for: {}", url);
         return None;
     }
 

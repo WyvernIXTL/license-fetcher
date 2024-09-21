@@ -13,12 +13,14 @@ keywords = ["license", "embed", "fetch", "about", "find"]
 [dependencies]
 async-process = { version = "2.3.0", optional = true }
 bincode = "=2.0.0-rc.3"
+log = { version = "0.4.22", optional = true }
 lz4_flex = {version = "0.11.3", optional = true}
 octocrab = { version = "0.39.0", optional = true }
 once_cell = { version = "1.19.0", optional = true }
 regex = { version = "1.10.6", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
+simplelog = { version = "0.12.2", optional = true }
 tempfile = { version = "3.12.0", optional = true }
 tokio = { version = "1.40.0", optional = true, features = ["rt"] }
 
@@ -30,9 +32,11 @@ serde_json = "1.0.128"
 
 
 [features]
-default = ["compress"]
+default = ["compress", "github", "git", "cache"]
 compress = ["dep:lz4_flex"]
-build = ["dep:serde_json", "dep:serde", "dep:octocrab", "dep:tokio"]
+build = ["dep:serde_json", "dep:serde", "dep:tokio", "dep:simplelog", "dep:log"]
 frozen = []
+github = ["dep:octocrab"]
 git = ["dep:async-process", "dep:regex", "dep:once_cell", "dep:tempfile"]
 ignore-git-missing = []
+cache = []
