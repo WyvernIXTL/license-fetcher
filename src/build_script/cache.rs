@@ -12,6 +12,12 @@ use std::collections::btree_map::Entry;
 use bincode::{Decode, Encode, decode_from_slice, encode_to_vec, config};
 use log::info;
 
+#[cfg(feature = "compress")]
+use miniz_oxide::{
+    deflate::compress_to_vec,
+    inflate::decompress_to_vec,
+};
+
 use crate::PackageList;
 
 const CACHE_FILE_NAME: &str = ".license-cache";
@@ -48,7 +54,13 @@ impl LicenseCache {
             };
         }
 
-        let (data, _) = decode_from_slice(&binary, config::standard())
+        #[cfg(feature = "compress")]
+        let uncompressed_binary = decompress_to_vec(&binary)
+                                                .expect("Failed decompressing license data.");
+        #[cfg(not(feature = "compress"))]
+        let uncompressed_binary = binary;
+
+        let (data, _) = decode_from_slice(&uncompressed_binary, config::standard())
                                                         .expect("Failed parsing license cache to HashMap");
 
         Self { data }
@@ -60,7 +72,13 @@ impl LicenseCache {
         let binary = encode_to_vec(&self.data, config::standard())
                                     .expect("Failed encoding license cache with bincode.");
 
-        file.write_all(&binary).unwrap();
+        #[cfg(feature = "compress")]
+        let compressed_binary = compress_to_vec(&binary, 6);
+    
+        #[cfg(not(feature = "compress"))]
+        let compressed_binary = binary;
+
+        file.write_all(&compressed_binary).unwrap();
     }
 
     pub(super) fn load_licenses_for_package_list(&self, list: &mut PackageList) {

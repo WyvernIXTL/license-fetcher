@@ -56,7 +56,7 @@ use std::error::Error;
 use bincode::{config, Decode, Encode};
 
 #[cfg(feature = "compress")]
-use lz4_flex::block::decompress_size_prepended;
+use miniz_oxide::inflate::decompress_to_vec;
 
 #[cfg(feature = "build")]
 pub mod build_script;
@@ -143,8 +143,8 @@ impl fmt::Display for PackageList {
 /// ```
 pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'static>> {
     #[cfg(feature = "compress")]
-    let uncompressed_bytes = decompress_size_prepended(bytes)?;
-
+    let uncompressed_bytes = decompress_to_vec(bytes)
+                                            .expect("Failed decompressing license data.");
     #[cfg(not(feature = "compress"))]
     let uncompressed_bytes = bytes;
 

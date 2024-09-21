@@ -1,3 +1,3 @@
 {
-    "rust-analyzer.cargo.features": ["build", "git", "ignore-git-missing"],
+    "rust-analyzer.cargo.features": ["build", "git", "ignore-git-missing", "github", "cache"],
 }

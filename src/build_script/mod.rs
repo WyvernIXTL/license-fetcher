@@ -7,9 +7,10 @@ use std::env::var_os;
 use std::fs::write;
 use std::process::Command;
 use std::collections::BTreeSet;
+use std::time::Instant;
 
 #[cfg(feature = "compress")]
-use lz4_flex::block::compress_prepend_size;
+use miniz_oxide::deflate::compress_to_vec;
 
 use serde_json::from_slice;
 use tokio::runtime::{Runtime, Builder};
@@ -48,14 +49,15 @@ fn write_package_list(package_list: PackageList) {
     let data = bincode::encode_to_vec(package_list, config::standard()).unwrap();
 
     info!("License data size: {} Bytes", data.len());
+    let instant_before_compression = Instant::now();
 
     #[cfg(feature = "compress")]
-    let compressed_data = compress_prepend_size(&data);
+    let compressed_data = compress_to_vec(&data, 10);
 
     #[cfg(not(feature = "compress"))]
     let compressed_data = data;
 
-    info!("Compressed data size: {} Bytes", compressed_data.len());
+    info!("Compressed data size: {} Bytes in {}ms", compressed_data.len(), instant_before_compression.elapsed().as_millis());
 
     info!("Writing to file: {:?}", &path);
     write(path, compressed_data).unwrap();
@@ -222,7 +224,7 @@ async fn get_license_text_for_package_list(package_list: PackageList) -> Package
 /// }
 /// ```
 pub fn generate_package_list_with_licenses() {
-    TermLogger::init(LevelFilter::Trace, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
+    TermLogger::init(LevelFilter::Info, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
 
     #[cfg(feature = "cache")]
     let mut cache = LicenseCache::load();

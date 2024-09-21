@@ -14,7 +14,7 @@ keywords = ["license", "embed", "fetch", "about", "find"]
 async-process = { version = "2.3.0", optional = true }
 bincode = "=2.0.0-rc.3"
 log = { version = "0.4.22", optional = true }
-lz4_flex = {version = "0.11.3", optional = true}
+miniz_oxide = { version = "0.8.0", optional = true }
 octocrab = { version = "0.39.0", optional = true }
 once_cell = { version = "1.19.0", optional = true }
 regex = { version = "1.10.6", optional = true }
@@ -32,8 +32,8 @@ serde_json = "1.0.128"
 
 
 [features]
-default = ["compress", "github", "git", "cache"]
-compress = ["dep:lz4_flex"]
+default = ["compress"]
+compress = ["dep:miniz_oxide"]
 build = ["dep:serde_json", "dep:serde", "dep:tokio", "dep:simplelog", "dep:log"]
 frozen = []
 github = ["dep:octocrab"]
