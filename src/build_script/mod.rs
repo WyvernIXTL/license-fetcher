@@ -3,7 +3,7 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-use env::var_os;
+use std::env::var_os;
 use std::fs::write;
 use std::process::Command;
 use std::collections::BTreeSet;
@@ -32,6 +32,10 @@ use git::get_license_text_from_git_repository_for_package_list;
 
 #[cfg(feature = "github")]
 use github::get_license_text_from_github_for_package_list;
+
+#[cfg(feature = "cache")]
+use cache::*;
+
 
 use crate::*;
 use crate::build_script::metadata::*;
@@ -220,12 +224,24 @@ async fn get_license_text_for_package_list(package_list: PackageList) -> Package
 pub fn generate_package_list_with_licenses() {
     TermLogger::init(LevelFilter::Trace, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
 
+    #[cfg(feature = "cache")]
+    let mut cache = LicenseCache::load();
+
     let mut package_list = generate_package_list();
+
+    #[cfg(feature = "cache")]
+    cache.load_licenses_for_package_list(&mut package_list);
 
     let rt: Runtime  = Builder::new_current_thread().enable_all().build().unwrap();
     package_list = rt.block_on(async move {
         get_license_text_for_package_list(package_list).await
     });
+
+    #[cfg(feature = "cache")]
+    {
+        cache.write_licenses_from_package_list(&package_list);
+        cache.write();
+    }
 
     write_package_list(package_list);
 }
