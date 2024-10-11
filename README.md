@@ -33,7 +33,7 @@ The data is then serialized and compressed.
 > Include this library as build dependency and as normal dependeny!
 
 ```
-cargo add --build --features "build github git cache" license-fetcher
+cargo add --build --features build license-fetcher
 cargo add license-fetcher
 ```
 
