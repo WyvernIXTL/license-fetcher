@@ -21,14 +21,8 @@
 This library gets all packages that are actually copmiled with your program via `cargo tree`.
 This is needed to circumvent a [cargo bug](https://github.com/rust-lang/cargo/issues/10801).
 Afterwards it fetches the metadata of said packages with `cargo metadata`.
-The `repository` field of the crates is used for fetching the license files.
-Licenses from github are fetched directly via its api!
-All licenses that aren't fetched via api are fetched with `git`.
-Licenses that are fetched are cached between runs.
+Licenses are fetched from the `.cargo/registry/src` folder.
 The data is then serialized and compressed.
-
-> [!NOTE]  
-> Octocrab (github api) does not support rate limits.
 
 
 ## Usage
@@ -79,7 +73,7 @@ fn main() {
 + Also retrieves licenses in the build step and loads them into the program.
 
 #### Cons
-- Does not fetch licenses directly via api access.
+- Does not fetch licenses from loacal source files.
 - Very slow.
 - Does not compress licenses.
 
@@ -91,6 +85,7 @@ fn main() {
 
 #### Cons
 - Is not a library to access said data but rather a command line tool.
+- Does not fetch licenses from loacal source files.
 
 
 ## Screenshots

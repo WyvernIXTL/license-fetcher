@@ -13,29 +13,13 @@ use std::time::Instant;
 use miniz_oxide::deflate::compress_to_vec;
 
 use serde_json::from_slice;
-use tokio::runtime::{Runtime, Builder};
 use log::info;
 use simplelog::{TermLogger, LevelFilter, Config, TerminalMode, ColorChoice};
 
 mod metadata;
+mod cargo_source;
 
-#[cfg(feature = "github")]
-mod github;
-
-#[cfg(feature = "git")]
-mod git;
-
-#[cfg(feature = "cache")]
-mod cache;
-
-#[cfg(feature = "git")]
-use git::get_license_text_from_git_repository_for_package_list;
-
-#[cfg(feature = "github")]
-use github::get_license_text_from_github_for_package_list;
-
-#[cfg(feature = "cache")]
-use cache::*;
+use cargo_source::licenses_text_from_cargo_src_folder;
 
 
 use crate::*;
@@ -184,22 +168,6 @@ fn generate_package_list() -> PackageList {
     PackageList(package_list)
 }
 
-async fn get_license_text_for_package_list(package_list: PackageList) -> PackageList {
-    let mut packages_with_license = package_list;
-
-    #[cfg(feature = "github")]
-    {
-        packages_with_license = get_license_text_from_github_for_package_list(packages_with_license).await;
-    }
-
-    #[cfg(feature = "git")]
-    {
-        packages_with_license = get_license_text_from_git_repository_for_package_list(packages_with_license).await;
-    }
-
-    packages_with_license
-}
-
 
 /// Generates a package list with package name, authors and license text.
 /// 
@@ -226,24 +194,9 @@ async fn get_license_text_for_package_list(package_list: PackageList) -> Package
 pub fn generate_package_list_with_licenses() {
     TermLogger::init(LevelFilter::Info, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
 
-    #[cfg(feature = "cache")]
-    let mut cache = LicenseCache::load();
-
     let mut package_list = generate_package_list();
 
-    #[cfg(feature = "cache")]
-    cache.load_licenses_for_package_list(&mut package_list);
-
-    let rt: Runtime  = Builder::new_current_thread().enable_all().build().unwrap();
-    package_list = rt.block_on(async move {
-        get_license_text_for_package_list(package_list).await
-    });
-
-    #[cfg(feature = "cache")]
-    {
-        cache.write_licenses_from_package_list(&package_list);
-        cache.write();
-    }
+    licenses_text_from_cargo_src_folder(&mut package_list);
 
     write_package_list(package_list);
 }

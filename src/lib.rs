@@ -6,7 +6,7 @@
 
 //! Fetch licenses of dependencies at build time and embed them into your program.
 //! 
-//! `license-fetcher` is a crate for fetching actual license texts from github for
+//! `license-fetcher` is a crate for fetching actual license texts from the cargo source directory for
 //! crates that are compiled with your project. It does this in the build step
 //! in a build script. This means that the heavy dependencies of `license-fetcher`
 //! aren't your dependencies!
@@ -44,9 +44,6 @@
 //! | `compress` | *(default)* Enables compression.                                        |
 //! | `build`    | Used for build script component.                                        |
 //! | `frozen`   | Panics if `Cargo.lock` needs to be updated for `cargo metadata` to run. |
-//! | `git`      | Enables asnyc `git clone` fallback for license fetching. `git` required.|
-//! | `ignore-git-missing` | Disables panic when git cannot be executed.                   |
-//! | `cache`    | Adds caching for license fetching.                                      |
 //! 
 
 
