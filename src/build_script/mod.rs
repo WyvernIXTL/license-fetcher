@@ -3,11 +3,12 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-use std::env::var_os;
+use std::env::{var_os, var};
 use std::fs::write;
 use std::process::Command;
 use std::collections::BTreeSet;
 use std::time::Instant;
+use std::path::PathBuf;
 
 #[cfg(feature = "compress")]
 use miniz_oxide::deflate::compress_to_vec;
@@ -19,7 +20,7 @@ use simplelog::{TermLogger, LevelFilter, Config, TerminalMode, ColorChoice};
 mod metadata;
 mod cargo_source;
 
-use cargo_source::licenses_text_from_cargo_src_folder;
+use cargo_source::{licenses_text_from_cargo_src_folder, license_text_from_folder};
 
 
 use crate::*;
@@ -189,14 +190,21 @@ fn generate_package_list() -> PackageList {
 ///     generate_package_list_with_licenses();
 ///     println!("cargo::rerun-if-changed=build.rs");
 ///     println!("cargo::rerun-if-changed=Cargo.lock");
+///     println!("cargo::rerun-if-changed=Cargo.toml");
 /// }
 /// ```
 pub fn generate_package_list_with_licenses() {
-    TermLogger::init(LevelFilter::Info, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
+    TermLogger::init(LevelFilter::Trace, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
 
     let mut package_list = generate_package_list();
 
     licenses_text_from_cargo_src_folder(&mut package_list);
+
+    let this_package_name = var("CARGO_PKG_NAME").unwrap();
+    info!("Fetching license for: {}", &this_package_name);
+    let this_package_path = var("CARGO_MANIFEST_DIR").unwrap();
+    let this_package_index = package_list.0.iter().enumerate().filter(|(_, p)| p.name == this_package_name).map(|(i, _)| i).next().unwrap();
+    package_list.0[this_package_index].license_text = license_text_from_folder(&PathBuf::from(this_package_path));
 
     write_package_list(package_list);
 }

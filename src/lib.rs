@@ -35,6 +35,7 @@
 //!     generate_package_list_with_licenses();
 //!     println!("cargo::rerun-if-changed=build.rs");
 //!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
 //! }
 //! ```
 //! 

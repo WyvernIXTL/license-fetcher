@@ -39,7 +39,7 @@ fn src_folder(path: PathBuf) -> PathBuf {
     .path()
 }
 
-fn license_text_from_folder(path: &PathBuf) ->  Option<String> {
+pub(super) fn license_text_from_folder(path: &PathBuf) ->  Option<String> {
     trace!("Fetching license in folder: {:?}", &path);
 
     let entries = read_dir(&path).unwrap();
