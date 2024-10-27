@@ -77,6 +77,54 @@ pub struct Package {
     pub license_text: Option<String>,
 }
 
+impl Package {
+    fn fmt_package(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        const SEPERATOR_WIDTH: usize = 80;
+        let separator: String = "=".repeat(SEPERATOR_WIDTH);
+        let separator_light: String = "-".repeat(SEPERATOR_WIDTH);
+
+        writeln!(f, "Package:     {} {}", self.name, self.version)?;
+        if let Some(description) = &self.description {
+            writeln!(f, "Description: {}", description)?;
+        }
+        if !self.authors.is_empty() {
+            writeln!(f, "Authors:     - {}", self.authors.get(0).unwrap_or(&"".to_owned()))?;
+            for author in self.authors.iter().skip(1) {
+            writeln!(f, "             - {}", author)?;
+            }
+        }
+        if let Some(homepage) = &self.homepage {
+            writeln!(f, "Homepage:    {}", homepage)?;
+        }
+        if let Some(repository) = &self.repository {
+            writeln!(f, "Repository:  {}", repository)?;
+        }
+        if let Some(license_identifier) = &self.license_identifier {
+            writeln!(f, "SPDX Ident:  {}", license_identifier)?;
+        }
+        
+        if let Some(license_text) = &self.license_text {
+            writeln!(f, "\n{}\n{}", separator_light, license_text)?;
+        }
+
+        writeln!(f, "\n{}\n", separator)?;
+
+        Ok(())
+    }
+}
+
+impl fmt::Display for Package {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        const SEPERATOR_WIDTH: usize = 80;
+        let separator: String = "=".repeat(SEPERATOR_WIDTH);
+
+        writeln!(f, "{}\n", separator)?;
+
+        self.fmt_package(f)
+    }
+}
+
+
 /// Holds information of all crates and licenses used for release build.
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
 pub struct PackageList(pub Vec<Package>);
@@ -100,37 +148,11 @@ impl fmt::Display for PackageList {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         const SEPERATOR_WIDTH: usize = 80;
         let separator: String = "=".repeat(SEPERATOR_WIDTH);
-        let separator_light: String = "-".repeat(SEPERATOR_WIDTH);
 
         writeln!(f, "{}\n", separator)?;
 
         for package in self.iter() {
-            writeln!(f, "Package:     {} {}", package.name, package.version)?;
-            if let Some(description) = &package.description {
-                writeln!(f, "Description: {}", description)?;
-            }
-            if !package.authors.is_empty() {
-                writeln!(f, "Authors:     - {}", package.authors.get(0).unwrap_or(&"".to_owned()))?;
-                for author in package.authors.iter().skip(1) {
-                writeln!(f, "             - {}", author)?;
-                }
-                //writeln!(f, "")?;
-            }
-            if let Some(homepage) = &package.homepage {
-                writeln!(f, "Homepage:    {}", homepage)?;
-            }
-            if let Some(repository) = &package.repository {
-                writeln!(f, "Repository:  {}", repository)?;
-            }
-            if let Some(license_identifier) = &package.license_identifier {
-                writeln!(f, "SPDX Ident:  {}", license_identifier)?;
-            }
-            
-            if let Some(license_text) = &package.license_text {
-                writeln!(f, "\n{}\n{}", separator_light, license_text)?;
-            }
-
-            writeln!(f, "\n{}\n", separator)?;
+            package.fmt_package(f)?;
         }
 
         Ok(())
