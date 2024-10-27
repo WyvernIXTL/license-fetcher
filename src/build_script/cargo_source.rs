@@ -91,7 +91,7 @@ pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList
                             .filter(|e| e.path().is_dir())
                             .map(|e| e.path()) {
         let folder_name = folder.as_path().iter().last().unwrap().to_str().unwrap();
-        for package in package_list.0.iter_mut()
+        for package in package_list.iter_mut()
                                     .filter(|p| p.license_text.is_none()) {
             if folder_name.starts_with(&package.name) && folder_name.ends_with(&package.version) {
                 info!("Fetching license for: {}", &package.name);

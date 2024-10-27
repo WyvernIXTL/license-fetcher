@@ -203,8 +203,8 @@ pub fn generate_package_list_with_licenses() {
     let this_package_name = var("CARGO_PKG_NAME").unwrap();
     info!("Fetching license for: {}", &this_package_name);
     let this_package_path = var("CARGO_MANIFEST_DIR").unwrap();
-    let this_package_index = package_list.0.iter().enumerate().filter(|(_, p)| p.name == this_package_name).map(|(i, _)| i).next().unwrap();
-    package_list.0[this_package_index].license_text = license_text_from_folder(&PathBuf::from(this_package_path));
+    let this_package_index = package_list.iter().enumerate().filter(|(_, p)| p.name == this_package_name).map(|(i, _)| i).next().unwrap();
+    package_list[this_package_index].license_text = license_text_from_folder(&PathBuf::from(this_package_path));
 
     write_package_list(package_list);
 }

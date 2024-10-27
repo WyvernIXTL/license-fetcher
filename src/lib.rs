@@ -51,6 +51,7 @@
 
 use std::fmt;
 use std::error::Error;
+use std::ops::{Deref, DerefMut};
 
 use bincode::{config, Decode, Encode};
 
@@ -81,6 +82,20 @@ pub struct Package {
 pub struct PackageList(pub Vec<Package>);
 
 
+impl Deref for PackageList {
+    type Target = Vec<Package>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for PackageList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl fmt::Display for PackageList {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         const SEPERATOR_WIDTH: usize = 80;
@@ -89,7 +104,7 @@ impl fmt::Display for PackageList {
 
         writeln!(f, "{}\n", separator)?;
 
-        for package in self.0.iter() {
+        for package in self.iter() {
             writeln!(f, "Package:     {} {}", package.name, package.version)?;
             if let Some(description) = &package.description {
                 writeln!(f, "Description: {}", description)?;
