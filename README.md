@@ -19,10 +19,8 @@
 
 ## Workings
 
-This library gets all packages that are actually copmiled with your program via `cargo tree`.
-This is needed to circumvent a [cargo bug](https://github.com/rust-lang/cargo/issues/10801).
-Afterwards it fetches the metadata of said packages with `cargo metadata`.
-Licenses are fetched from the `.cargo/registry/src` folder.
+Crates that are compiled with your program are fetched via `cargo metadata`.
+License texts are read from the `.cargo/registry/src` folder.
 The data is then serialized and compressed.
 
 

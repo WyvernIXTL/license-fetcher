@@ -42,56 +42,6 @@ fn generate_package_list() -> PackageList {
     let cargo_path = var_os("CARGO").unwrap();
     let manifest_path = var_os("CARGO_MANIFEST_DIR").unwrap();
 
-    // Workaround: Get dependencies with `cargo tree`.
-    // These are dependencies, which are compiled.
-    // <https://github.com/rust-lang/cargo/issues/11444>
-
-    let mut used_packages_tree: Option<BTreeSet<String>> = None;
-
-    #[cfg(feature = "cargo-tree")]
-    {
-
-        let mut output = Command::new(&cargo_path)
-                                .current_dir(&manifest_path)
-                                .args(["tree", "-e", "normal", "-f", "{p}", "--prefix", "none", "--frozen", "--color", "never", "--no-dedupe"])
-                                .output()
-                                .unwrap();
-        
-        #[cfg(not(feature = "frozen"))]
-        if !output.status.success() {
-            output = Command::new(&cargo_path)
-                                .current_dir(&manifest_path)
-                                .args(["tree", "-e", "normal", "-f", "{p}", "--prefix", "none", "--color", "never", "--no-dedupe"])
-                                .output()
-                                .unwrap();
-        }
-
-        #[cfg(feature = "frozen")]
-        if !output.status.success() {
-            panic!("Failed executing cargo tree with:\n{}", String::from_utf8_lossy(&output.stderr));
-        }
-
-        if output.status.success() {
-            let tree_string = String::from_utf8(output.stdout).unwrap();
-            let mut used_package_set = BTreeSet::new();
-
-            for package in tree_string.lines() {
-                let mut split_line_iter = package.split_whitespace();
-                if let Some(s) = split_line_iter.next() {
-                    used_package_set.insert(s.to_owned());
-                }
-            }
-
-            used_packages_tree = Some(used_package_set);
-        }
-
-    }
-
-
-    // Walk dependencies.
-    // This also finds packages which are not compiled.
-    // See: <https://github.com/rust-lang/cargo/issues/10801>
-
     let mut metadata_output = Command::new(&cargo_path)
                                         .current_dir(&manifest_path)
                                         .args(["metadata", "--format-version", "1", "--frozen", "--color", "never"])
@@ -127,13 +77,7 @@ fn generate_package_list() -> PackageList {
     let mut package_list = vec![];
 
     for package in packages {
-        let mut is_used = true;
-
-        if let Some(tree_packages) = &used_packages_tree {
-            is_used = tree_packages.contains(&package.name);
-        }
-
-        if is_used && used_packages.contains(&package.id) {
+        if used_packages.contains(&package.id) {
             package_list.push(Package {
                 license_text: None,
                 authors: package.authors,
