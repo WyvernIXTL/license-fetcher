@@ -205,6 +205,7 @@ pub fn generate_package_list_with_licenses() {
     let this_package_path = var("CARGO_MANIFEST_DIR").unwrap();
     let this_package_index = package_list.iter().enumerate().filter(|(_, p)| p.name == this_package_name).map(|(i, _)| i).next().unwrap();
     package_list[this_package_index].license_text = license_text_from_folder(&PathBuf::from(this_package_path));
+    package_list.swap(this_package_index, 0);
 
     write_package_list(package_list);
 }
