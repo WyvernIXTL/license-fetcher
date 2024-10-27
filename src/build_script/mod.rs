@@ -20,33 +20,10 @@ use simplelog::{TermLogger, LevelFilter, Config, TerminalMode, ColorChoice};
 mod metadata;
 mod cargo_source;
 
+use crate::*;
+use build_script::metadata::*;
 use cargo_source::{licenses_text_from_cargo_src_folder, license_text_from_folder};
 
-
-use crate::*;
-use crate::build_script::metadata::*;
-
-
-fn write_package_list(package_list: PackageList) {
-    let mut path = var_os("OUT_DIR").unwrap();
-    path.push("/LICENSE-3RD-PARTY.bincode");
-
-    let data = bincode::encode_to_vec(package_list, config::standard()).unwrap();
-
-    info!("License data size: {} Bytes", data.len());
-    let instant_before_compression = Instant::now();
-
-    #[cfg(feature = "compress")]
-    let compressed_data = compress_to_vec(&data, 10);
-
-    #[cfg(not(feature = "compress"))]
-    let compressed_data = data;
-
-    info!("Compressed data size: {} Bytes in {}ms", compressed_data.len(), instant_before_compression.elapsed().as_millis());
-
-    info!("Writing to file: {:?}", &path);
-    write(path, compressed_data).unwrap();
-}
 
 fn walk_dependencies<'a>(used_dependencies: &mut BTreeSet<&'a String>, dependencies: &'a Vec<MetadataResolveNode>, root: &String) {
     let package = match dependencies.iter().find(|&dep| dep.id == *root) {
@@ -187,13 +164,13 @@ fn generate_package_list() -> PackageList {
 /// use license_fetcher::build_script::generate_package_list_with_licenses;
 ///
 /// fn main() {
-///     generate_package_list_with_licenses();
+///     generate_package_list_with_licenses().write();
 ///     println!("cargo::rerun-if-changed=build.rs");
 ///     println!("cargo::rerun-if-changed=Cargo.lock");
 ///     println!("cargo::rerun-if-changed=Cargo.toml");
 /// }
 /// ```
-pub fn generate_package_list_with_licenses() {
+pub fn generate_package_list_with_licenses() -> PackageList {
     TermLogger::init(LevelFilter::Trace, Config::default(), TerminalMode::Stderr, ColorChoice::Auto).unwrap();
 
     let mut package_list = generate_package_list();
@@ -207,6 +184,31 @@ pub fn generate_package_list_with_licenses() {
     package_list[this_package_index].license_text = license_text_from_folder(&PathBuf::from(this_package_path));
     package_list.swap(this_package_index, 0);
 
-    write_package_list(package_list);
+    package_list
 }
 
+impl PackageList {
+    /// Writes the [PackageList] to the file and folder where they can be embedded into the program at compile time.
+    /// 
+    /// Copmresses and writes the PackageList into the `OUT_DIR` with file name `LICENSE-3RD-PARTY.bincode`.
+    pub fn write(self) {
+        let mut path = var_os("OUT_DIR").unwrap();
+        path.push("/LICENSE-3RD-PARTY.bincode");
+    
+        let data = bincode::encode_to_vec(self, config::standard()).unwrap();
+    
+        info!("License data size: {} Bytes", data.len());
+        let instant_before_compression = Instant::now();
+    
+        #[cfg(feature = "compress")]
+        let compressed_data = compress_to_vec(&data, 10);
+    
+        #[cfg(not(feature = "compress"))]
+        let compressed_data = data;
+    
+        info!("Compressed data size: {} Bytes in {}ms", compressed_data.len(), instant_before_compression.elapsed().as_millis());
+    
+        info!("Writing to file: {:?}", &path);
+        write(path, compressed_data).unwrap();
+    }
+}

@@ -32,10 +32,49 @@
 //! use license_fetcher::build_script::generate_package_list_with_licenses;
 //!
 //! fn main() {
-//!     generate_package_list_with_licenses();
+//!     generate_package_list_with_licenses().write();
 //!     println!("cargo::rerun-if-changed=build.rs");
 //!     println!("cargo::rerun-if-changed=Cargo.lock");
 //!     println!("cargo::rerun-if-changed=Cargo.toml");
+//! }
+//! ```
+//! 
+//! ## Adding Packages that are not Crates
+//! 
+//! Sometimes we have dependencies that are not crates. For these dependencies `license-fetcher` cannot
+//! automatically generate information. These dependencies can be added manually:
+//! ```ignore
+//! use std::fs::read_to_string;
+//! use std::concat;
+//! 
+//! use license_fetcher::{
+//!     Package,
+//!     build_script::generate_package_list_with_licenses
+//! };
+//! 
+//! fn main() {
+//!     let mut packages = generate_package_list_with_licenses();
+//! 
+//!     packages.push(Package {
+//!         name: "other dependency".to_owned(),
+//!         version: "0.1.0".to_owned(),
+//!         authors: vec!["Me".to_owned()],
+//!         description: Some("A dependency that is not a rust crate.".to_owned()),
+//!         homepage: None,
+//!         repository: None,
+//!         license_identifier: None,
+//!         license_text: Some(
+//!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/some_dependency/LICENSE"))
+//!             .expect("Failed reading license of other dependency")
+//!         )
+//!     });
+//! 
+//!     packages.write();
+//! 
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
+//!     
 //! }
 //! ```
 //! 
@@ -52,6 +91,7 @@
 use std::fmt;
 use std::error::Error;
 use std::ops::{Deref, DerefMut};
+use std::default::Default;
 
 use bincode::{config, Decode, Encode};
 
