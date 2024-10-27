@@ -27,7 +27,8 @@ pretty_assertions = "1.4.0"
 
 
 [features]
-default = ["compress"]
+default = ["compress", "cargo-tree"]
 compress = ["dep:miniz_oxide"]
 build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:once_cell", "dep:directories"]
 frozen = []
+cargo-tree = []
