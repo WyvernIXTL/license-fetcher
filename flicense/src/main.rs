@@ -3,8 +3,11 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::{read_dir, read_to_string};
+use std::io::prelude::*;
+use std::io::{stdout, BufWriter};
 use std::path::{absolute, PathBuf};
 
 use clap::Parser;
@@ -41,6 +44,10 @@ struct Cli {
     /// Output as json.
     #[arg(short, long)]
     json: bool,
+
+    /// Outputs only a short overview.
+    #[arg(short, long)]
+    short: bool,
 }
 
 fn main() -> Result<()> {
@@ -96,7 +103,32 @@ fn main() -> Result<()> {
     } else if cli.json {
         println!("{}", to_string_pretty(&package_list)?)
     } else {
-        println!("{}", package_list);
+        if cli.short {
+            let mut license_map: HashMap<String, Vec<String>> = HashMap::new();
+            for pck in package_list.iter() {
+                if let Some(license) = pck.license_identifier.clone() {
+                    if !license_map.contains_key(&license) {
+                        license_map.insert(license, vec![pck.name.clone()]);
+                    } else {
+                        license_map
+                            .get_mut(&license)
+                            .unwrap()
+                            .push(pck.name.clone());
+                    }
+                }
+            }
+            let mut stdout_buffered = BufWriter::new(stdout());
+            for (license, packages) in license_map {
+                write!(stdout_buffered, "{}: ", license.green())?;
+                for pck in packages.iter().take(packages.len() - 1) {
+                    write!(stdout_buffered, "{}, ", pck)?;
+                }
+                write!(stdout_buffered, "{}\n", packages.last().unwrap())?;
+            }
+            stdout_buffered.flush();
+        } else {
+            println!("{}", package_list);
+        }
     }
 
     Ok(())
