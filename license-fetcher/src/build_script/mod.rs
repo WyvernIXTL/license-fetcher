@@ -42,9 +42,11 @@ fn walk_dependencies<'a>(
     }
 }
 
-fn generate_package_list(cargo_path: OsString, manifest_path: OsString) -> PackageList {
+fn generate_package_list(cargo_path: Option<OsString>, manifest_dir_path: OsString) -> PackageList {
+    let cargo_path = cargo_path.unwrap_or_else(|| OsString::from("cargo"));
+
     let mut metadata_output = Command::new(&cargo_path)
-        .current_dir(&manifest_path)
+        .current_dir(&manifest_dir_path)
         .args([
             "metadata",
             "--format-version",
@@ -59,7 +61,7 @@ fn generate_package_list(cargo_path: OsString, manifest_path: OsString) -> Packa
     #[cfg(not(feature = "frozen"))]
     if !metadata_output.status.success() {
         metadata_output = Command::new(&cargo_path)
-            .current_dir(&manifest_path)
+            .current_dir(&manifest_dir_path)
             .args(["metadata", "--format-version", "1", "--color", "never"])
             .output()
             .unwrap();
@@ -107,20 +109,25 @@ fn generate_package_list(cargo_path: OsString, manifest_path: OsString) -> Packa
 /// Generates a package list with package name, authors and license text. Uses supplied parameters for cargo path and manifest path.
 ///
 /// Thist function is not as usefull as [generate_package_list_with_licenses()] for build scripts.
-/// [generate_package_list_with_licenses()] fetches `cargo_path` and `manifest_path` automatically.
+/// [generate_package_list_with_licenses()] fetches `cargo_path` and `manifest_dir_path` automatically.
 /// This function does not.
 /// The main use is for other rust programs to fetch the metadata outside of a build script.
+///
+/// ### Arguments
+///
+/// * **cargo_path - Absolute path to cargo executable. If omited tries to fetch the path from `PATH`.
+/// * **manifest_dir_path** - Relative or absolut path to manifest dir.
+/// * **this_package_name** - Name of the package. `cargo metadata` does not disclode the name, but it is needed for parsing the used licenses.
 pub fn generate_package_list_with_licenses_without_env_calls(
-    cargo_path: OsString,
-    manifest_path: OsString,
+    cargo_path: Option<OsString>,
+    manifest_dir_path: OsString,
+    this_package_name: String,
 ) -> PackageList {
-    let mut package_list = generate_package_list(cargo_path, manifest_path);
+    let mut package_list = generate_package_list(cargo_path, manifest_dir_path.clone());
 
     licenses_text_from_cargo_src_folder(&mut package_list);
 
-    let this_package_name = var("CARGO_PKG_NAME").unwrap();
     info!("Fetching license for: {}", &this_package_name);
-    let this_package_path = var("CARGO_MANIFEST_DIR").unwrap();
     let this_package_index = package_list
         .iter()
         .enumerate()
@@ -129,7 +136,7 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         .next()
         .unwrap();
     package_list[this_package_index].license_text =
-        license_text_from_folder(&PathBuf::from(this_package_path));
+        license_text_from_folder(&PathBuf::from(manifest_dir_path));
     package_list.swap(this_package_index, 0);
 
     package_list
@@ -166,9 +173,14 @@ pub fn generate_package_list_with_licenses() -> PackageList {
     .unwrap();
 
     let cargo_path = var_os("CARGO").unwrap();
-    let manifest_path = var_os("CARGO_MANIFEST_DIR").unwrap();
+    let manifest_dir_path = var_os("CARGO_MANIFEST_DIR").unwrap();
+    let this_package_name = var("CARGO_PKG_NAME").unwrap();
 
-    generate_package_list_with_licenses_without_env_calls(cargo_path, manifest_path)
+    generate_package_list_with_licenses_without_env_calls(
+        Some(cargo_path),
+        manifest_dir_path,
+        this_package_name,
+    )
 }
 
 impl PackageList {

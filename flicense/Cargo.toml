@@ -1,12 +1,13 @@
 [package]
-name = "license-fetcher-cli"
+name = "flicense"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.27", features = ["derive"] }
 color-eyre = "0.6.3"
+colored = "3.0.0"
 license-fetcher = { version = "0.5.0", path = "../license-fetcher", features = ["build"], default-features = false }
+serde = { version = "1.0.217", features = ["derive"] }
+toml = "0.8.19"
 
-[[bin]]
-name = "flicense"
