@@ -5,6 +5,7 @@
 
 use std::collections::BTreeSet;
 use std::env::{var, var_os};
+use std::ffi::OsString;
 use std::fs::write;
 use std::path::PathBuf;
 use std::process::Command;
@@ -41,10 +42,7 @@ fn walk_dependencies<'a>(
     }
 }
 
-fn generate_package_list() -> PackageList {
-    let cargo_path = var_os("CARGO").unwrap();
-    let manifest_path = var_os("CARGO_MANIFEST_DIR").unwrap();
-
+fn generate_package_list(cargo_path: OsString, manifest_path: OsString) -> PackageList {
     let mut metadata_output = Command::new(&cargo_path)
         .current_dir(&manifest_path)
         .args([
@@ -106,14 +104,43 @@ fn generate_package_list() -> PackageList {
     PackageList(package_list)
 }
 
-/// Generates a package list with package name, authors and license text.
+/// Generates a package list with package name, authors and license text. Uses supplied parameters for cargo path and manifest path.
+///
+/// Thist function is not as usefull as [generate_package_list_with_licenses()] for build scripts.
+/// [generate_package_list_with_licenses()] fetches `cargo_path` and `manifest_path` automatically.
+/// This function does not.
+/// The main use is for other rust programs to fetch the metadata outside of a build script.
+pub fn generate_package_list_with_licenses_without_env_calls(
+    cargo_path: OsString,
+    manifest_path: OsString,
+) -> PackageList {
+    let mut package_list = generate_package_list(cargo_path, manifest_path);
+
+    licenses_text_from_cargo_src_folder(&mut package_list);
+
+    let this_package_name = var("CARGO_PKG_NAME").unwrap();
+    info!("Fetching license for: {}", &this_package_name);
+    let this_package_path = var("CARGO_MANIFEST_DIR").unwrap();
+    let this_package_index = package_list
+        .iter()
+        .enumerate()
+        .filter(|(_, p)| p.name == this_package_name)
+        .map(|(i, _)| i)
+        .next()
+        .unwrap();
+    package_list[this_package_index].license_text =
+        license_text_from_folder(&PathBuf::from(this_package_path));
+    package_list.swap(this_package_index, 0);
+
+    package_list
+}
+
+/// Generates a package list with package name, authors and license text. Uses env variables supplied by cargo during build.
 ///
 /// This function:
 /// 1. Calls `cargo tree -e normal --frozen`. *(After error tries again online if not `frozen` feature is set.)*
 /// 2. Calls `cargo metadata --frozen`. *(After error tries again online if not `frozen` feature is set.)*
 /// 3. Takes the packages gotten from `cargo tree` with the metadata of `cargo metadata`.
-/// 4. Fetches the licenses from github with the `repository` link if it includes `github` in name.
-/// 5. Serializes, copmresses and writes said package list to `OUT_DIR/LICENSE-3RD-PARTY.bincode` file.
 ///
 /// Needs the feature `build` and is only meant to be used in build scripts.
 ///
@@ -138,25 +165,10 @@ pub fn generate_package_list_with_licenses() -> PackageList {
     )
     .unwrap();
 
-    let mut package_list = generate_package_list();
+    let cargo_path = var_os("CARGO").unwrap();
+    let manifest_path = var_os("CARGO_MANIFEST_DIR").unwrap();
 
-    licenses_text_from_cargo_src_folder(&mut package_list);
-
-    let this_package_name = var("CARGO_PKG_NAME").unwrap();
-    info!("Fetching license for: {}", &this_package_name);
-    let this_package_path = var("CARGO_MANIFEST_DIR").unwrap();
-    let this_package_index = package_list
-        .iter()
-        .enumerate()
-        .filter(|(_, p)| p.name == this_package_name)
-        .map(|(i, _)| i)
-        .next()
-        .unwrap();
-    package_list[this_package_index].license_text =
-        license_text_from_folder(&PathBuf::from(this_package_path));
-    package_list.swap(this_package_index, 0);
-
-    package_list
+    generate_package_list_with_licenses_without_env_calls(cargo_path, manifest_path)
 }
 
 impl PackageList {
