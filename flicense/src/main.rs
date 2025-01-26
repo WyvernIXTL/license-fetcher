@@ -6,6 +6,7 @@ use clap::Parser;
 use color_eyre::eyre::Result;
 use colored::Colorize;
 use serde::Deserialize;
+use serde_json::to_string_pretty;
 
 use license_fetcher::build_script::generate_package_list_with_licenses_without_env_calls;
 
@@ -81,7 +82,14 @@ fn main() -> Result<()> {
         manifest_dir.as_os_str().to_owned(),
         name,
     );
-    println!("{}", package_list);
+
+    if cli.yaml {
+        println!("{}", serde_yml::to_string(&package_list)?)
+    } else if cli.json {
+        println!("{}", to_string_pretty(&package_list)?)
+    } else {
+        println!("{}", package_list);
+    }
 
     Ok(())
 }
