@@ -225,6 +225,7 @@ pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'st
 
     let (package_list, _) =
         bincode::decode_from_slice(&uncompressed_bytes[..], config::standard())?;
+
     Ok(package_list)
 }
 

@@ -17,6 +17,7 @@ use serde::Deserialize;
 use serde_json::to_string_pretty;
 
 use license_fetcher::build_script::generate_package_list_with_licenses_without_env_calls;
+use license_fetcher::get_package_list_macro;
 
 #[derive(Deserialize)]
 struct CargoToml {
@@ -48,12 +49,25 @@ struct Cli {
     /// Outputs only a short overview.
     #[arg(short, long)]
     short: bool,
+
+    /// Outputs license information regarding this software and it's dependencies.
+    #[arg(short, long)]
+    license: bool,
 }
 
 fn main() -> Result<()> {
     color_eyre::install()?;
 
     let cli = Cli::parse();
+
+    if cli.license {
+        let packages = license_fetcher::get_package_list(std::include_bytes!(std::concat!(
+            env!("OUT_DIR"),
+            "/LICENSE-3RD-PARTY.bincode"
+        )));
+        println!("{:#?}", packages);
+        return Ok(());
+    }
 
     let manifest_dir = match cli.manifest_dir_path {
         Some(path) => {
@@ -125,7 +139,7 @@ fn main() -> Result<()> {
                 }
                 write!(stdout_buffered, "{}\n", packages.last().unwrap())?;
             }
-            stdout_buffered.flush();
+            stdout_buffered.flush()?;
         } else {
             println!("{}", package_list);
         }
