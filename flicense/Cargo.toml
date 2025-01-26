@@ -1,7 +1,12 @@
 [package]
 name = "flicense"
+description = "CLI for printing license information of rust cargo projects to the terminal."
+authors = ["Adam McKellar <dev@mckellar.eu>"]
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/WyvernIXTL/license-fetcher"
+license = "BSL-1.0"
+keywords = ["license", "fetch", "about", "find"]
 
 [dependencies]
 clap = { version = "4.5.27", features = ["derive"] }

@@ -1,3 +1,8 @@
+//               Copyright Adam McKellar 2025
+// Distributed under the Boost Software License, Version 1.0.
+//         (See accompanying file LICENSE or copy at
+//          https://www.boost.org/LICENSE_1_0.txt)
+
 use std::env::current_dir;
 use std::fs::{read_dir, read_to_string};
 use std::path::{absolute, PathBuf};
@@ -20,10 +25,13 @@ struct CargoPackage {
     name: String,
 }
 
+/// CLI for printing license information of rust cargo projects to the terminal.
+///
+/// Cargo needs to be installed and be in the PATH.
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// Optional path to manifest dir (where Cargo.toml and Cargo.lock are).
+    /// Optional path to manifest dir (where Cargo.toml and Cargo.lock are). Defaults to current dir.
     manifest_dir_path: Option<PathBuf>,
 
     /// Output as yaml.
