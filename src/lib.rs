@@ -103,7 +103,7 @@ pub mod build_script;
 /// Information regarding a crate.
 ///
 /// This struct holds information like package name, authors and of course license text.
-#[derive(Encode, Decode, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(serde::Serialize))]
 pub struct Package {
     pub name: String,

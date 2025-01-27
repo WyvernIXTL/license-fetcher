@@ -106,6 +106,92 @@ fn generate_package_list(cargo_path: Option<OsString>, manifest_dir_path: OsStri
     PackageList(package_list)
 }
 
+/// Filters [PackageList] with output of `cargo tree`.
+///
+/// Workaround for `cargo metadata`'s inability to differentiate between dependencies
+/// of packages that are used in build scripts and normally.
+fn filter_package_list_with_cargo_tree(
+    package_list: PackageList,
+    cargo_path: Option<OsString>,
+    manifest_dir_path: OsString,
+) -> PackageList {
+    let cargo_path = cargo_path.unwrap_or_else(|| OsString::from("cargo"));
+
+    let mut output = Command::new(&cargo_path)
+        .current_dir(&manifest_dir_path)
+        .args([
+            "tree",
+            "-e",
+            "normal",
+            "-f",
+            "{p}",
+            "--prefix",
+            "none",
+            "--frozen",
+            "--color",
+            "never",
+            "--no-dedupe",
+        ])
+        .output()
+        .unwrap();
+
+    #[cfg(not(feature = "frozen"))]
+    if !output.status.success() {
+        output = Command::new(&cargo_path)
+            .current_dir(&manifest_dir_path)
+            .args([
+                "tree",
+                "-e",
+                "normal",
+                "-f",
+                "{p}",
+                "--prefix",
+                "none",
+                "--color",
+                "never",
+                "--no-dedupe",
+            ])
+            .output()
+            .unwrap();
+    }
+
+    #[cfg(feature = "frozen")]
+    if !output.status.success() {
+        panic!(
+            "Failed executing cargo tree with:\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    if !output.status.success() {
+        log::error!(
+            "Failed executing cargo tree with:\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        return package_list;
+    }
+
+    let tree_string = String::from_utf8(output.stdout).unwrap();
+    let mut used_package_set = BTreeSet::new();
+
+    for package in tree_string.lines() {
+        let mut split_line_iter = package.split_whitespace();
+        if let Some(s) = split_line_iter.next() {
+            used_package_set.insert(s.to_owned());
+        }
+    }
+
+    let mut filtered_package_list = PackageList(vec![]);
+
+    for pkg in package_list.iter() {
+        if used_package_set.contains(&pkg.name) {
+            filtered_package_list.push(pkg.clone());
+        }
+    }
+
+    filtered_package_list
+}
+
 /// Generates a package list with package name, authors and license text. Uses supplied parameters for cargo path and manifest path.
 ///
 /// Thist function is not as usefull as [generate_package_list_with_licenses()] for build scripts.
@@ -123,7 +209,9 @@ pub fn generate_package_list_with_licenses_without_env_calls(
     manifest_dir_path: OsString,
     this_package_name: String,
 ) -> PackageList {
-    let mut package_list = generate_package_list(cargo_path, manifest_dir_path.clone());
+    let mut package_list = generate_package_list(cargo_path.clone(), manifest_dir_path.clone());
+    package_list =
+        filter_package_list_with_cargo_tree(package_list, cargo_path, manifest_dir_path.clone());
 
     licenses_text_from_cargo_src_folder(&mut package_list);
 
