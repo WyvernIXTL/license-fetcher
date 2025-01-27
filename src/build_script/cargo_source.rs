@@ -20,7 +20,15 @@ fn cargo_folder() -> PathBuf {
     } else {
         let base_dir = BaseDirs::new().expect("Failed to find home dir.");
         let home_dir = base_dir.home_dir();
-        home_dir.into()
+        let mut cargo_dir = home_dir.to_path_buf();
+        cargo_dir.push(".cargo");
+        if !cargo_dir.exists() {
+            panic!(
+                "Failed finding cargo dir: {:#?}. Set it manually with CARGO_HOME variable.",
+                &cargo_dir
+            );
+        }
+        cargo_dir
     }
 }
 
