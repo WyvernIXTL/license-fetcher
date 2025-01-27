@@ -61,10 +61,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     if cli.license {
-        let packages = license_fetcher::get_package_list(std::include_bytes!(std::concat!(
-            env!("OUT_DIR"),
-            "/LICENSE-3RD-PARTY.bincode"
-        )))?;
+        let packages = get_package_list_macro!()?;
         println!("{}", packages);
         return Ok(());
     }
