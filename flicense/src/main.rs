@@ -18,6 +18,7 @@ use serde_json::to_string_pretty;
 
 use license_fetcher::build_script::generate_package_list_with_licenses_without_env_calls;
 use license_fetcher::get_package_list_macro;
+use license_fetcher::PackageList;
 
 #[derive(Deserialize)]
 struct CargoToml {
@@ -53,6 +54,33 @@ struct Cli {
     /// Outputs license information regarding this software and it's dependencies.
     #[arg(short, long)]
     license: bool,
+}
+
+fn print_short_license_info(package_list: PackageList) -> Result<()> {
+    let mut license_map: HashMap<String, Vec<String>> = HashMap::new();
+    for pck in package_list.iter() {
+        if let Some(license) = pck.license_identifier.clone() {
+            if !license_map.contains_key(&license) {
+                license_map.insert(license, vec![pck.name.clone()]);
+            } else {
+                license_map
+                    .get_mut(&license)
+                    .unwrap()
+                    .push(pck.name.clone());
+            }
+        }
+    }
+    let mut stdout_buffered = BufWriter::new(stdout());
+    for (license, packages) in license_map {
+        write!(stdout_buffered, "{}: ", license.green())?;
+        for pck in packages.iter().take(packages.len() - 1) {
+            write!(stdout_buffered, "{}, ", pck)?;
+        }
+        write!(stdout_buffered, "{}\n", packages.last().unwrap())?;
+    }
+    stdout_buffered.flush()?;
+
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -115,28 +143,7 @@ fn main() -> Result<()> {
         println!("{}", to_string_pretty(&package_list)?)
     } else {
         if cli.short {
-            let mut license_map: HashMap<String, Vec<String>> = HashMap::new();
-            for pck in package_list.iter() {
-                if let Some(license) = pck.license_identifier.clone() {
-                    if !license_map.contains_key(&license) {
-                        license_map.insert(license, vec![pck.name.clone()]);
-                    } else {
-                        license_map
-                            .get_mut(&license)
-                            .unwrap()
-                            .push(pck.name.clone());
-                    }
-                }
-            }
-            let mut stdout_buffered = BufWriter::new(stdout());
-            for (license, packages) in license_map {
-                write!(stdout_buffered, "{}: ", license.green())?;
-                for pck in packages.iter().take(packages.len() - 1) {
-                    write!(stdout_buffered, "{}, ", pck)?;
-                }
-                write!(stdout_buffered, "{}\n", packages.last().unwrap())?;
-            }
-            stdout_buffered.flush()?;
+            print_short_license_info(package_list)?;
         } else {
             println!("{}", package_list);
         }
