@@ -155,14 +155,6 @@ fn filter_package_list_with_cargo_tree(
             .unwrap();
     }
 
-    #[cfg(feature = "frozen")]
-    if !output.status.success() {
-        panic!(
-            "Failed executing cargo tree with:\n{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-
     if !output.status.success() {
         log::error!(
             "Failed executing cargo tree with:\n{}",
