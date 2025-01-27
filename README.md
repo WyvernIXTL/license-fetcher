@@ -58,7 +58,7 @@ Add following content to your `main.rs`:
 use license_fetcher::get_package_list_macro;
 
 fn main() {
-    let packages = get_package_list_macro!();
+    let packages = get_package_list_macro!().unwrap();
     println!("{}", packages);
 }
 ```
@@ -72,7 +72,7 @@ fn main() {
 + Also retrieves licenses in the build step and loads them into the program.
 
 #### Cons
-- Does not fetch licenses from loacal source files.
+- Does not fetch licenses from local source files.
 - Very slow.
 - Does not compress licenses.
 
@@ -84,7 +84,7 @@ fn main() {
 
 #### Cons
 - Is not a library to access said data but rather a command line tool.
-- Does not fetch licenses from loacal source files.
+- Does not fetch licenses from local source files.
 
 
 ## Screenshots
