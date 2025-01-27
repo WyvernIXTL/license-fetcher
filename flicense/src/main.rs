@@ -64,8 +64,8 @@ fn main() -> Result<()> {
         let packages = license_fetcher::get_package_list(std::include_bytes!(std::concat!(
             env!("OUT_DIR"),
             "/LICENSE-3RD-PARTY.bincode"
-        )));
-        println!("{:#?}", packages);
+        )))?;
+        println!("{}", packages);
         return Ok(());
     }
 

@@ -58,7 +58,7 @@ Add following content to your `main.rs`:
 use license_fetcher::get_package_list_macro;
 
 fn main() {
-    let packages = get_package_list_macro!();
+    let packages = get_package_list_macro!().unwrap();
     println!("{}", packages);
 }
 ```

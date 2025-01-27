@@ -14,7 +14,7 @@ keywords = ["license", "embed", "fetch", "about", "find"]
 bincode = "=2.0.0-rc.3"
 directories = {version = "5.0.1", optional = true}
 log = { version = "0.4.22", optional = true }
-miniz_oxide = { version = "0.8.0", optional = true }
+miniz_oxide = { version = "0.8.0", optional = true, features = ["std"]}
 once_cell = { version = "1.19.0", optional = true }
 regex = { version = "1.10.6", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }

@@ -86,7 +86,6 @@
 //!
 
 use std::default::Default;
-use std::error::Error;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
@@ -94,6 +93,9 @@ use bincode::{config, Decode, Encode};
 
 #[cfg(feature = "compress")]
 use miniz_oxide::inflate::decompress_to_vec;
+
+pub mod error;
+use error::UnpackError;
 
 #[cfg(feature = "build")]
 pub mod build_script;
@@ -217,7 +219,7 @@ impl fmt::Display for PackageList {
 ///                         ).unwrap();
 /// }
 /// ```
-pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, Box<dyn Error + 'static>> {
+pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
     #[cfg(feature = "compress")]
     let uncompressed_bytes = decompress_to_vec(bytes).expect("Failed decompressing license data.");
     #[cfg(not(feature = "compress"))]
@@ -245,6 +247,5 @@ macro_rules! get_package_list_macro {
             env!("OUT_DIR"),
             "/LICENSE-3RD-PARTY.bincode"
         )))
-        .unwrap()
     };
 }
