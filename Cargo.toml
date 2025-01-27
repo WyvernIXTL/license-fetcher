@@ -1,8 +1,33 @@
-[workspace]
+[package]
+name = "license-fetcher"
+description = "Fetch licenses of dependencies at build time and embed them into your program."
+authors = ["Adam McKellar <dev@mckellar.eu>"]
+version = "0.5.0"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/WyvernIXTL/license-fetcher"
+license = "BSL-1.0"
+keywords = ["license", "embed", "fetch", "about", "find"]
 
-resolver = "2"
 
-members = [
-	"license-fetcher", 
-	"flicense",
-]
+[dependencies]
+bincode = "=2.0.0-rc.3"
+directories = {version = "5.0.1", optional = true}
+log = { version = "0.4.22", optional = true }
+miniz_oxide = { version = "0.8.0", optional = true, features = ["std"]}
+once_cell = { version = "1.19.0", optional = true }
+regex = { version = "1.10.6", optional = true }
+serde = { version = "1.0.210", features = ["derive"], optional = true }
+serde_json = { version = "1.0.128", optional = true }
+simplelog = { version = "0.12.2", optional = true }
+
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+
+
+[features]
+default = ["compress"]
+compress = ["dep:miniz_oxide"]
+build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:once_cell", "dep:directories"]
+frozen = []
