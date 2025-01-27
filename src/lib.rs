@@ -22,7 +22,7 @@
 //! ```ignore
 //! use license_fetcher::get_package_list_macro;
 //! fn main() {
-//!     let package_list = get_package_list_macro!();
+//!     let package_list = get_package_list_macro!().unwrap();
 //! }
 //!
 //! ```
