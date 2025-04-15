@@ -118,9 +118,9 @@ pub struct Package {
 
 impl Package {
     fn fmt_package(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        const SEPERATOR_WIDTH: usize = 80;
-        let separator: String = "=".repeat(SEPERATOR_WIDTH);
-        let separator_light: String = "-".repeat(SEPERATOR_WIDTH);
+        const SEPARATOR_WIDTH: usize = 80;
+        let separator: String = "=".repeat(SEPARATOR_WIDTH);
+        let separator_light: String = "-".repeat(SEPARATOR_WIDTH);
 
         writeln!(f, "Package:     {} {}", self.name, self.version)?;
         if let Some(description) = &self.description {
@@ -158,8 +158,8 @@ impl Package {
 
 impl fmt::Display for Package {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        const SEPERATOR_WIDTH: usize = 80;
-        let separator: String = "=".repeat(SEPERATOR_WIDTH);
+        const SEPARATOR_WIDTH: usize = 80;
+        let separator: String = "=".repeat(SEPARATOR_WIDTH);
 
         writeln!(f, "{}\n", separator)?;
 
@@ -188,8 +188,8 @@ impl DerefMut for PackageList {
 
 impl fmt::Display for PackageList {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        const SEPERATOR_WIDTH: usize = 80;
-        let separator: String = "=".repeat(SEPERATOR_WIDTH);
+        const SEPARATOR_WIDTH: usize = 80;
+        let separator: String = "=".repeat(SEPARATOR_WIDTH);
 
         writeln!(f, "{}\n", separator)?;
 
@@ -201,10 +201,10 @@ impl fmt::Display for PackageList {
     }
 }
 
-/// Decopresses and deserializes the crate and license information.
+/// Decompresses and deserializes the crate and license information.
 ///
-/// Thise function decompresses the input, if `compress` feature was not disabled and
-/// then deserializes the input. The input should be the embeded license information from
+/// This function decompresses the input, if `compress` feature was not disabled and
+/// then deserializes the input. The input should be the embedded license information from
 /// the build step.
 ///
 /// # Example

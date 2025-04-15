@@ -186,16 +186,16 @@ fn filter_package_list_with_cargo_tree(
 
 /// Generates a package list with package name, authors and license text. Uses supplied parameters for cargo path and manifest path.
 ///
-/// Thist function is not as usefull as [generate_package_list_with_licenses()] for build scripts.
+/// This function is not as useful as [generate_package_list_with_licenses()] for build scripts.
 /// [generate_package_list_with_licenses()] fetches `cargo_path` and `manifest_dir_path` automatically.
 /// This function does not.
 /// The main use is for other rust programs to fetch the metadata outside of a build script.
 ///
 /// ### Arguments
 ///
-/// * **cargo_path - Absolute path to cargo executable. If omited tries to fetch the path from `PATH`.
-/// * **manifest_dir_path** - Relative or absolut path to manifest dir.
-/// * **this_package_name** - Name of the package. `cargo metadata` does not disclode the name, but it is needed for parsing the used licenses.
+/// * **cargo_path - Absolute path to cargo executable. If omitted tries to fetch the path from `PATH`.
+/// * **manifest_dir_path** - Relative or absolute path to manifest dir.
+/// * **this_package_name** - Name of the package. `cargo metadata` does not disclose the name, but it is needed for parsing the used licenses.
 pub fn generate_package_list_with_licenses_without_env_calls(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
@@ -266,7 +266,7 @@ pub fn generate_package_list_with_licenses() -> PackageList {
 impl PackageList {
     /// Writes the [PackageList] to the file and folder where they can be embedded into the program at compile time.
     ///
-    /// Copmresses and writes the PackageList into the `OUT_DIR` with file name `LICENSE-3RD-PARTY.bincode`.
+    /// Compresses and writes the PackageList into the `OUT_DIR` with file name `LICENSE-3RD-PARTY.bincode`.
     pub fn write(self) {
         let mut path = var_os("OUT_DIR").unwrap();
         path.push("/LICENSE-3RD-PARTY.bincode");
