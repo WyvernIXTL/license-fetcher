@@ -4,13 +4,16 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 use std::env::var_os;
-use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 
 use directories::BaseDirs;
 use log::{info, trace, warn};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use smol::fs::{read_dir, read_to_string};
+use smol::future::FutureExt;
+use smol::stream::{self, StreamExt};
+use smol::{block_on, LocalExecutor};
 
 use crate::PackageList;
 
@@ -32,15 +35,21 @@ fn cargo_folder() -> PathBuf {
     }
 }
 
-fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
+async fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
     let src_subfolder = PathBuf::from("registry/src");
     let src_dir = path.join(src_subfolder);
-    read_dir(src_dir)
-        .expect("Src path is not a dir.")
+    let mut dir_poll = read_dir(src_dir).await.expect("Src path is not a dir.");
+    let mut file_paths = vec![];
+    while let Some(dir_entry) = stream::poll_fn(|cx| dir_poll.poll_next(cx))
         .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().map_or(false, |ft| ft.is_dir()))
-        .map(|e| e.path())
-        .collect()
+        .next()
+        .await
+    {
+        if dir_entry.file_type().await.map_or(false, |t| t.is_dir()) {
+            file_paths.push(dir_entry.path());
+        }
+    }
+    file_paths
 }
 
 pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
@@ -82,7 +91,10 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     Some(license_text_vec.join("\n\n"))
 }
 
-pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList) {
+pub(super) async fn licenses_text_from_cargo_src_folder(
+    ex: &LocalExecutor<'_>,
+    package_list: &mut PackageList,
+) {
     for src_folder in src_registry_folders(cargo_folder()) {
         info!("src folder: {:?}", &src_folder);
 

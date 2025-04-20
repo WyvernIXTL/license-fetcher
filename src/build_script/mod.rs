@@ -227,7 +227,7 @@ pub async fn generate_package_list_with_licenses_without_env_calls(
         package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
     }
 
-    licenses_text_from_cargo_src_folder(&mut package_list);
+    licenses_text_from_cargo_src_folder(&ex, &mut package_list).await;
 
     info!("Fetching license for: {}", &this_package_name);
     let this_package_index = package_list
