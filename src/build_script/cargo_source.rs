@@ -38,14 +38,19 @@ fn cargo_folder() -> PathBuf {
 async fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
     let src_subfolder = PathBuf::from("registry/src");
     let src_dir = path.join(src_subfolder);
-    let mut dir_poll = read_dir(src_dir).await.expect("Src path is not a dir.");
-    let mut file_paths = vec![];
-    while let Some(dir_entry) = (&mut dir_poll).filter_map(|e| e.ok()).next().await {
-        if dir_entry.file_type().await.map_or(false, |t| t.is_dir()) {
-            file_paths.push(dir_entry.path());
-        }
-    }
-    file_paths
+
+    (&mut read_dir(src_dir).await.expect("Src path is not a dir."))
+        .filter_map(|e| e.ok())
+        .then(|e| async move {
+            if e.file_type().await.map_or(false, |t| t.is_dir()) {
+                Some(e.path())
+            } else {
+                None
+            }
+        })
+        .filter_map(|e| e)
+        .collect()
+        .await
 }
 
 pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
