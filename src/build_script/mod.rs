@@ -214,18 +214,14 @@ pub fn generate_package_list_with_licenses_without_env_calls(
     manifest_dir_path: OsString,
     this_package_name: String,
 ) -> PackageList {
-    let ex = LocalExecutor::new();
-
     let fut = async {
-        let package_list_task = ex.spawn(generate_package_list(
-            cargo_path.clone(),
-            manifest_dir_path.clone(),
-        ));
-        let cargo_tree_options_task =
-            ex.spawn(execute_cargo_tree(cargo_path, manifest_dir_path.clone()));
+        let (mut package_list, cargo_tree_output) = smol::future::zip(
+            generate_package_list(cargo_path.clone(), manifest_dir_path.clone()),
+            execute_cargo_tree(cargo_path, manifest_dir_path.clone()),
+        )
+        .await;
 
-        let mut package_list = package_list_task.await;
-        if let Some(cargo_tree_output) = cargo_tree_options_task.await {
+        if let Some(cargo_tree_output) = cargo_tree_output {
             package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
         }
 
@@ -246,6 +242,7 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         package_list
     };
 
+    let ex = LocalExecutor::new();
     block_on(ex.run(fut))
 }
 
