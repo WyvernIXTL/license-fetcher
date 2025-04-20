@@ -11,9 +11,7 @@ use log::{info, trace, warn};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use smol::fs::{read_dir, read_to_string};
-use smol::future::FutureExt;
-use smol::stream::{self, StreamExt};
-use smol::{block_on, LocalExecutor};
+use smol::stream::{Stream, StreamExt};
 
 use crate::PackageList;
 
@@ -35,11 +33,13 @@ fn cargo_folder() -> PathBuf {
     }
 }
 
-async fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
+async fn src_registry_folders(path: PathBuf) -> impl Stream<Item = PathBuf> {
     let src_subfolder = PathBuf::from("registry/src");
     let src_dir = path.join(src_subfolder);
 
-    (&mut read_dir(src_dir).await.expect("Src path is not a dir."))
+    read_dir(src_dir)
+        .await
+        .expect("Src path is not a dir.")
         .filter_map(|e| e.ok())
         .then(|e| async move {
             if e.file_type().await.map_or(false, |t| t.is_dir()) {
@@ -49,8 +49,6 @@ async fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
             }
         })
         .filter_map(|e| e)
-        .collect()
-        .await
 }
 
 pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
@@ -83,28 +81,41 @@ pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     Some(license_texts.join("\n\n"))
 }
 
-pub(super) async fn licenses_text_from_cargo_src_folder(
-    ex: &LocalExecutor<'_>,
-    package_list: &mut PackageList,
-) {
-    for src_folder in src_registry_folders(cargo_folder()) {
-        info!("src folder: {:?}", &src_folder);
-
-        for folder in read_dir(src_folder)
-            .expect("Failed reading source folder.")
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().is_dir())
-            .map(|e| e.path())
-        {
-            let folder_name = folder.as_path().iter().last().unwrap().to_str().unwrap();
-            for package in package_list.iter_mut().filter(|p| p.license_text.is_none()) {
-                if folder_name.starts_with(&package.name) && folder_name.ends_with(&package.version)
-                {
-                    info!("Fetching license for: {}", &package.name);
-                    package.license_text = license_text_from_folder(&folder);
+pub(super) async fn licenses_text_from_cargo_src_folder(package_list: &PackageList) -> PackageList {
+    PackageList(
+        src_registry_folders(cargo_folder())
+            .await
+            .inspect(|e| info!("src folder: {:?}", &e))
+            .then(|d| read_dir(d))
+            .filter_map(|r| r.ok())
+            .flatten()
+            .filter_map(|d| d.ok())
+            .then(|e| async move {
+                if e.file_type().await.map_or(false, |t| t.is_dir()) {
+                    Some(e)
+                } else {
+                    None
                 }
-            }
-        }
-    }
+            })
+            .filter_map(|e| e)
+            .filter_map(|e| {
+                let name_os = e.file_name();
+                let name = name_os.to_str().unwrap();
+                if let Some(p) = package_list
+                    .iter()
+                    .find(|p| name.starts_with(&p.name) && name.ends_with(&p.version))
+                {
+                    Some((e, p.clone()))
+                } else {
+                    None
+                }
+            })
+            .inspect(|(_, p)| info!("Fetching license for: {}", p.name))
+            .then(|(e, mut p)| async move {
+                p.license_text = license_text_from_folder(&e.path()).await;
+                p
+            })
+            .collect()
+            .await,
+    )
 }
