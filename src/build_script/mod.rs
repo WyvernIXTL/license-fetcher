@@ -209,39 +209,44 @@ fn filter_package_list_with_cargo_tree(
 /// * **cargo_path - Absolute path to cargo executable. If omitted tries to fetch the path from `PATH`.
 /// * **manifest_dir_path** - Relative or absolute path to manifest dir.
 /// * **this_package_name** - Name of the package. `cargo metadata` does not disclose the name, but it is needed for parsing the used licenses.
-pub async fn generate_package_list_with_licenses_without_env_calls(
-    ex: &LocalExecutor<'_>,
+pub fn generate_package_list_with_licenses_without_env_calls(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
     this_package_name: String,
 ) -> PackageList {
-    let package_list_task = ex.spawn(generate_package_list(
-        cargo_path.clone(),
-        manifest_dir_path.clone(),
-    ));
-    let cargo_tree_options_task =
-        ex.spawn(execute_cargo_tree(cargo_path, manifest_dir_path.clone()));
+    let ex = LocalExecutor::new();
 
-    let mut package_list = package_list_task.await;
-    if let Some(cargo_tree_output) = cargo_tree_options_task.await {
-        package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
-    }
+    let fut = async {
+        let package_list_task = ex.spawn(generate_package_list(
+            cargo_path.clone(),
+            manifest_dir_path.clone(),
+        ));
+        let cargo_tree_options_task =
+            ex.spawn(execute_cargo_tree(cargo_path, manifest_dir_path.clone()));
 
-    package_list = licenses_text_from_cargo_src_folder(&package_list).await;
+        let mut package_list = package_list_task.await;
+        if let Some(cargo_tree_output) = cargo_tree_options_task.await {
+            package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
+        }
 
-    info!("Fetching license for: {}", &this_package_name);
-    let this_package_index = package_list
-        .iter()
-        .enumerate()
-        .filter(|(_, p)| p.name == this_package_name)
-        .map(|(i, _)| i)
-        .next()
-        .unwrap();
-    package_list[this_package_index].license_text =
-        license_text_from_folder(&PathBuf::from(manifest_dir_path)).await;
-    package_list.swap(this_package_index, 0);
+        package_list = licenses_text_from_cargo_src_folder(&package_list).await;
 
-    package_list
+        info!("Fetching license for: {}", &this_package_name);
+        let this_package_index = package_list
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| p.name == this_package_name)
+            .map(|(i, _)| i)
+            .next()
+            .unwrap();
+        package_list[this_package_index].license_text =
+            license_text_from_folder(&PathBuf::from(manifest_dir_path)).await;
+        package_list.swap(this_package_index, 0);
+
+        package_list
+    };
+
+    block_on(ex.run(fut))
 }
 
 /// Generates a package list with package name, authors and license text. Uses env variables supplied by cargo during build.
@@ -278,15 +283,10 @@ pub fn generate_package_list_with_licenses() -> PackageList {
     let manifest_dir_path = var_os("CARGO_MANIFEST_DIR").unwrap();
     let this_package_name = var("CARGO_PKG_NAME").unwrap();
 
-    let ex = LocalExecutor::new();
-
-    block_on(
-        ex.run(generate_package_list_with_licenses_without_env_calls(
-            &ex,
-            Some(cargo_path),
-            manifest_dir_path,
-            this_package_name,
-        )),
+    generate_package_list_with_licenses_without_env_calls(
+        Some(cargo_path),
+        manifest_dir_path,
+        this_package_name,
     )
 }
 
