@@ -8,7 +8,6 @@ use std::env::{var, var_os};
 use std::ffi::OsString;
 use std::fs::write;
 use std::path::PathBuf;
-use std::process::Command;
 use std::time::Instant;
 
 #[cfg(feature = "compress")]
@@ -17,6 +16,8 @@ use miniz_oxide::deflate::compress_to_vec;
 use log::info;
 use serde_json::from_slice;
 use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
+use smol::process::Command;
+use smol::{block_on, LocalExecutor};
 
 mod cargo_source;
 mod metadata;
@@ -42,7 +43,10 @@ fn walk_dependencies<'a>(
     }
 }
 
-fn generate_package_list(cargo_path: Option<OsString>, manifest_dir_path: OsString) -> PackageList {
+async fn generate_package_list(
+    cargo_path: Option<OsString>,
+    manifest_dir_path: OsString,
+) -> PackageList {
     let cargo_path = cargo_path.unwrap_or_else(|| OsString::from("cargo"));
 
     let mut metadata_output = Command::new(&cargo_path)
@@ -56,6 +60,7 @@ fn generate_package_list(cargo_path: Option<OsString>, manifest_dir_path: OsStri
             "never",
         ])
         .output()
+        .await
         .unwrap();
 
     #[cfg(not(feature = "frozen"))]
@@ -64,15 +69,15 @@ fn generate_package_list(cargo_path: Option<OsString>, manifest_dir_path: OsStri
             .current_dir(&manifest_dir_path)
             .args(["metadata", "--format-version", "1", "--color", "never"])
             .output()
+            .await
             .unwrap();
     }
 
-    if !metadata_output.status.success() {
-        panic!(
-            "Failed executing cargo metadata with:\n{}",
-            String::from_utf8_lossy(&metadata_output.stderr)
-        );
-    }
+    assert!(
+        metadata_output.status.success(),
+        "Failed executing cargo metadata with:\n{}",
+        String::from_utf8_lossy(&metadata_output.stderr)
+    );
 
     let metadata_parsed: Metadata = from_slice(&metadata_output.stdout).unwrap();
 
@@ -106,15 +111,11 @@ fn generate_package_list(cargo_path: Option<OsString>, manifest_dir_path: OsStri
     PackageList(package_list)
 }
 
-/// Filters [PackageList] with output of `cargo tree`.
-///
-/// Workaround for `cargo metadata`'s inability to differentiate between dependencies
-/// of packages that are used in build scripts and normally.
-fn filter_package_list_with_cargo_tree(
-    package_list: PackageList,
+/// Runs the cargo tree command and returns it output or None if an error occurred.
+async fn execute_cargo_tree(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
-) -> PackageList {
+) -> Option<String> {
     let cargo_path = cargo_path.unwrap_or_else(|| OsString::from("cargo"));
 
     let mut output = Command::new(&cargo_path)
@@ -133,6 +134,7 @@ fn filter_package_list_with_cargo_tree(
             "--no-dedupe",
         ])
         .output()
+        .await
         .unwrap();
 
     #[cfg(not(feature = "frozen"))]
@@ -152,6 +154,7 @@ fn filter_package_list_with_cargo_tree(
                 "--no-dedupe",
             ])
             .output()
+            .await
             .unwrap();
     }
 
@@ -160,13 +163,23 @@ fn filter_package_list_with_cargo_tree(
             "Failed executing cargo tree with:\n{}",
             String::from_utf8_lossy(&output.stderr)
         );
-        return package_list;
+        return None;
     }
 
-    let tree_string = String::from_utf8(output.stdout).unwrap();
+    Some(String::from_utf8(output.stdout).unwrap())
+}
+
+/// Filters [PackageList] with output of `cargo tree`.
+///
+/// Workaround for `cargo metadata`'s inability to differentiate between dependencies
+/// of packages that are used in build scripts and normally.
+fn filter_package_list_with_cargo_tree(
+    package_list: PackageList,
+    cargo_tree_output: String,
+) -> PackageList {
     let mut used_package_set = BTreeSet::new();
 
-    for package in tree_string.lines() {
+    for package in cargo_tree_output.lines() {
         let mut split_line_iter = package.split_whitespace();
         if let Some(s) = split_line_iter.next() {
             used_package_set.insert(s.to_owned());
@@ -196,14 +209,23 @@ fn filter_package_list_with_cargo_tree(
 /// * **cargo_path - Absolute path to cargo executable. If omitted tries to fetch the path from `PATH`.
 /// * **manifest_dir_path** - Relative or absolute path to manifest dir.
 /// * **this_package_name** - Name of the package. `cargo metadata` does not disclose the name, but it is needed for parsing the used licenses.
-pub fn generate_package_list_with_licenses_without_env_calls(
+pub async fn generate_package_list_with_licenses_without_env_calls(
+    ex: &LocalExecutor<'_>,
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
     this_package_name: String,
 ) -> PackageList {
-    let mut package_list = generate_package_list(cargo_path.clone(), manifest_dir_path.clone());
-    package_list =
-        filter_package_list_with_cargo_tree(package_list, cargo_path, manifest_dir_path.clone());
+    let package_list_task = ex.spawn(generate_package_list(
+        cargo_path.clone(),
+        manifest_dir_path.clone(),
+    ));
+    let cargo_tree_options_task =
+        ex.spawn(execute_cargo_tree(cargo_path, manifest_dir_path.clone()));
+
+    let mut package_list = package_list_task.await;
+    if let Some(cargo_tree_output) = cargo_tree_options_task.await {
+        package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
+    }
 
     licenses_text_from_cargo_src_folder(&mut package_list);
 
@@ -256,10 +278,15 @@ pub fn generate_package_list_with_licenses() -> PackageList {
     let manifest_dir_path = var_os("CARGO_MANIFEST_DIR").unwrap();
     let this_package_name = var("CARGO_PKG_NAME").unwrap();
 
-    generate_package_list_with_licenses_without_env_calls(
-        Some(cargo_path),
-        manifest_dir_path,
-        this_package_name,
+    let ex = LocalExecutor::new();
+
+    block_on(
+        ex.run(generate_package_list_with_licenses_without_env_calls(
+            &ex,
+            Some(cargo_path),
+            manifest_dir_path,
+            this_package_name,
+        )),
     )
 }
 
