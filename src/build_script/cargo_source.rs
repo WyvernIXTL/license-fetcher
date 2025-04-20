@@ -40,11 +40,7 @@ async fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
     let src_dir = path.join(src_subfolder);
     let mut dir_poll = read_dir(src_dir).await.expect("Src path is not a dir.");
     let mut file_paths = vec![];
-    while let Some(dir_entry) = stream::poll_fn(|cx| dir_poll.poll_next(cx))
-        .filter_map(|e| e.ok())
-        .next()
-        .await
-    {
+    while let Some(dir_entry) = (&mut dir_poll).filter_map(|e| e.ok()).next().await {
         if dir_entry.file_type().await.map_or(false, |t| t.is_dir()) {
             file_paths.push(dir_entry.path());
         }
@@ -52,43 +48,34 @@ async fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
     file_paths
 }
 
-pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
+pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     trace!("Fetching license in folder: {:?}", &path);
-
-    let entries = read_dir(&path).unwrap();
 
     static LICENSE_FILE_NAME_REGEX: Lazy<Regex> =
         Lazy::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
-    let mut potential_license_files = vec![];
-
-    for entry in entries {
-        if let Ok(entry) = entry {
-            if let Ok(metadata) = entry.metadata() {
-                if !metadata.is_file() {
-                    continue;
-                }
-                if LICENSE_FILE_NAME_REGEX.is_match(&entry.file_name().to_string_lossy()) {
-                    potential_license_files.push(entry.path());
-                }
+    let license_texts: Vec<String> = (&mut read_dir(&path)
+        .await
+        .expect("Failed reading source dir of dependency."))
+        .filter_map(|e| e.ok())
+        .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
+        .then(|e| async move {
+            if e.file_type().await.map_or(false, |t| t.is_file()) {
+                Some(read_to_string(e.path()).await)
+            } else {
+                None
             }
-        }
-    }
+        })
+        .filter_map(|e| e?.ok())
+        .collect()
+        .await;
 
-    let mut license_text_vec = vec![];
-
-    for license_file in potential_license_files {
-        if let Ok(license_text) = read_to_string(license_file) {
-            license_text_vec.push(license_text);
-        }
-    }
-
-    if license_text_vec.is_empty() {
+    if license_texts.is_empty() {
         warn!("Found no licenses in folder: {:?}", &path);
         return None;
     }
 
-    Some(license_text_vec.join("\n\n"))
+    Some(license_texts.join("\n\n"))
 }
 
 pub(super) async fn licenses_text_from_cargo_src_folder(
