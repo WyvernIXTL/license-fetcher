@@ -4,6 +4,7 @@
         "Kellar",
         "miniz",
         "serde",
-        "simplelog"
+        "simplelog",
+        "smol"
     ]
 }
