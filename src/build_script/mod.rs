@@ -8,6 +8,7 @@ use std::env::{var, var_os};
 use std::ffi::OsString;
 use std::fs::write;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use std::time::Instant;
 
 #[cfg(feature = "compress")]
@@ -17,7 +18,7 @@ use log::info;
 use serde_json::from_slice;
 use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 use smol::process::Command;
-use smol::{block_on, LocalExecutor};
+use smol::{block_on, Executor};
 
 mod cargo_source;
 mod metadata;
@@ -26,6 +27,7 @@ use crate::*;
 use build_script::metadata::*;
 use cargo_source::{license_text_from_folder, licenses_text_from_cargo_src_folder};
 
+#[cfg_attr(feature = "debug", tracing::instrument)]
 fn walk_dependencies<'a>(
     used_dependencies: &mut BTreeSet<&'a String>,
     dependencies: &'a Vec<MetadataResolveNode>,
@@ -43,6 +45,7 @@ fn walk_dependencies<'a>(
     }
 }
 
+#[cfg_attr(feature = "debug", tracing::instrument)]
 async fn generate_package_list(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
@@ -112,6 +115,7 @@ async fn generate_package_list(
 }
 
 /// Runs the cargo tree command and returns it output or None if an error occurred.
+#[cfg_attr(feature = "debug", tracing::instrument)]
 async fn execute_cargo_tree(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
@@ -173,6 +177,7 @@ async fn execute_cargo_tree(
 ///
 /// Workaround for `cargo metadata`'s inability to differentiate between dependencies
 /// of packages that are used in build scripts and normally.
+#[cfg_attr(feature = "debug", tracing::instrument)]
 fn filter_package_list_with_cargo_tree(
     package_list: PackageList,
     cargo_tree_output: String,
@@ -209,41 +214,47 @@ fn filter_package_list_with_cargo_tree(
 /// * **cargo_path - Absolute path to cargo executable. If omitted tries to fetch the path from `PATH`.
 /// * **manifest_dir_path** - Relative or absolute path to manifest dir.
 /// * **this_package_name** - Name of the package. `cargo metadata` does not disclose the name, but it is needed for parsing the used licenses.
-pub fn generate_package_list_with_licenses_without_env_calls(
+#[cfg_attr(feature = "debug", tracing::instrument)]
+pub fn generate_package_list_with_licenses_without_env_calls<'a>(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
     this_package_name: String,
 ) -> PackageList {
-    let fut = async {
-        let (mut package_list, cargo_tree_output) = smol::future::zip(
-            generate_package_list(cargo_path.clone(), manifest_dir_path.clone()),
-            execute_cargo_tree(cargo_path, manifest_dir_path.clone()),
-        )
-        .await;
+    static EX: LazyLock<Executor> = LazyLock::new(|| Executor::new());
 
-        if let Some(cargo_tree_output) = cargo_tree_output {
-            package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
-        }
+    let (mut package_list, cargo_tree_output) = block_on(EX.run(async {
+        let package_list_task = EX.spawn(generate_package_list(
+            cargo_path.clone(),
+            manifest_dir_path.clone(),
+        ));
+        let cargo_tree_output_task =
+            EX.spawn(execute_cargo_tree(cargo_path, manifest_dir_path.clone()));
+        smol::future::zip(package_list_task, cargo_tree_output_task).await
+    }));
 
-        package_list = licenses_text_from_cargo_src_folder(&package_list).await;
+    if let Some(cargo_tree_output) = cargo_tree_output {
+        package_list = filter_package_list_with_cargo_tree(package_list, cargo_tree_output);
+    }
+
+    let this_package_index = package_list
+        .iter()
+        .enumerate()
+        .filter(|(_, p)| p.name == this_package_name)
+        .map(|(i, _)| i)
+        .next()
+        .unwrap();
+
+    package_list.swap(this_package_index, 0);
+
+    block_on(EX.run(async {
+        package_list = licenses_text_from_cargo_src_folder(&EX, &package_list).await;
 
         info!("Fetching license for: {}", &this_package_name);
-        let this_package_index = package_list
-            .iter()
-            .enumerate()
-            .filter(|(_, p)| p.name == this_package_name)
-            .map(|(i, _)| i)
-            .next()
-            .unwrap();
         package_list[this_package_index].license_text =
-            license_text_from_folder(&PathBuf::from(manifest_dir_path)).await;
-        package_list.swap(this_package_index, 0);
+            license_text_from_folder(&EX, PathBuf::from(manifest_dir_path)).await;
+    }));
 
-        package_list
-    };
-
-    let ex = LocalExecutor::new();
-    block_on(ex.run(fut))
+    package_list
 }
 
 /// Generates a package list with package name, authors and license text. Uses env variables supplied by cargo during build.

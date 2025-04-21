@@ -21,6 +21,7 @@ serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
 simplelog = { version = "0.12.2", optional = true }
 smol = { version = "2.0.2", optional = true }
+tracing = { version = "0.1.41", optional = true }
 
 
 [dev-dependencies]
@@ -32,3 +33,4 @@ default = ["compress"]
 compress = ["dep:miniz_oxide"]
 build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:once_cell", "dep:directories", "dep:smol"]
 frozen = []
+debug = ["dep:tracing"]

@@ -174,7 +174,7 @@ pub struct PackageList(pub Vec<Package>);
 
 impl Default for PackageList {
     fn default() -> Self {
-        return Self(vec![]);
+        Self(vec![])
     }
 }
 

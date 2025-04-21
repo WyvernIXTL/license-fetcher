@@ -12,9 +12,11 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use smol::fs::{read_dir, read_to_string};
 use smol::stream::{Stream, StreamExt};
+use smol::Executor;
 
 use crate::PackageList;
 
+#[cfg_attr(feature = "debug", tracing::instrument)]
 fn cargo_folder() -> PathBuf {
     if let Some(path) = var_os("CARGO_HOME") {
         path.into()
@@ -33,6 +35,7 @@ fn cargo_folder() -> PathBuf {
     }
 }
 
+#[cfg_attr(feature = "debug", tracing::instrument)]
 async fn src_registry_folders(path: PathBuf) -> impl Stream<Item = PathBuf> {
     let src_subfolder = PathBuf::from("registry/src");
     let src_dir = path.join(src_subfolder);
@@ -51,7 +54,8 @@ async fn src_registry_folders(path: PathBuf) -> impl Stream<Item = PathBuf> {
         .filter_map(|e| e)
 }
 
-pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
+#[cfg_attr(feature = "debug", tracing::instrument)]
+pub(super) async fn license_text_from_folder(ex: &Executor<'_>, path: PathBuf) -> Option<String> {
     trace!("Fetching license in folder: {:?}", &path);
 
     static LICENSE_FILE_NAME_REGEX: Lazy<Regex> =
@@ -64,7 +68,7 @@ pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .then(|e| async move {
             if e.file_type().await.map_or(false, |t| t.is_file()) {
-                Some(read_to_string(e.path()).await)
+                Some(ex.spawn(read_to_string(e.path())).await)
             } else {
                 None
             }
@@ -81,12 +85,16 @@ pub(super) async fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     Some(license_texts.join("\n\n"))
 }
 
-pub(super) async fn licenses_text_from_cargo_src_folder(package_list: &PackageList) -> PackageList {
+#[cfg_attr(feature = "debug", tracing::instrument)]
+pub(super) async fn licenses_text_from_cargo_src_folder<'a>(
+    ex: &'a Executor<'a>,
+    package_list: &PackageList,
+) -> PackageList {
     PackageList(
         src_registry_folders(cargo_folder())
             .await
             .inspect(|e| info!("src folder: {:?}", &e))
-            .then(|d| read_dir(d))
+            .then(|d| ex.spawn(read_dir(d)))
             .filter_map(|r| r.ok())
             .flatten()
             .filter_map(|d| d.ok())
@@ -112,7 +120,9 @@ pub(super) async fn licenses_text_from_cargo_src_folder(package_list: &PackageLi
             })
             .inspect(|(_, p)| info!("Fetching license for: {}", p.name))
             .then(|(e, mut p)| async move {
-                p.license_text = license_text_from_folder(&e.path()).await;
+                p.license_text = ex
+                    .spawn(license_text_from_folder(&ex, e.path().clone()))
+                    .await;
                 p
             })
             .collect()
