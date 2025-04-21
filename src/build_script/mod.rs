@@ -216,6 +216,23 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         package_list = filter_package_list_with_cargo_tree(package_list, output);
     }
 
+    let root_crate_license = {
+        info!("Fetching license for: {}", &this_package_name);
+        std::thread::spawn(move || license_text_from_folder(&PathBuf::from(manifest_dir_path)))
+    };
+
+    let mut package_list_incomplete_wit_licenses =
+        licenses_text_from_cargo_src_folder(&package_list);
+
+    // Fill in Packages that miss a license.
+    for pkg in package_list.iter() {
+        if !package_list_incomplete_wit_licenses.contains(&pkg) {
+            package_list_incomplete_wit_licenses.push(pkg.clone());
+        }
+    }
+
+    package_list = package_list_incomplete_wit_licenses;
+
     // Put root crate at front.
     let this_package_index = package_list
         .iter()
@@ -225,16 +242,6 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         .next()
         .unwrap();
     package_list.swap(this_package_index, 0);
-
-    let root_crate_license = {
-        std::thread::spawn(move || {
-            info!("Fetching license for: {}", &this_package_name);
-            license_text_from_folder(&PathBuf::from(manifest_dir_path))
-        })
-    };
-
-    licenses_text_from_cargo_src_folder(&mut package_list);
-
     package_list[this_package_index].license_text = root_crate_license
         .join()
         .expect("Failed fetching license of root crate.");

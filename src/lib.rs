@@ -85,6 +85,7 @@
 //! | `frozen`   | Panics if `Cargo.lock` needs to be updated for `cargo metadata` to run. |
 //!
 
+use std::cmp::Ordering;
 use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
@@ -156,6 +157,30 @@ impl Package {
     }
 }
 
+impl Ord for Package {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.name < other.name {
+            Ordering::Less
+        } else if self.name > other.name {
+            Ordering::Greater
+        } else {
+            if self.version < other.version {
+                Ordering::Less
+            } else if self.version > other.version {
+                Ordering::Greater
+            } else {
+                Ordering::Equal
+            }
+        }
+    }
+}
+
+impl PartialOrd for Package {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl fmt::Display for Package {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         const SEPARATOR_WIDTH: usize = 80;
@@ -171,6 +196,18 @@ impl fmt::Display for Package {
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "build", derive(serde::Serialize))]
 pub struct PackageList(pub Vec<Package>);
+
+impl From<Vec<Package>> for PackageList {
+    fn from(value: Vec<Package>) -> Self {
+        PackageList(value)
+    }
+}
+
+impl Default for PackageList {
+    fn default() -> Self {
+        PackageList(vec![])
+    }
+}
 
 impl Deref for PackageList {
     type Target = Vec<Package>;

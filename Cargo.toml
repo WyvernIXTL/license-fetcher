@@ -16,6 +16,7 @@ directories = {version = "6.0.0", optional = true}
 log = { version = "0.4.22", optional = true }
 miniz_oxide = { version = "0.8.0", optional = true, features = ["std"]}
 once_cell = { version = "1.19.0", optional = true }
+rayon = { version = "1.10.0", optional = true }
 regex = { version = "1.10.6", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
@@ -29,5 +30,5 @@ pretty_assertions = "1.4.0"
 [features]
 default = ["compress"]
 compress = ["dep:miniz_oxide"]
-build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:once_cell", "dep:directories"]
+build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:once_cell", "dep:directories", "dep:rayon"]
 frozen = []

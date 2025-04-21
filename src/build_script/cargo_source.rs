@@ -10,9 +10,10 @@ use std::path::PathBuf;
 use directories::BaseDirs;
 use log::{info, trace, warn};
 use once_cell::sync::Lazy;
+use rayon::prelude::*;
 use regex::Regex;
 
-use crate::PackageList;
+use crate::{Package, PackageList};
 
 fn cargo_folder() -> PathBuf {
     if let Some(path) = var_os("CARGO_HOME") {
@@ -82,25 +83,36 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     Some(license_text_vec.join("\n\n"))
 }
 
-pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList) {
-    for src_folder in src_registry_folders(cargo_folder()) {
-        info!("src folder: {:?}", &src_folder);
+pub(super) fn licenses_text_from_cargo_src_folder(package_list: &PackageList) -> PackageList {
+    src_registry_folders(cargo_folder())
+        .iter()
+        .map(|src_folder| {
+            info!("src folder: {:?}", &src_folder);
 
-        for folder in read_dir(src_folder)
-            .expect("Failed reading source folder.")
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().is_dir())
-            .map(|e| e.path())
-        {
-            let folder_name = folder.as_path().iter().last().unwrap().to_str().unwrap();
-            for package in package_list.iter_mut().filter(|p| p.license_text.is_none()) {
-                if folder_name.starts_with(&package.name) && folder_name.ends_with(&package.version)
-                {
-                    info!("Fetching license for: {}", &package.name);
-                    package.license_text = license_text_from_folder(&folder);
-                }
-            }
-        }
-    }
+            read_dir(src_folder)
+                .expect("Failed reading source folder.")
+                .filter_map(|e| e.ok())
+                .filter_map(|e| {
+                    let folder_name_os = e.file_name();
+                    let folder_name = folder_name_os.to_string_lossy();
+                    package_list
+                        .iter()
+                        .filter(|p| p.license_text.is_none())
+                        .find(|p| {
+                            folder_name.starts_with(&p.name) && folder_name.ends_with(&p.version)
+                        })
+                        .and_then(|p| Some((e, p)))
+                })
+                .filter(|(e, _)| e.file_type().map_or(false, |e| e.is_dir()))
+                .map(|(e, p)| {
+                    let mut package_with_license = p.clone();
+                    info!("Fetching license for: {}", &p.name);
+                    package_with_license.license_text = license_text_from_folder(&e.path());
+                    package_with_license
+                })
+                .collect::<Vec<Package>>()
+        })
+        .flatten()
+        .collect::<Vec<Package>>()
+        .into()
 }
