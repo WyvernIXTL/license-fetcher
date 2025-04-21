@@ -246,6 +246,8 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         .join()
         .expect("Failed fetching license of root crate.");
 
+    package_list[0..].sort();
+
     package_list
 }
 
