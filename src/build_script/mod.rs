@@ -3,7 +3,7 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use std::env::{var, var_os};
 use std::ffi::OsString;
 use std::fs::write;
@@ -162,7 +162,7 @@ fn filter_package_list_with_cargo_tree(
     package_list: PackageList,
     cargo_tree_output: String,
 ) -> PackageList {
-    let mut used_package_set = BTreeSet::new();
+    let mut used_package_set = HashSet::new();
 
     for package in cargo_tree_output.lines() {
         let mut split_line_iter = package.split_whitespace();
