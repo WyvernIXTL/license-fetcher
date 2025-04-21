@@ -85,13 +85,14 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
 
 pub(super) fn licenses_text_from_cargo_src_folder(package_list: &PackageList) -> PackageList {
     src_registry_folders(cargo_folder())
-        .iter()
+        .par_iter()
         .map(|src_folder| {
             info!("src folder: {:?}", &src_folder);
 
             read_dir(src_folder)
                 .expect("Failed reading source folder.")
                 .filter_map(|e| e.ok())
+                .par_bridge()
                 .filter_map(|e| {
                     let folder_name_os = e.file_name();
                     let folder_name = folder_name_os.to_string_lossy();
