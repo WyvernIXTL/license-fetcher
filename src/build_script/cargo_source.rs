@@ -6,10 +6,10 @@
 use std::env::var_os;
 use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
 use directories::BaseDirs;
 use log::{info, trace, warn};
-use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use regex::Regex;
 
@@ -47,8 +47,8 @@ fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
 pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     trace!("Fetching license in folder: {:?}", &path);
 
-    static LICENSE_FILE_NAME_REGEX: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
+    static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
     let license_text_vec: Vec<String> = read_dir(&path)
         .unwrap()
