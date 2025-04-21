@@ -47,33 +47,17 @@ fn src_registry_folders(path: PathBuf) -> Vec<PathBuf> {
 pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     trace!("Fetching license in folder: {:?}", &path);
 
-    let entries = read_dir(&path).unwrap();
-
     static LICENSE_FILE_NAME_REGEX: Lazy<Regex> =
         Lazy::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
-    let mut potential_license_files = vec![];
-
-    for entry in entries {
-        if let Ok(entry) = entry {
-            if let Ok(metadata) = entry.metadata() {
-                if !metadata.is_file() {
-                    continue;
-                }
-                if LICENSE_FILE_NAME_REGEX.is_match(&entry.file_name().to_string_lossy()) {
-                    potential_license_files.push(entry.path());
-                }
-            }
-        }
-    }
-
-    let mut license_text_vec = vec![];
-
-    for license_file in potential_license_files {
-        if let Ok(license_text) = read_to_string(license_file) {
-            license_text_vec.push(license_text);
-        }
-    }
+    let license_text_vec: Vec<String> = read_dir(&path)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
+        .par_bridge()
+        .filter(|e| e.file_type().map_or(false, |e| e.is_file()))
+        .filter_map(|e| read_to_string(e.path()).ok())
+        .collect();
 
     if license_text_vec.is_empty() {
         warn!("Found no licenses in folder: {:?}", &path);
