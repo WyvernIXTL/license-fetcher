@@ -1,0 +1,16 @@
+name: Benchmark PR
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run-benches:
+    name: Run Benches
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: boa-dev/criterion-compare-action@v3
+        with:
+          defaultFeatures: false
+          features: "build"
