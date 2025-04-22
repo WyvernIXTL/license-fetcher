@@ -242,7 +242,7 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         .next()
         .unwrap();
     package_list.swap(this_package_index, 0);
-    package_list[this_package_index].license_text = root_crate_license
+    package_list[0].license_text = root_crate_license
         .join()
         .expect("Failed fetching license of root crate.");
 

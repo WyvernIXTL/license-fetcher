@@ -1,0 +1,9 @@
+[package]
+name = "test_crate"
+version = "0.1.0"
+edition = "2024"
+license = "CC0-1.0"
+
+[dependencies]
+directories = "6.0.0"
+log = "0.4.27"
