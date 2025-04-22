@@ -13,7 +13,7 @@ use directories::BaseDirs;
 use log::{info, trace, warn};
 use regex::Regex;
 
-use crate::{Package, PackageList};
+use crate::PackageList;
 
 fn cargo_folder() -> PathBuf {
     if let Some(path) = var_os("CARGO_HOME") {
@@ -50,20 +50,24 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
-    let license_text_vec: Vec<String> = read_dir(&path)
+    let license_text = read_dir(&path)
         .unwrap()
         .filter_map(|e| e.ok())
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .filter(|e| e.file_type().map_or(false, |e| e.is_file()))
         .filter_map(|e| read_to_string(e.path()).ok())
-        .collect();
+        .fold(String::new(), |mut a, b| {
+            a += &b;
+            a += "\n\n";
+            a
+        });
 
-    if license_text_vec.is_empty() {
+    if license_text.is_empty() {
         warn!("Found no licenses in folder: {:?}", &path);
         return None;
     }
 
-    Some(license_text_vec.join("\n\n"))
+    Some(license_text)
 }
 
 pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList) {
