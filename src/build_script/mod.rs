@@ -226,25 +226,15 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         package_list = filter_package_list_with_cargo_tree(package_list, output);
     }
 
-    let root_crate_license = {
-        info!("Fetching license for: {}", &this_package_name);
-        std::thread::spawn(move || license_text_from_folder(&PathBuf::from(manifest_dir_path)))
-    };
-
     licenses_text_from_cargo_src_folder(&mut package_list);
 
     // Put root crate at front.
     let this_package_index = package_list
         .iter()
-        .enumerate()
-        .filter(|(_, p)| p.name == this_package_name)
-        .map(|(i, _)| i)
-        .next()
+        .position(|e| e.name == this_package_name)
         .unwrap();
     package_list.swap(this_package_index, 0);
-    package_list[0].license_text = root_crate_license
-        .join()
-        .expect("Failed fetching license of root crate.");
+    package_list[0].license_text = license_text_from_folder(&PathBuf::from(manifest_dir_path));
 
     package_list[1..].sort();
 
