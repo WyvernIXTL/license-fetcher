@@ -5,6 +5,7 @@
         "miniz",
         "serde",
         "simplelog",
-        "Swatinem"
+        "Swatinem",
+        "taskfile"
     ]
 }

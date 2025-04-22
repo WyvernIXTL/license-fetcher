@@ -8,6 +8,17 @@ readme = "README.md"
 repository = "https://github.com/WyvernIXTL/license-fetcher"
 license = "BSL-1.0"
 keywords = ["license", "embed", "fetch", "about", "find"]
+exclude = [
+    "/tests",
+    "/benches",
+    "/img",
+    "/.vscode",
+    "/.github",
+    "/build.rs",
+    "/cSpell.json",
+    "/lic-fetcher.code-workspace",
+    "/taskfile.yml"
+]
 
 
 [dependencies]
