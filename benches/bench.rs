@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use criterion::{criterion_group, criterion_main, Criterion};
 
 fn test_fetch_licenses_test() {
@@ -9,9 +11,13 @@ fn test_fetch_licenses_test() {
 }
 
 fn bench_fetch_licenses(c: &mut Criterion) {
-    c.bench_function("fetch-licenses-test-crate", |b| {
+    let mut group = c.benchmark_group("test-crate");
+    // group.measurement_time(Duration::from_secs(30));
+    // group.sample_size(50);
+    group.bench_function("fetch-licenses-test-crate", |b| {
         b.iter(|| test_fetch_licenses_test())
     });
+    group.finish();
 }
 
 criterion_group!(benches, bench_fetch_licenses);

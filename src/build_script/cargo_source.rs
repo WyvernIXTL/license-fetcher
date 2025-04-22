@@ -3,6 +3,7 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+use std::collections::HashMap;
 use std::env::var_os;
 use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
@@ -54,7 +55,7 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
         .unwrap()
         .filter_map(|e| e.ok())
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
-        .par_bridge()
+        // .par_bridge()
         .filter(|e| e.file_type().map_or(false, |e| e.is_file()))
         .filter_map(|e| read_to_string(e.path()).ok())
         .collect();
@@ -68,29 +69,32 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
 }
 
 pub(super) fn licenses_text_from_cargo_src_folder(package_list: &PackageList) -> PackageList {
+    let mut package_hash_map = HashMap::new();
+    for p in package_list.iter().filter(|p| p.license_text.is_none()) {
+        package_hash_map.insert(format!("{}-{}", &p.name, &p.version), p);
+    }
+
     src_registry_folders(cargo_folder())
-        .par_iter()
+        .iter()
+        // .par_iter()
         .map(|src_folder| {
             info!("src folder: {:?}", &src_folder);
 
             read_dir(src_folder)
                 .expect("Failed reading source folder.")
                 .filter_map(|e| e.ok())
-                .par_bridge()
+                // .par_bridge()
                 .filter_map(|e| {
                     let folder_name_os = e.file_name();
                     let folder_name = folder_name_os.to_string_lossy();
-                    package_list
-                        .iter()
-                        .filter(|p| p.license_text.is_none())
-                        .find(|p| {
-                            folder_name.starts_with(&p.name) && folder_name.ends_with(&p.version)
-                        })
+                    package_hash_map
+                        .get(folder_name.as_ref())
                         .and_then(|p| Some((e, p)))
                 })
                 .filter(|(e, _)| e.file_type().map_or(false, |e| e.is_dir()))
+                // .par_bridge()
                 .map(|(e, p)| {
-                    let mut package_with_license = p.clone();
+                    let mut package_with_license = (*p).clone();
                     info!("Fetching license for: {}", &p.name);
                     package_with_license.license_text = license_text_from_folder(&e.path());
                     package_with_license
