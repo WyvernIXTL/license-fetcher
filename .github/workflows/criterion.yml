@@ -9,7 +9,7 @@ jobs:
     name: Run Benches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: boa-dev/criterion-compare-action@v3
         with:
           defaultFeatures: false
