@@ -32,3 +32,8 @@ default = ["compress"]
 compress = ["dep:miniz_oxide"]
 build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:directories", "dep:rayon"]
 frozen = []
+
+
+[[bench]]
+name = "bench"
+harness = false

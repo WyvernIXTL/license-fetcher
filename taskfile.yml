@@ -1,0 +1,22 @@
+version: "3"
+
+tasks:
+  test:setup:
+    desc: "Setup for tests and benchmarks."
+    aliases:
+      - setup
+    dir: "./tests/test_crate"
+    cmds:
+      - cargo fetch --locked
+
+  test:integration:
+    desc: "Run integration test."
+    aliases:
+      - test
+    cmds:
+      - cargo test -F build
+    
+  bench:
+    desc: bench with criterion
+    cmds:
+      - cargo bench -F build
