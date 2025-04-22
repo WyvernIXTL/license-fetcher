@@ -18,4 +18,11 @@ fn test_generate_licenses() {
         .clone()
         .expect("Failed fetching license of test crate.")
         .contains("THIS IS NOT A LICENSE"));
+    assert!(licenses[1..].iter().any(|e| e.license_text.is_some()));
+    assert!(licenses[1..].iter().any(|e| !e.name.is_empty()));
+    assert!(licenses[1..].iter().any(|e| !e.version.is_empty()));
+    assert!(licenses[1..].iter().any(|e| !e.authors.is_empty()));
+    assert!(licenses[1..].iter().any(|e| e.description.is_some()));
+    assert!(licenses[1..].iter().any(|e| e.homepage.is_some()));
+    assert!(licenses[1..].iter().any(|e| e.repository.is_some()));
 }
