@@ -19,7 +19,7 @@ jobs:
         with:
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Setup Integration Test
-        run: cargo fetch --frozen
+        run: cargo fetch --locked
         working-directory: ./tests/test_crate
       - name: Run Unit Tests
         run: cargo test -F build
