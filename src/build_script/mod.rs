@@ -182,18 +182,28 @@ fn filter_package_list_with_cargo_tree(
     filtered_package_list
 }
 
-/// Generates a package list with package name, authors and license text. Uses supplied parameters for cargo path and manifest path.
+/// Generates a package list with package name, authors and license text.
 ///
-/// This function is not as useful as [generate_package_list_with_licenses()] for build scripts.
-/// [generate_package_list_with_licenses()] fetches `cargo_path` and `manifest_dir_path` automatically.
-/// This function does not.
-/// The main use is for other rust programs to fetch the metadata outside of a build script.
+/// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
+/// This function is not dependant on environment variables and thus also useful outside of build scripts.
 ///
 /// ### Arguments
 ///
-/// * **cargo_path - Absolute path to cargo executable. If omitted tries to fetch the path from `PATH`.
+/// * **cargo_path** - Absolute path to cargo executable. If omitted, tries to fetch the path from `PATH`.
 /// * **manifest_dir_path** - Relative or absolute path to manifest dir.
 /// * **this_package_name** - Name of the package. `cargo metadata` does not disclose the name, but it is needed for parsing the used licenses.
+///
+/// ### Inner Workings
+///
+/// This function:
+/// 1. Calls `cargo metadata --frozen`.
+/// 2. Traverses all dependencies not marked as `build` or as `dev` dependencies and writes the metadata like name and version to a [PackageList].
+/// 3. Calls `cargo tree -e normal --frozen`.
+/// 4. Filters the [PackageList] from step 2. to only contain crates / packages, that `cargo tree` outputted. (This is to omit crates, that are not used.)
+/// 5. Licenses are fetched from the subfolders of the `~/.cargo/registry/src` folder, by checking the name and the license version of the crates contained in the [PackageList] against the folders names in said folders.
+/// 6. The root crate / package is put at index 0 and all other crates / packages are sorted by their name and version.
+///
+/// If the executions of the `cargo` commands error and if the `frozen` flag is not set, `cargo` is executed without the `--frozen` argument and is free to write to `Cargo.lock`.
 pub fn generate_package_list_with_licenses_without_env_calls(
     cargo_path: Option<OsString>,
     manifest_dir_path: OsString,
@@ -251,14 +261,15 @@ pub fn generate_package_list_with_licenses_without_env_calls(
     package_list
 }
 
-/// Generates a package list with package name, authors and license text. Uses env variables supplied by cargo during build.
+/// Generates a package list with package name, authors and license text. Uses environment variables supplied by cargo during build.
 ///
-/// This function:
-/// 1. Calls `cargo tree -e normal --frozen`. *(After error tries again online if not `frozen` feature is set.)*
-/// 2. Calls `cargo metadata --frozen`. *(After error tries again online if not `frozen` feature is set.)*
-/// 3. Takes the packages gotten from `cargo tree` with the metadata of `cargo metadata`.
+/// This functions usage is in your cargo build script (`build.rs`), that is being run during compilation of your program.
 ///
-/// Needs the feature `build` and is only meant to be used in build scripts.
+/// Uses the [generate_package_list_with_licenses_without_env_calls] function under the hood.
+/// The remaining arguments are fetched via the environment variables that cargo sets during compilation:
+/// * `CARGO` - The path to the `cargo` executable that compiled this code.
+/// * `CARGO_MANIFEST_DIR` - The path to the directory that contains the `Cargo.toml` that this code is compiled for.
+/// * `CARGO_PKG_NAME` - The package name of the package this code is compiled for.
 ///
 /// # Example
 /// In `build.rs`:
@@ -293,9 +304,11 @@ pub fn generate_package_list_with_licenses() -> PackageList {
 }
 
 impl PackageList {
-    /// Writes the [PackageList] to the file and folder where they can be embedded into the program at compile time.
+    /// Writes the [PackageList] into [`env!("OUT_DIR")/LICENSE-3RD-PARTY.bincode`](`env!("OUT_DIR")`)
     ///
-    /// Compresses and writes the PackageList into the `OUT_DIR` with file name `LICENSE-3RD-PARTY.bincode`.
+    /// If the `compress` feature is set, the output is is compressed as well.
+    ///
+    /// [`env!("OUT_DIR")`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
     pub fn write(self) {
         let mut path = var_os("OUT_DIR").unwrap();
         path.push("/LICENSE-3RD-PARTY.bincode");

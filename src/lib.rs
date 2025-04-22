@@ -97,7 +97,7 @@ use bincode::{config, Decode, Encode};
 #[cfg(feature = "compress")]
 use miniz_oxide::inflate::decompress_to_vec;
 
-/// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList](crate::PackageList).
+/// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList].
 pub mod error;
 use error::UnpackError;
 
@@ -105,7 +105,7 @@ use error::UnpackError;
 #[cfg(feature = "build")]
 pub mod build_script;
 
-/// Information regarding a crate.
+/// Information regarding a crate / package.
 ///
 /// This struct holds information like package name, authors and of course license text.
 #[derive(Encode, Decode, Debug, PartialEq, Eq, Clone)]
@@ -196,7 +196,7 @@ impl fmt::Display for Package {
     }
 }
 
-/// Holds information of all crates and licenses used for release build.
+/// Holds information of all crates and licenses used for a release build.
 #[derive(Encode, Decode, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "build", derive(serde::Serialize))]
 pub struct PackageList(pub Vec<Package>);
@@ -244,11 +244,11 @@ impl fmt::Display for PackageList {
 
 /// Decompresses and deserializes the crate and license information.
 ///
-/// This function decompresses the input, if `compress` feature was not disabled and
-/// then deserializes the input. The input should be the embedded license information from
-/// the build step.
+/// This function decompresses (`compress` feature) and then deserializes the supplied bytes.
+/// The the the supplied bytes should be the embedded license information from
+/// the build step, else this function is going to panic.
 ///
-/// # Example
+/// ## Example
 /// Called from within main program:
 /// ```no_run
 /// use license_fetcher::get_package_list;
@@ -274,7 +274,7 @@ pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
 
 /// Calls [get_package_list] with parameters expected from a call from `main.rs`.
 ///
-/// # Example
+/// ## Example
 /// ```no_run
 /// use license_fetcher::get_package_list_macro;
 /// fn main() {
