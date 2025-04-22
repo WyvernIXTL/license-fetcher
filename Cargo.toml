@@ -32,11 +32,9 @@ serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
 simplelog = { version = "0.12.2", optional = true }
 
-
 [dev-dependencies]
 criterion = "0.5.1"
 pretty_assertions = "1.4.0"
-
 
 [features]
 default = ["compress"]
@@ -44,7 +42,10 @@ compress = ["dep:miniz_oxide"]
 build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:directories", "dep:rayon"]
 frozen = []
 
-
 [[bench]]
 name = "bench"
 harness = false
+
+[package.metadata.docs.rs]
+features = ["build"]
+rustdoc-args = ["--cfg", "docsrs"]

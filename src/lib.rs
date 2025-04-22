@@ -82,8 +82,10 @@
 //! | ---------- | ----------------------------------------------------------------------- |
 //! | `compress` | *(default)* Enables compression.                                        |
 //! | `build`    | Used for build script component.                                        |
-//! | `frozen`   | Panics if `Cargo.lock` needs to be updated for `cargo metadata` to run. |
+//! | `frozen`   | Panics if `Cargo.lock` needs to be updated or if a network request needs to be made for `cargo metadata` to run. |
 //!
+
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 use std::cmp::Ordering;
 use std::default::Default;
@@ -95,9 +97,11 @@ use bincode::{config, Decode, Encode};
 #[cfg(feature = "compress")]
 use miniz_oxide::inflate::decompress_to_vec;
 
+/// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList](crate::PackageList).
 pub mod error;
 use error::UnpackError;
 
+/// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
 pub mod build_script;
 

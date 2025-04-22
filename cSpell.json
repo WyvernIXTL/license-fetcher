@@ -1,8 +1,10 @@
 {
     "words": [
         "dedupe",
+        "docsrs",
         "Kellar",
         "miniz",
+        "rustdoc",
         "serde",
         "simplelog",
         "Swatinem",
