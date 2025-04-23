@@ -15,8 +15,16 @@ tasks:
       - test
     cmds:
       - cargo test -F build
+
+  test:check:
+    desc: call cargo check on all applicable features
+    aliases: 
+      - check
+    cmds:
+      - cargo check -F build
     
   bench:
     desc: bench with criterion
     cmds:
       - cargo bench -F build
+

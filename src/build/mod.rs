@@ -254,7 +254,7 @@ pub fn generate_package_list_with_licenses_without_env_calls(
 /// # Example
 /// In `build.rs`:
 /// ```no_run
-/// use license_fetcher::build_script::generate_package_list_with_licenses;
+/// use license_fetcher::build::generate_package_list_with_licenses;
 ///
 /// fn main() {
 ///     generate_package_list_with_licenses().write();
