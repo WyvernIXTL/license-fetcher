@@ -1,0 +1,35 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: true # Cache PR builds
+      - name: Setup Integration Test
+        run: cargo fetch --locked
+        working-directory: ./tests/test_crate
+      - name: Run Unit Tests
+        run: cargo test -F build
+
+  benchmark:
+    name: Benchmark
+    needs: test
+    # Run only if 'test' succeeded AND it's a manual trigger, a new PR, or a PR marked ready for review
+    if: success() && (github.event_name == 'workflow_dispatch' || github.event.action == 'opened' || github.event.action == 'ready_for_review')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: boa-dev/criterion-compare-action@v3
+        with:
+          defaultFeatures: false
+          features: "build"
