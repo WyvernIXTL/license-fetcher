@@ -1,0 +1,32 @@
+name: PR Security Check
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-github-folder:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch the PR's head ref so we can diff
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Check for .github changes
+        id: github_changes
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          if git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep -q '^.github/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Comment if .github changed
+        if: steps.github_changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ This PR modifies files in the .github folder. Please review carefully for security."
