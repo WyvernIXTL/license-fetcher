@@ -3,6 +3,11 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+//! This module holds the structs and enums to configure the fetching process.
+//!
+//! ## Examples
+//!
+//! TODO
 use std::path::PathBuf;
 
 /// Configures what backend is used for walking the registry source folder.
@@ -59,6 +64,7 @@ pub enum CacheSaveLocation {
     ///
     /// **Be sure to track said directory with [`git lfs`](https://git-lfs.com/)!**
     ///
+    /// [`CARGO_MANIFEST_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
     /// [`.license-fetcher/CARGO_MANIFEST_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
     Repository,
     /// Disables writing cache.
@@ -87,6 +93,7 @@ pub enum CacheBehavior {
 /// Struct to configure the behavior of the license fetching.
 ///
 /// See the [config](crate::config) module documentation for examples.
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: String,
