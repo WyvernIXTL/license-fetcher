@@ -293,7 +293,7 @@ impl PackageList {
         let mut path = var_os("OUT_DIR").unwrap();
         path.push("/LICENSE-3RD-PARTY.bincode");
 
-        let data = bincode::encode_to_vec(self, config::standard()).unwrap();
+        let data = bincode::encode_to_vec(self, bincode::config::standard()).unwrap();
 
         info!("License data size: {} Bytes", data.len());
         let instant_before_compression = Instant::now();

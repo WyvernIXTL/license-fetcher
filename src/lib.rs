@@ -1,4 +1,4 @@
-//               Copyright Adam McKellar 2024, 2025
+//            Copyright Adam McKellar 2024, 2025
 // Distributed under the Boost Software License, Version 1.0.
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
@@ -11,7 +11,7 @@ use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-use bincode::{config, Decode, Encode};
+use bincode::{Decode, Encode};
 
 #[cfg(feature = "compress")]
 use miniz_oxide::inflate::decompress_to_vec;
@@ -19,6 +19,9 @@ use miniz_oxide::inflate::decompress_to_vec;
 /// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList].
 pub mod error;
 use error::UnpackError;
+
+/// Configuration structs and builders.
+pub mod config;
 
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
@@ -186,7 +189,7 @@ pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
     let uncompressed_bytes = bytes;
 
     let (package_list, _) =
-        bincode::decode_from_slice(&uncompressed_bytes[..], config::standard())?;
+        bincode::decode_from_slice(&uncompressed_bytes[..], bincode::config::standard())?;
 
     Ok(package_list)
 }
