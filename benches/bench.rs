@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use criterion::{criterion_group, criterion_main, Criterion};
 
 fn test_fetch_licenses_test() {
