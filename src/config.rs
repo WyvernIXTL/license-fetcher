@@ -3,6 +3,8 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+use std::path::PathBuf;
+
 /// Configures what backend is used for walking the registry source folder.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum FetchBackend {
@@ -63,7 +65,7 @@ pub enum CacheSaveLocation {
     None,
 }
 
-/// Configure how the cache behaves.
+/// Configure how the cache behaves during fetching.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum CacheBehavior {
     /// The first cache that is found is used.
@@ -80,4 +82,22 @@ pub enum CacheBehavior {
     Global,
     /// Checking for cache is disabled.
     Disabled,
+}
+
+/// Struct to configure the behavior of the license fetching.
+///
+/// See the [config](crate::config) module documentation for examples.
+pub struct Config {
+    /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
+    pub manifest_dir: String,
+    /// Optional path to `cargo`.
+    pub explicit_cargo_path: Option<PathBuf>,
+    /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
+    pub fetch_backend: FetchBackend,
+    /// Set the cache type.
+    pub cache_backend: CacheBackend,
+    /// Set the location where the cache should be saved to.
+    pub cache_save_location: CacheSaveLocation,
+    /// Set cache behavior during fetching.
+    pub cache_behavior: CacheBehavior,
 }
