@@ -22,7 +22,7 @@ use error::UnpackError;
 
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
-pub mod build_script;
+pub mod build;
 
 /// Information regarding a crate / package.
 ///

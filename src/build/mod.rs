@@ -18,12 +18,12 @@ use log::info;
 use serde_json::from_slice;
 use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 
-mod cargo_source;
+mod fetch;
 mod metadata;
 
 use crate::*;
-use build_script::metadata::*;
-use cargo_source::{license_text_from_folder, licenses_text_from_cargo_src_folder};
+use build::metadata::*;
+use fetch::{license_text_from_folder, licenses_text_from_cargo_src_folder};
 
 fn walk_dependencies<'a>(
     used_dependencies: &mut BTreeSet<&'a String>,

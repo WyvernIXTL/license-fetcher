@@ -1,12 +1,11 @@
 #[cfg(feature = "build")]
 #[test]
 fn test_generate_licenses() {
-    let licenses =
-        license_fetcher::build_script::generate_package_list_with_licenses_without_env_calls(
-            Some(env!("CARGO").into()),
-            concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate").into(),
-            "test_crate".to_owned(),
-        );
+    let licenses = license_fetcher::build::generate_package_list_with_licenses_without_env_calls(
+        Some(env!("CARGO").into()),
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate").into(),
+        "test_crate".to_owned(),
+    );
 
     assert!(licenses.len() > 0);
     assert!(licenses[0].license_identifier.is_some());
