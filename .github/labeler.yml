@@ -1,0 +1,11 @@
+workflow-config:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**/*'
+
+source-code:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.md'
