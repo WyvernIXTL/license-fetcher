@@ -8,7 +8,7 @@
 //! ## Examples
 //!
 //! TODO
-use std::path::PathBuf;
+use std::{ops::Deref, path::PathBuf};
 
 /// Configures what backend is used for walking the registry source folder.
 #[derive(Debug, Clone, Copy, Default)]
@@ -71,7 +71,7 @@ pub enum CacheSaveLocation {
     None,
 }
 
-/// Configure how the cache behaves during fetching.
+/// Configures how the cache behaves during fetching.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum CacheBehavior {
     /// The first cache that is found is used.
@@ -90,6 +90,90 @@ pub enum CacheBehavior {
     Disabled,
 }
 
+/// Configures how Cargo [fetches metadata].
+///
+/// This configuration enum is meant to be used with [CargoDirectiveList].
+///
+/// [fetches metadata]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#manifest-options
+#[derive(Debug, Clone, Copy)]
+pub enum CargoDirective {
+    /// Fetch metadata normally.
+    Default,
+    /// Fetch metadata with versions locked to `Cargo.toml`.
+    Locked,
+    /// Fetch metadata with versions locked and offline.
+    Frozen,
+}
+
+/// Configure how Cargo fetches metadata.
+///
+/// Each [CargoDirective] corresponds to one `cargo` command being called if the one prior failed.
+/// This can be useful if you supply installation instructions that either set `--locked` or `--frozen`.
+///
+/// ### Examples
+///
+/// #### Default (not locked)
+///
+/// If your `README.md` states to install your program with:
+/// ```sh
+/// cargo install my-program
+/// ```
+/// and if your ci also builds your program without lock, then
+/// ```
+/// let cargo_directives = CargoDirectiveList::default();
+/// ```
+/// or
+/// ```
+/// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Default]);
+/// ```
+/// is the right choice for you.
+///
+/// #### Locked
+///
+/// If you build your program in CI with `--locked` or `--frozen` and supply
+/// installation instruction like:
+/// ```sh
+/// cargo install --locked my-program
+/// ```
+/// then be sure to set [CargoDirective::Locked] before [Default](CargoDirective::Default):
+/// ```
+/// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default]);
+/// ```
+/// or
+/// ```
+/// let cargo_directives = CargoDirectiveList::locked();
+/// ```
+/// This results in `cargo metadata --locked` being called, and if it fails, `cargo metadata` without lock
+/// being called.
+///
+/// If someone then installs your program with `cargo install`, there might be missing or wrong licensing
+/// information.
+///
+#[derive(Debug, Clone)]
+pub struct CargoDirectiveList(Vec<CargoDirective>);
+
+impl Deref for CargoDirectiveList {
+    type Target = Vec<CargoDirective>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Default for CargoDirectiveList {
+    fn default() -> Self {
+        CargoDirectiveList(vec![CargoDirective::Default])
+    }
+}
+
+impl CargoDirectiveList {
+    /// Shorthand for `CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default])`
+    pub fn prefer_locked() -> Self {
+        // What might be a better name than `locked`? locked implies that versions never change, but they might if necessary AI?
+        CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default])
+    }
+}
+
 /// Struct to configure the behavior of the license fetching.
 ///
 /// See the [config](crate::config) module documentation for examples.
@@ -105,6 +189,8 @@ pub struct Config {
     pub cache_backend: CacheBackend,
     /// Set the location where the cache should be saved to.
     pub cache_save_location: CacheSaveLocation,
+    /// Set Cargo directives for fetching metadata.
+    pub cargo_directives: CargoDirectiveList,
     /// Set cache behavior during fetching.
     pub cache_behavior: CacheBehavior,
 }

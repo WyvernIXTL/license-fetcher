@@ -27,3 +27,4 @@ Cargo.lock
 ./stupid.json
 
 /.aider*
+!/.aiderignore
