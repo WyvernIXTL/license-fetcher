@@ -169,7 +169,6 @@ impl Default for CargoDirectiveList {
 impl CargoDirectiveList {
     /// Shorthand for `CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default])`
     pub fn prefer_locked() -> Self {
-        // What might be a better name than `locked`? locked implies that versions never change, but they might if necessary AI?
         CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default])
     }
 }
@@ -179,6 +178,7 @@ impl CargoDirectiveList {
 /// See the [config](crate::config) module documentation for examples.
 #[derive(Debug, Clone)]
 pub struct Config {
+    package_name: String, // TODO: add a way to either parse package_name from manifest or set it directly.
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: String,
     /// Optional path to `cargo`.
