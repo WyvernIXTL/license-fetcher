@@ -19,9 +19,6 @@ use miniz_oxide::inflate::decompress_to_vec;
 pub mod error;
 use error::UnpackError;
 
-/// Configuration structs and builders.
-pub mod config;
-
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
 pub mod build;

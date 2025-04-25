@@ -16,6 +16,8 @@ use log::info;
 use serde_json::from_slice;
 use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 
+/// Configuration structs and builders.
+pub mod config;
 mod fetch;
 mod metadata;
 
