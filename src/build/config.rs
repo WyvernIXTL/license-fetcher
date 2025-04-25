@@ -8,7 +8,13 @@
 //! ## Examples
 //!
 //! TODO
-use std::{ops::Deref, path::PathBuf};
+use std::{
+    env::{var, var_os},
+    ops::Deref,
+    path::{Path, PathBuf},
+};
+
+use typed_builder::TypedBuilder;
 
 /// Configures what backend is used for walking the registry source folder.
 #[derive(Debug, Clone, Copy, Default)]
@@ -120,12 +126,12 @@ pub enum CargoDirective {
 /// ```
 /// and if your ci also builds your program without lock, then
 /// ```
-/// # use license_fetcher::config::CargoDirectiveList;
+/// # use license_fetcher::build::config::CargoDirectiveList;
 /// let cargo_directives = CargoDirectiveList::default();
 /// ```
 /// or
 /// ```
-/// # use license_fetcher::config::{CargoDirectiveList, CargoDirective};
+/// # use license_fetcher::build::config::{CargoDirectiveList, CargoDirective};
 /// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Default]);
 /// ```
 /// is the right choice for you.
@@ -139,12 +145,12 @@ pub enum CargoDirective {
 /// ```
 /// then be sure to set [CargoDirective::Locked] before [Default](CargoDirective::Default):
 /// ```
-/// # use license_fetcher::config::{CargoDirectiveList, CargoDirective};
+/// # use license_fetcher::build::config::{CargoDirectiveList, CargoDirective};
 /// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default]);
 /// ```
 /// or
 /// ```
-/// # use license_fetcher::config::CargoDirectiveList;
+/// # use license_fetcher::build::config::CargoDirectiveList;
 /// let cargo_directives = CargoDirectiveList::prefer_locked();
 /// ```
 /// This results in `cargo metadata --locked` being called, and if it fails, `cargo metadata` without lock
@@ -186,27 +192,52 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 /// Struct to configure the behavior of the license fetching.
 ///
 /// See the [config](crate::config) module documentation for examples.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TypedBuilder)]
+#[builder(mutators(
+    pub fn from_env(&mut self) {
+        self.package_name = var("CARGO_PKG_NAME").expect("Failed to get CARGO_PKG_NAME env variable. 'from_env()' is meant to be called from a build script ('build.rs').");
+        self.cargo_path = var_os("CARGO").expect("Failed to get CARGO env variable. 'from_env()' is meant to be called from a build script ('build.rs').").into();
+        self.manifest_dir = var_os("CARGO_MANIFEST_DIR").expect("Failed to get CARGO_MANIFEST_DIR env variable. 'from_env()' is meant to be called from a build script ('build.rs').").into();
+    }
+))]
 pub struct Config {
-    package_name: String, // TODO: add a way to either parse package_name from manifest or set it directly.
+    #[builder(via_mutators)]
+    package_name: String,
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
-    pub manifest_dir: String,
+    #[builder(via_mutators)]
+    pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
-    pub explicit_cargo_path: Option<PathBuf>,
+    #[builder(via_mutators, default=PathBuf::from("cargo"))]
+    pub cargo_path: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
+    #[builder(default)]
     pub fetch_backend: FetchBackend,
     /// Set the cache type.
+    #[builder(default)]
     pub cache_backend: CacheBackend,
     /// Set the location where the cache should be saved to.
+    #[builder(default)]
     pub cache_save_location: CacheSaveLocation,
     /// Set Cargo directives for fetching metadata.
+    #[builder(default)]
     pub cargo_directives: CargoDirectiveList,
     /// Set cache behavior during fetching.
+    #[builder(default)]
     pub cache_behavior: CacheBehavior,
 }
 
-impl Config {
-    pub fn from_env() -> Self {
-        todo!()
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_config_builder_from_env() {
+        let config = Config::builder().from_env().build();
+        assert_eq!(config.package_name, env!("CARGO_PKG_NAME"));
+        assert_eq!(
+            config.manifest_dir,
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        );
+        assert_eq!(config.cargo_path, PathBuf::from(env!("CARGO")))
     }
 }
