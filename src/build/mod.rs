@@ -3,6 +3,7 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+use miniz_oxide::deflate::compress_to_vec;
 use std::collections::{BTreeSet, HashSet};
 use std::env::{var, var_os};
 use std::ffi::OsString;
@@ -10,9 +11,6 @@ use std::fs::write;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::Instant;
-
-#[cfg(feature = "compress")]
-use miniz_oxide::deflate::compress_to_vec;
 
 use log::info;
 use serde_json::from_slice;
@@ -56,7 +54,6 @@ fn generate_package_list(cargo_path: OsString, manifest_dir_path: OsString) -> P
         .output()
         .unwrap();
 
-    #[cfg(not(feature = "frozen"))]
     if !metadata_output.status.success() {
         metadata_output = Command::new(&cargo_path)
             .current_dir(&manifest_dir_path)
@@ -123,7 +120,6 @@ fn cargo_tree(cargo_path: OsString, manifest_dir_path: OsString) -> Option<Strin
         .output()
         .unwrap();
 
-    #[cfg(not(feature = "frozen"))]
     if !output.status.success() {
         output = Command::new(&cargo_path)
             .current_dir(&manifest_dir_path)
@@ -298,11 +294,7 @@ impl PackageList {
         info!("License data size: {} Bytes", data.len());
         let instant_before_compression = Instant::now();
 
-        #[cfg(feature = "compress")]
         let compressed_data = compress_to_vec(&data, 10);
-
-        #[cfg(not(feature = "compress"))]
-        let compressed_data = data;
 
         info!(
             "Compressed data size: {} Bytes in {}ms",

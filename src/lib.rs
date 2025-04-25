@@ -13,7 +13,6 @@ use std::ops::{Deref, DerefMut};
 
 use bincode::{Decode, Encode};
 
-#[cfg(feature = "compress")]
 use miniz_oxide::inflate::decompress_to_vec;
 
 /// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList].
@@ -183,10 +182,7 @@ impl fmt::Display for PackageList {
 /// }
 /// ```
 pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
-    #[cfg(feature = "compress")]
     let uncompressed_bytes = decompress_to_vec(bytes).expect("Failed decompressing license data.");
-    #[cfg(not(feature = "compress"))]
-    let uncompressed_bytes = bytes;
 
     let (package_list, _) =
         bincode::decode_from_slice(&uncompressed_bytes[..], bincode::config::standard())?;

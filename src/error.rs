@@ -9,12 +9,10 @@ use std::fmt;
 /// Error union representing errors that might occur during unpacking of license data.
 #[derive(Debug)]
 pub enum UnpackError {
-    #[cfg(feature = "compress")]
     DecompressError(miniz_oxide::inflate::DecompressError),
     DecodeError(bincode::error::DecodeError),
 }
 
-#[cfg(feature = "compress")]
 impl From<miniz_oxide::inflate::DecompressError> for UnpackError {
     fn from(value: miniz_oxide::inflate::DecompressError) -> Self {
         Self::DecompressError(value)
@@ -30,7 +28,6 @@ impl From<bincode::error::DecodeError> for UnpackError {
 impl fmt::Display for UnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            #[cfg(feature = "compress")]
             Self::DecompressError(e) => writeln!(f, "{}", e),
             Self::DecodeError(e) => writeln!(f, "{}", e),
         }
@@ -40,7 +37,6 @@ impl fmt::Display for UnpackError {
 impl Error for UnpackError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(match self {
-            #[cfg(feature = "compress")]
             Self::DecompressError(e) => e,
             Self::DecodeError(e) => e,
         })

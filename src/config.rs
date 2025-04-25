@@ -120,10 +120,12 @@ pub enum CargoDirective {
 /// ```
 /// and if your ci also builds your program without lock, then
 /// ```
+/// # use license_fetcher::config::CargoDirectiveList;
 /// let cargo_directives = CargoDirectiveList::default();
 /// ```
 /// or
 /// ```
+/// # use license_fetcher::config::{CargoDirectiveList, CargoDirective};
 /// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Default]);
 /// ```
 /// is the right choice for you.
@@ -137,11 +139,13 @@ pub enum CargoDirective {
 /// ```
 /// then be sure to set [CargoDirective::Locked] before [Default](CargoDirective::Default):
 /// ```
+/// # use license_fetcher::config::{CargoDirectiveList, CargoDirective};
 /// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default]);
 /// ```
 /// or
 /// ```
-/// let cargo_directives = CargoDirectiveList::locked();
+/// # use license_fetcher::config::CargoDirectiveList;
+/// let cargo_directives = CargoDirectiveList::prefer_locked();
 /// ```
 /// This results in `cargo metadata --locked` being called, and if it fails, `cargo metadata` without lock
 /// being called.
@@ -150,7 +154,7 @@ pub enum CargoDirective {
 /// information.
 ///
 #[derive(Debug, Clone)]
-pub struct CargoDirectiveList(Vec<CargoDirective>);
+pub struct CargoDirectiveList(pub Vec<CargoDirective>);
 
 impl Deref for CargoDirectiveList {
     type Target = Vec<CargoDirective>;
@@ -199,4 +203,10 @@ pub struct Config {
     pub cargo_directives: CargoDirectiveList,
     /// Set cache behavior during fetching.
     pub cache_behavior: CacheBehavior,
+}
+
+impl Config {
+    pub fn from_env() -> Self {
+        todo!()
+    }
 }
