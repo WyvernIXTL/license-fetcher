@@ -173,6 +173,12 @@ impl CargoDirectiveList {
     }
 }
 
+impl From<Vec<CargoDirective>> for CargoDirectiveList {
+    fn from(value: Vec<CargoDirective>) -> Self {
+        CargoDirectiveList(value)
+    }
+}
+
 /// Struct to configure the behavior of the license fetching.
 ///
 /// See the [config](crate::config) module documentation for examples.
