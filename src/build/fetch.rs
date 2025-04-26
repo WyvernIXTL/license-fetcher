@@ -11,7 +11,7 @@ use std::sync::LazyLock;
 
 use directories::BaseDirs;
 use log::{info, trace, warn};
-use regex::Regex;
+use regex_lite::Regex;
 
 use crate::PackageList;
 

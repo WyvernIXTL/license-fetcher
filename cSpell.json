@@ -9,6 +9,7 @@
         "simplelog",
         "subfolders",
         "Swatinem",
-        "taskfile"
+        "taskfile",
+        "thiserror"
     ]
 }
