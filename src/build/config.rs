@@ -8,6 +8,7 @@
 //! ## Examples
 //!
 //! TODO
+use log::error;
 use snafu::{Backtrace, OptionExt, ResultExt, Snafu};
 use std::{
     env::{var, var_os},
@@ -233,7 +234,7 @@ impl ConfigBuilder {
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn from_env() -> Result<Self, ConfigBuilderError> {
+    pub fn from_env() -> Result<Self, ConfigBuilderEnvError> {
         let package_name = string_from_env("CARGO_PKG_NAME")?;
         let manifest_dir = path_buf_from_env("CARGO_MANIFEST_DIR")?;
         let cargo_path = path_buf_from_env("CARGO")?;
@@ -308,12 +309,14 @@ impl ConfigBuilder {
 
 /// Error that appears during failed build of config.
 #[derive(Debug, Snafu)]
-pub enum ConfigBuilderError {
+pub enum ConfigBuilderEnvError {
     /// Error that appears during execution of [ConfigBuilder::from_env()].
     ///
     /// This error might appear if this function is not called from a build script.
     /// Cargo sets during execution of the build script the needed environment variables.
-    #[snafu(display("Environment variable '{env_variable}' is not set. Was 'from_env()' not called from a build script ('build.rs')?"))]
+    #[snafu(display(
+        "Environment variable '{env_variable}' is not set. Was 'from_env()' not called from a build script ('build.rs')?"
+    ))]
     EnvVarNotPresent {
         env_variable: String,
         backtrace: Backtrace,
@@ -327,23 +330,143 @@ pub enum ConfigBuilderError {
     },
 }
 
-fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, ConfigBuilderError> {
-    let env_value = var_os(&env).with_context(|| EnvVarNotPresentSnafu {
-        env_variable: env.as_ref().to_string_lossy(),
-    })?;
+fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, ConfigBuilderEnvError> {
+    let env_value = var_os(&env)
+        .with_context(|| EnvVarNotPresentSnafu {
+            env_variable: env.as_ref().to_string_lossy(),
+        })
+        .inspect_err(|e| error!("{}", e))?;
 
     Ok(PathBuf::from(env_value))
 }
 
-fn string_from_env<K>(env: K) -> Result<String, ConfigBuilderError>
+fn string_from_env<K>(env: K) -> Result<String, ConfigBuilderEnvError>
 where
     K: AsRef<OsStr>,
 {
-    let env_value = var(&env).with_context(|_| EnvVarSnafu {
-        env_variable: env.as_ref().to_string_lossy(),
-    })?;
+    let env_value = var(&env)
+        .with_context(|_| EnvVarSnafu {
+            env_variable: env.as_ref().to_string_lossy(),
+        })
+        .inspect_err(|e| error!("{}", e))?;
 
     Ok(env_value)
+}
+
+#[cfg(feature = "toml")]
+pub mod parse_manifest {
+    use std::fs::{read_dir, read_to_string};
+
+    use log::error;
+    use serde::Deserialize;
+    use snafu::ensure;
+
+    use super::*;
+
+    /// Error that appears during failed build of config via [ConfigBuilder::from_toml()].
+    #[derive(Debug, Snafu)]
+    pub enum ConfigBuilderTomlError {
+        #[snafu(display(
+            "Path '{}' does not exist or this program does not have the permission to access it.",
+            path.display()
+        ))]
+        PathDoesNotExist {
+            path: PathBuf,
+            backtrace: Backtrace,
+        },
+        #[snafu(display("Manifest not found."))]
+        ManifestNotFound {
+            backtrace: Backtrace,
+        },
+        #[snafu(display("Failure during IO operation."))]
+        GenericIoError {
+            source: std::io::Error,
+            backtrace: Backtrace,
+        },
+        #[snafu(display("Failure parsing 'Cargo.toml'."))]
+        TomlParseError {
+            source: toml::de::Error,
+        },
+        GenericError,
+    }
+
+    #[derive(Deserialize)]
+    struct CargoToml {
+        package: CargoPackage,
+    }
+
+    #[derive(Deserialize)]
+    struct CargoPackage {
+        name: String,
+        // path: PathBuf,
+    }
+
+    fn manifest_file_path(uncertain_path: &PathBuf) -> Result<PathBuf, ConfigBuilderTomlError> {
+        if uncertain_path.is_file() {
+            ensure!(
+                uncertain_path
+                    .file_name()
+                    .with_context(|| ManifestNotFoundSnafu)
+                    .inspect_err(|e| error!("{}", e))?
+                    == "Cargo.toml",
+                ManifestNotFoundSnafu
+            );
+
+            Ok(uncertain_path.clone())
+        } else {
+            debug_assert!(uncertain_path.is_dir());
+
+            Ok(read_dir(&uncertain_path)
+                .with_context(|_| GenericIoSnafu)?
+                .filter_map(|e| e.ok())
+                .find(|e| {
+                    e.file_type().map_or(false, |e| e.is_file()) && e.file_name() == "Cargo.toml"
+                })
+                .with_context(|| ManifestNotFoundSnafu)?
+                .path())
+        }
+    }
+
+    impl ConfigBuilder {
+        /// New builder with needed values being filled from a manifest (`Cargo.toml`).
+        ///
+        /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
+        pub fn from_toml(
+            manifest_path: impl Into<PathBuf>,
+        ) -> Result<Self, ConfigBuilderTomlError> {
+            let manifest_path: PathBuf = manifest_path.into();
+
+            ensure!(
+                manifest_path
+                    .try_exists()
+                    .with_context(|_| GenericIoSnafu)?,
+                {
+                    error!("Path does not exist: '{}'", manifest_path.display());
+                    PathDoesNotExistSnafu {
+                        path: manifest_path.clone(),
+                    }
+                }
+            );
+
+            let manifest_file_path = manifest_file_path(&manifest_path)?;
+
+            let cargo_toml: CargoToml = toml::from_str(
+                &read_to_string(&manifest_file_path).with_context(|_| GenericIoSnafu)?,
+            )
+            .with_context(|_| TomlParseSnafu)?;
+
+            let name = cargo_toml.package.name;
+
+            Ok(ConfigBuilder::custom(
+                name,
+                manifest_file_path
+                    .parent()
+                    .with_context(|| GenericSnafu)?
+                    .to_path_buf(),
+                PathBuf::from("cargo"),
+            ))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -352,7 +475,7 @@ mod test {
 
     #[test]
     #[snafu::report]
-    fn test_config_from_env() -> Result<(), ConfigBuilderError> {
+    fn test_config_from_env() -> Result<(), ConfigBuilderEnvError> {
         let conf = ConfigBuilder::from_env()?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));

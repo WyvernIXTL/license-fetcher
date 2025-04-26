@@ -31,6 +31,7 @@ serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
 simplelog = { version = "0.12.2", optional = true }
 snafu = { version = "0.8.5", optional = true }
+toml = { version = "0.8.21", optional = true, default-features = false, features = ["parse"]}
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -39,6 +40,7 @@ pretty_assertions = "1.4.0"
 [features]
 default = []
 build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:directories", "dep:snafu"]
+toml = ["dep:toml"]
 
 
 [[bench]]
