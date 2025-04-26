@@ -14,8 +14,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use typed_builder::TypedBuilder;
-
 /// Configures what backend is used for walking the registry source folder.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum FetchBackend {
@@ -192,52 +190,99 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 /// Struct to configure the behavior of the license fetching.
 ///
 /// See the [config](crate::config) module documentation for examples.
-#[derive(Debug, Clone, TypedBuilder)]
-#[builder(mutators(
-    pub fn from_env(&mut self) {
-        self.package_name = var("CARGO_PKG_NAME").expect("Failed to get CARGO_PKG_NAME env variable. 'from_env()' is meant to be called from a build script ('build.rs').");
-        self.cargo_path = var_os("CARGO").expect("Failed to get CARGO env variable. 'from_env()' is meant to be called from a build script ('build.rs').").into();
-        self.manifest_dir = var_os("CARGO_MANIFEST_DIR").expect("Failed to get CARGO_MANIFEST_DIR env variable. 'from_env()' is meant to be called from a build script ('build.rs').").into();
-    }
-))]
+#[derive(Debug, Clone)]
 pub struct Config {
-    #[builder(via_mutators)]
-    package_name: String,
+    /// Name (underscore name / module name) of the package that you are fetching licenses for.
+    pub package_name: String,
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
-    #[builder(via_mutators)]
     pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
-    #[builder(via_mutators, default=PathBuf::from("cargo"))]
     pub cargo_path: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
-    #[builder(default)]
     pub fetch_backend: FetchBackend,
     /// Set the cache type.
-    #[builder(default)]
     pub cache_backend: CacheBackend,
     /// Set the location where the cache should be saved to.
-    #[builder(default)]
     pub cache_save_location: CacheSaveLocation,
     /// Set Cargo directives for fetching metadata.
-    #[builder(default)]
     pub cargo_directives: CargoDirectiveList,
     /// Set cache behavior during fetching.
-    #[builder(default)]
     pub cache_behavior: CacheBehavior,
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+/// Builder for [Config].
+pub struct ConfigBuilder {
+    package_name: String,
+    manifest_dir: PathBuf,
+    cargo_path: PathBuf,
+    fetch_backend: Option<FetchBackend>,
+    cache_backend: Option<CacheBackend>,
+    cache_save_location: Option<CacheSaveLocation>,
+    cargo_directives: Option<CargoDirectiveList>,
+    cache_behavior: Option<CacheBehavior>,
+}
 
-    #[test]
-    fn test_config_builder_from_env() {
-        let config = Config::builder().from_env().build();
-        assert_eq!(config.package_name, env!("CARGO_PKG_NAME"));
-        assert_eq!(
-            config.manifest_dir,
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        );
-        assert_eq!(config.cargo_path, PathBuf::from(env!("CARGO")))
+impl ConfigBuilder {
+    /// New builder with needed values being filled in from environment variables.
+    ///
+    /// This constructor is meant to be used from a build script (`build.rs`)!
+    /// The environment variables used are set by cargo during build.
+    pub fn from_env() -> Self {
+        let package_name = var("CARGO_PKG_NAME").unwrap();
+        let manifest_dir = PathBuf::from(var_os("CARGO_MANIFEST_DIR").unwrap());
+        let cargo_path = PathBuf::from(var_os("CARGO").unwrap());
+
+        ConfigBuilder::custom(package_name, manifest_dir, cargo_path)
+    }
+
+    pub fn custom(package_name: String, manifest_dir: PathBuf, cargo_path: PathBuf) -> Self {
+        Self {
+            package_name,
+            manifest_dir,
+            cargo_path,
+            fetch_backend: None,
+            cache_backend: None,
+            cache_save_location: None,
+            cargo_directives: None,
+            cache_behavior: None,
+        }
+    }
+
+    pub fn fetch_backend(mut self, fetch_backend: FetchBackend) -> Self {
+        self.fetch_backend = Some(fetch_backend);
+        self
+    }
+
+    pub fn cache_backend(mut self, cache_backend: CacheBackend) -> Self {
+        self.cache_backend = Some(cache_backend);
+        self
+    }
+
+    pub fn cache_save_location(mut self, cache_save_location: CacheSaveLocation) -> Self {
+        self.cache_save_location = Some(cache_save_location);
+        self
+    }
+
+    pub fn cargo_directives(mut self, cargo_directives: CargoDirectiveList) -> Self {
+        self.cargo_directives = Some(cargo_directives);
+        self
+    }
+
+    pub fn cache_behavior(mut self, cache_behavior: CacheBehavior) -> Self {
+        self.cache_behavior = Some(cache_behavior);
+        self
+    }
+
+    pub fn build(self) -> Config {
+        Config {
+            package_name: self.package_name,
+            manifest_dir: self.manifest_dir,
+            cargo_path: self.cargo_path,
+            fetch_backend: self.fetch_backend.unwrap_or_default(),
+            cache_backend: self.cache_backend.unwrap_or_default(),
+            cache_save_location: self.cache_save_location.unwrap_or_default(),
+            cargo_directives: self.cargo_directives.unwrap_or_default(),
+            cache_behavior: self.cache_behavior.unwrap_or_default(),
+        }
     }
 }

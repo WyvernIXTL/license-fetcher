@@ -1,0 +1,3 @@
+test-cmd: "cargo c --all-features"
+auto-test: true
+watch-files: true

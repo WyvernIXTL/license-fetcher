@@ -27,4 +27,5 @@ Cargo.lock
 ./stupid.json
 
 /.aider*
+!/.aider.conf.yml
 !/.aiderignore
