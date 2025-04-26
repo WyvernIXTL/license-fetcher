@@ -40,7 +40,7 @@ pretty_assertions = "1.4.0"
 [features]
 default = []
 build = ["dep:serde_json", "dep:serde", "dep:simplelog", "dep:log", "dep:regex", "dep:directories", "dep:snafu"]
-toml = ["dep:toml"]
+from_path = ["dep:toml"]
 
 
 [[bench]]

@@ -14,7 +14,7 @@ tasks:
     aliases:
       - test
     cmds:
-      - cargo test -F build,toml
+      - cargo test -F build,from_path
 
   test:check:
     desc: call cargo check on all applicable features
@@ -22,7 +22,7 @@ tasks:
       - check
       - c
     cmds:
-      - cargo check -F build,toml
+      - cargo check -F build,from_path
       - cargo check -F build
       - cargo check
     
