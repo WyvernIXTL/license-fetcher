@@ -8,10 +8,12 @@
 //! ## Examples
 //!
 //! TODO
+use snafu::{Backtrace, OptionExt, ResultExt, Snafu};
 use std::{
     env::{var, var_os},
+    ffi::OsStr,
     ops::Deref,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 /// Configures what backend is used for walking the registry source folder.
@@ -189,7 +191,7 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 
 /// Struct to configure the behavior of the license fetching.
 ///
-/// See the [config](crate::config) module documentation for examples.
+/// It is recommended to create this struct via [ConfigBuilder].
 #[derive(Debug, Clone)]
 pub struct Config {
     /// Name (underscore name / module name) of the package that you are fetching licenses for.
@@ -211,6 +213,8 @@ pub struct Config {
 }
 
 /// Builder for [Config].
+///
+///
 pub struct ConfigBuilder {
     package_name: String,
     manifest_dir: PathBuf,
@@ -227,12 +231,16 @@ impl ConfigBuilder {
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn from_env() -> Self {
-        let package_name = var("CARGO_PKG_NAME").unwrap();
-        let manifest_dir = PathBuf::from(var_os("CARGO_MANIFEST_DIR").unwrap());
-        let cargo_path = PathBuf::from(var_os("CARGO").unwrap());
+    pub fn from_env() -> Result<Self, ConfigBuilderError> {
+        let package_name = string_from_env("CARGO_PKG_NAME")?;
+        let manifest_dir = path_buf_from_env("CARGO_MANIFEST_DIR")?;
+        let cargo_path = path_buf_from_env("CARGO")?;
 
-        ConfigBuilder::custom(package_name, manifest_dir, cargo_path)
+        Ok(ConfigBuilder::custom(
+            package_name,
+            manifest_dir,
+            cargo_path,
+        ))
     }
 
     pub fn custom(package_name: String, manifest_dir: PathBuf, cargo_path: PathBuf) -> Self {
@@ -263,8 +271,8 @@ impl ConfigBuilder {
         self
     }
 
-    pub fn cargo_directives(mut self, cargo_directives: CargoDirectiveList) -> Self {
-        self.cargo_directives = Some(cargo_directives);
+    pub fn cargo_directives(mut self, cargo_directives: impl Into<CargoDirectiveList>) -> Self {
+        self.cargo_directives = Some(cargo_directives.into());
         self
     }
 
@@ -284,5 +292,61 @@ impl ConfigBuilder {
             cargo_directives: self.cargo_directives.unwrap_or_default(),
             cache_behavior: self.cache_behavior.unwrap_or_default(),
         }
+    }
+}
+
+/// Error that appears during failed build of config.
+#[derive(Debug, Snafu)]
+pub enum ConfigBuilderError {
+    /// Error that appears during execution of [ConfigBuilder::from_env()].
+    ///
+    /// This error might appear if this function is not called from a build script.
+    /// Cargo sets during execution of the build script the needed environment variables.
+    #[snafu(display("Environment variable '{env_variable}' is not set. Was 'from_env()' not called from a build script ('build.rs')?"))]
+    EnvVarNotPresent {
+        env_variable: String,
+        backtrace: Backtrace,
+    },
+    /// Error that appears during execution of [ConfigBuilder::from_env()].
+    #[snafu(display("Failure getting the environment variable '{env_variable}'."))]
+    EnvVarError {
+        source: std::env::VarError,
+        env_variable: String,
+        backtrace: Backtrace,
+    },
+}
+
+fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, ConfigBuilderError> {
+    let env_value = var_os(&env).with_context(|| EnvVarNotPresentSnafu {
+        env_variable: env.as_ref().to_string_lossy(),
+    })?;
+
+    Ok(PathBuf::from(env_value))
+}
+
+fn string_from_env<K>(env: K) -> Result<String, ConfigBuilderError>
+where
+    K: AsRef<OsStr>,
+{
+    let env_value = var(&env).with_context(|_| EnvVarSnafu {
+        env_variable: env.as_ref().to_string_lossy(),
+    })?;
+
+    Ok(env_value)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[snafu::report]
+    fn test_config_from_env() -> Result<(), ConfigBuilderError> {
+        let conf = ConfigBuilder::from_env()?.build();
+        assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
+        assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
+        assert_eq!(conf.cargo_path, PathBuf::from(env!("CARGO")));
+
+        Ok(())
     }
 }

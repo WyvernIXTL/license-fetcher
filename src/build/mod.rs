@@ -18,6 +18,8 @@ use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 
 /// Configuration structs and builders.
 pub mod config;
+/// Errors that might appear during build.
+pub mod error;
 mod fetch;
 mod metadata;
 
