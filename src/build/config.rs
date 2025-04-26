@@ -431,7 +431,7 @@ pub mod parse_manifest {
         /// New builder with needed values being filled from a manifest (`Cargo.toml`).
         ///
         /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-        pub fn from_toml(
+        pub fn from_path(
             manifest_path: impl Into<PathBuf>,
         ) -> Result<Self, ConfigBuilderTomlError> {
             let manifest_path: PathBuf = manifest_path.into();
@@ -465,6 +465,33 @@ pub mod parse_manifest {
                     .to_path_buf(),
                 PathBuf::from("cargo"),
             ))
+        }
+    }
+
+    #[cfg(test)]
+    mod test {
+        use super::*;
+
+        #[test]
+        #[snafu::report]
+        fn test_from_path_with_file_path() -> Result<(), ConfigBuilderTomlError> {
+            let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build();
+            assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
+            assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
+            assert_eq!(conf.cargo_path, PathBuf::from("cargo"));
+
+            Ok(())
+        }
+
+        #[test]
+        #[snafu::report]
+        fn test_from_path_with_dir_path() -> Result<(), ConfigBuilderTomlError> {
+            let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build();
+            assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
+            assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
+            assert_eq!(conf.cargo_path, PathBuf::from("cargo"));
+
+            Ok(())
         }
     }
 }
