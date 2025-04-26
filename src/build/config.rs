@@ -214,7 +214,9 @@ pub struct Config {
 
 /// Builder for [Config].
 ///
-///
+/// Use this builder to construct a [Config] struct with various options.
+/// You can initialize the builder with required values using [ConfigBuilder::custom]
+/// or populate them from environment variables using [ConfigBuilder::from_env].
 pub struct ConfigBuilder {
     package_name: String,
     manifest_dir: PathBuf,
@@ -243,6 +245,7 @@ impl ConfigBuilder {
         ))
     }
 
+    /// Creates a new builder with the required fields explicitly provided.
     pub fn custom(package_name: String, manifest_dir: PathBuf, cargo_path: PathBuf) -> Self {
         Self {
             package_name,
@@ -256,31 +259,39 @@ impl ConfigBuilder {
         }
     }
 
+    /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
     pub fn fetch_backend(mut self, fetch_backend: FetchBackend) -> Self {
         self.fetch_backend = Some(fetch_backend);
         self
     }
 
+    /// Set the cache type.
     pub fn cache_backend(mut self, cache_backend: CacheBackend) -> Self {
         self.cache_backend = Some(cache_backend);
         self
     }
 
+    /// Set the location where the cache should be saved to.
     pub fn cache_save_location(mut self, cache_save_location: CacheSaveLocation) -> Self {
         self.cache_save_location = Some(cache_save_location);
         self
     }
 
+    /// Set Cargo directives for fetching metadata.
     pub fn cargo_directives(mut self, cargo_directives: impl Into<CargoDirectiveList>) -> Self {
         self.cargo_directives = Some(cargo_directives.into());
         self
     }
 
+    /// Set cache behavior during fetching.
     pub fn cache_behavior(mut self, cache_behavior: CacheBehavior) -> Self {
         self.cache_behavior = Some(cache_behavior);
         self
     }
 
+    /// Builds the [Config] struct from the builder's current state.
+    ///
+    /// Default values will be used for any options that were not explicitly set.
     pub fn build(self) -> Config {
         Config {
             package_name: self.package_name,
