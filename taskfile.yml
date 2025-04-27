@@ -34,5 +34,7 @@ tasks:
 
   doc:
     desc: build docs
+    env:
+      RUSTDOCFLAGS: "--cfg docsrs"
     cmds:
       - cargo +nightly doc --all-features

@@ -8,9 +8,9 @@ use thiserror::Error;
 
 use super::*;
 
-/// Error that appears during failed build of config via [ConfigBuilder::from_toml()].
+/// Error that appears during failed build of config via [ConfigBuilder::from_path()].
 #[derive(Debug, Error)]
-pub enum FromTomlError {
+pub enum FromPathError {
     #[error("The requested path does not exist or this program does not have the permission to access it.")]
     PathDoesNotExist,
     #[error("Manifest not found.")]
@@ -34,27 +34,27 @@ struct CargoPackage {
     // path: PathBuf,
 }
 
-fn valid_cargo_toml_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromTomlError> {
+fn valid_cargo_toml_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromPathError> {
     debug_assert!(uncertain_file_path.is_file());
 
     ensure!(
         uncertain_file_path
             .file_name()
-            .ok_or(FromTomlError::ManifestNotFound)
+            .ok_or(FromPathError::ManifestNotFound)
             .attach_printable_lazy(|| "Path to file provided has an invalid file name.")
             .inspect_err(|e| error!("{}", e))?
             == "Cargo.toml",
-        FromTomlError::ManifestNotFound
+        FromPathError::ManifestNotFound
     );
 
     Ok(uncertain_file_path)
 }
 
-fn find_valid_cargo_toml_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, FromTomlError> {
+fn find_valid_cargo_toml_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, FromPathError> {
     debug_assert!(uncertain_dir_path.is_dir());
 
     read_dir(&uncertain_dir_path)
-        .map_err(|e| FromTomlError::from(e))
+        .map_err(|e| FromPathError::from(e))
         .attach_printable_lazy(|| {
             format!(
                 "Error during reading of directory: '{:?}'",
@@ -64,10 +64,10 @@ fn find_valid_cargo_toml_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, Fr
         .filter_map(|e| e.ok())
         .find(|e| e.file_type().map_or(false, |e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
-        .ok_or(FromTomlError::ManifestNotFound.into())
+        .ok_or(FromPathError::ManifestNotFound.into())
 }
 
-fn manifest_file_path(uncertain_path: PathBuf) -> Result<PathBuf, FromTomlError> {
+fn manifest_file_path(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
     if uncertain_path.is_file() {
         valid_cargo_toml_path(uncertain_path)
     } else {
@@ -79,19 +79,19 @@ impl ConfigBuilder {
     /// New builder with needed values being filled from a manifest (`Cargo.toml`).
     ///
     /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, FromTomlError> {
+    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, FromPathError> {
         let manifest_path: PathBuf = manifest_path.into();
 
         ensure!(
-            manifest_path.try_exists().map_err(FromTomlError::from)?,
-            FromTomlError::PathDoesNotExist
+            manifest_path.try_exists().map_err(FromPathError::from)?,
+            FromPathError::PathDoesNotExist
         );
 
         let manifest_file_path = manifest_file_path(manifest_path)?;
 
         let cargo_toml: CargoToml = toml::from_str(
             &read_to_string(&manifest_file_path)
-                .map_err(FromTomlError::from)
+                .map_err(FromPathError::from)
                 .attach_printable_lazy(|| {
                     format!(
                         "Failed to read 'Cargo.toml' file at path: '{:?}'",
@@ -99,12 +99,12 @@ impl ConfigBuilder {
                     )
                 })?,
         )
-        .map_err(FromTomlError::from)?;
+        .map_err(FromPathError::from)?;
 
         let package_name = cargo_toml.package.name;
         let manifest_dir = manifest_file_path
             .parent()
-            .ok_or_else(|| FromTomlError::ManifestParentPathNotFound)?
+            .ok_or_else(|| FromPathError::ManifestParentPathNotFound)?
             .to_path_buf();
 
         Ok(ConfigBuilder::custom(
@@ -120,7 +120,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_from_path_with_file_path() -> Result<(), FromTomlError> {
+    fn test_from_path_with_file_path() -> Result<(), FromPathError> {
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
@@ -130,7 +130,7 @@ mod test {
     }
 
     #[test]
-    fn test_from_path_with_dir_path() -> Result<(), FromTomlError> {
+    fn test_from_path_with_dir_path() -> Result<(), FromPathError> {
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));

@@ -3,7 +3,7 @@ This module holds the structs and enums to configure the fetching process.
 ## Build Scripts (`build.rs`)
 
 If you are using `license-fetcher` from within a build script to fetch licenses for your project,
-it is recommended to use [ConfigBuilder::from_env()], as cargo sets the necessary environment
+it is recommended to use [`ConfigBuilder::from_env()`], as cargo sets the necessary environment
 variables during build. [See the docs.](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)
 
 `build.rs`:
@@ -20,7 +20,7 @@ let config: Config = ConfigBuilder::from_env()
 
 If you are using `license-fetcher` from inside another application to fetch licenses,
 you'll probably want to fetch licenses for another project.
-In this case there exits the [ConfigBuilder::from_path()] method, that can be enabled by the `config_from_path` feature.
+In this case there exits the [`ConfigBuilder::from_path()`] method, that can be enabled by the `config_from_path` feature.
 
 `main.rs`:
 ```rs
@@ -37,5 +37,8 @@ fn main() -> {
 
 ## Note
 
-`license-fetcher` uses [stack_error]. The `Result` from [ConfigBuilder::from_path()] and from [ConfigBuilder::from_env()] are [stack_error::Result].
+`license-fetcher` uses [error_stack]. The `Result` from [`ConfigBuilder::from_path()`] and from [`ConfigBuilder::from_env()`] are [`error_stack::Result`].
 This means very nice debug prints.
+
+[`ConfigBuilder::from_path()`]: crate::build::config::ConfigBuilder::from_path
+[`ConfigBuilder::from_env()`]: crate::build::config::ConfigBuilder::from_env
