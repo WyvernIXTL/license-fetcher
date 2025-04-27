@@ -32,7 +32,6 @@ regex-lite = { version = "0.1.6", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
 simplelog = { version = "0.12.2", optional = true, default-features = false}
-snafu = { version = "0.8.5", optional = true }
 thiserror = { version = "2.0.12", optional = true }
 toml = { version = "0.8.21", optional = true, default-features = false, features = ["parse"]}
 
@@ -42,7 +41,7 @@ pretty_assertions = "1.4.0"
 
 [features]
 default = []
-build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:snafu", "dep:thiserror", "dep:regex-lite", "dep:picolog", "dep:error-stack"]
+build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:thiserror", "dep:regex-lite", "dep:picolog", "dep:error-stack"]
 config_from_path = ["dep:toml"]
 
 

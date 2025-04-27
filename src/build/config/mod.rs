@@ -8,7 +8,6 @@
 //! ## Examples
 //!
 //! TODO
-use snafu::{Backtrace, OptionExt, ResultExt, Snafu};
 use std::{ops::Deref, path::PathBuf};
 
 pub mod from_env;
