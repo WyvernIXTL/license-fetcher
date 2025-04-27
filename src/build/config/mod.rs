@@ -3,11 +3,8 @@
 //         (See accompanying file LICENSE or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-//! This module holds the structs and enums to configure the fetching process.
-//!
-//! ## Examples
-//!
-//! TODO
+#![doc = include_str!("../../../docs/build_config.md")]
+
 use std::{ops::Deref, path::PathBuf};
 
 pub mod from_env;

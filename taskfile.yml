@@ -32,3 +32,7 @@ tasks:
     cmds:
       - cargo bench -F build
 
+  doc:
+    desc: build docs
+    cmds:
+      - cargo +nightly doc --all-features

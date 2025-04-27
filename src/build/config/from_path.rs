@@ -1,6 +1,6 @@
 use std::fs::{read_dir, read_to_string};
 
-use error_stack::{ensure, report};
+use error_stack::ensure;
 use error_stack::{Result, ResultExt};
 use log::error;
 use serde::Deserialize;
