@@ -18,7 +18,7 @@ impl ConfigBuilder {
     /// The environment variables used are set by cargo during build.
     ///
     /// A tiny logger is being enabled as well.
-    pub fn from_env() -> Result<Self, VarError> {
+    pub fn from_build_env() -> Result<Self, VarError> {
         install_logger_build_env();
 
         let package_name = string_from_env("CARGO_PKG_NAME")?;
@@ -61,7 +61,7 @@ mod test {
     #[test]
     fn test_config_from_env() -> Result<(), VarError> {
         test_setup();
-        let conf = ConfigBuilder::from_env()?.build();
+        let conf = ConfigBuilder::from_build_env()?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         assert_eq!(conf.cargo_path, PathBuf::from(env!("CARGO")));

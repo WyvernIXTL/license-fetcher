@@ -212,7 +212,7 @@ pub struct Config {
 ///
 /// Use this builder to construct a [Config] struct with various options.
 /// You can initialize the builder with required values using [ConfigBuilder::custom]
-/// or populate them from environment variables using [ConfigBuilder::from_env].
+/// or populate them from environment variables using [ConfigBuilder::from_build_env].
 pub struct ConfigBuilder {
     package_name: String,
     manifest_dir: PathBuf,
