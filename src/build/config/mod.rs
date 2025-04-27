@@ -13,7 +13,7 @@ use std::{ops::Deref, path::PathBuf};
 
 pub mod from_env;
 
-#[cfg(feature = "from_path")]
+#[cfg(feature = "config_from_path")]
 pub mod from_path;
 
 /// Configures what backend is used for walking the registry source folder.

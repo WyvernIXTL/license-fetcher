@@ -13,8 +13,9 @@ tasks:
     desc: "Run integration test."
     aliases:
       - test
+      - t
     cmds:
-      - cargo test -F build,from_path
+      - cargo test -F build,config_from_path
 
   test:check:
     desc: call cargo check on all applicable features
@@ -22,7 +23,7 @@ tasks:
       - check
       - c
     cmds:
-      - cargo check -F build,from_path
+      - cargo check -F build,config_from_path
       - cargo check -F build
       - cargo check
     

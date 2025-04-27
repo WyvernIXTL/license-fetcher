@@ -1,3 +1,3 @@
 {
-    "rust-analyzer.cargo.features": ["build", "from_path"],
+    "rust-analyzer.cargo.features": ["build", "config_from_path"],
 }
