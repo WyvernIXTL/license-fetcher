@@ -16,9 +16,9 @@ pub enum FromPathError {
     #[error("Manifest not found.")]
     ManifestNotFound,
     #[error("Failure during IO operation.")]
-    Io(#[from] std::io::Error),
+    Io,
     #[error("Failure parsing 'Cargo.toml'.")]
-    TomlParseError(#[from] toml::de::Error),
+    TomlParseError,
     #[error("Manifest found but parent path not. This might imply that your manifest is at the root '/' or 'C:/'.")]
     ManifestParentPathNotFound,
 }
@@ -54,7 +54,7 @@ fn find_valid_cargo_toml_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, Fr
     debug_assert!(uncertain_dir_path.is_dir());
 
     read_dir(&uncertain_dir_path)
-        .map_err(|e| FromPathError::from(e))
+        .change_context(FromPathError::Io)
         .attach_printable_lazy(|| {
             format!(
                 "Error during reading of directory: '{:?}'",
@@ -83,7 +83,9 @@ impl ConfigBuilder {
         let manifest_path: PathBuf = manifest_path.into();
 
         ensure!(
-            manifest_path.try_exists().map_err(FromPathError::from)?,
+            manifest_path
+                .try_exists()
+                .change_context(FromPathError::Io)?,
             FromPathError::PathDoesNotExist
         );
 
@@ -91,7 +93,7 @@ impl ConfigBuilder {
 
         let cargo_toml: CargoToml = toml::from_str(
             &read_to_string(&manifest_file_path)
-                .map_err(FromPathError::from)
+                .change_context(FromPathError::Io)
                 .attach_printable_lazy(|| {
                     format!(
                         "Failed to read 'Cargo.toml' file at path: '{:?}'",
@@ -99,7 +101,7 @@ impl ConfigBuilder {
                     )
                 })?,
         )
-        .map_err(FromPathError::from)?;
+        .change_context(FromPathError::TomlParseError)?;
 
         let package_name = cargo_toml.package.name;
         let manifest_dir = manifest_file_path
