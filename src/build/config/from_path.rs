@@ -2,7 +2,6 @@ use std::fs::{read_dir, read_to_string};
 
 use error_stack::ensure;
 use error_stack::{Result, ResultExt};
-use log::error;
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -15,11 +14,11 @@ pub enum FromPathError {
     PathDoesNotExist,
     #[error("Manifest not found.")]
     ManifestNotFound,
-    #[error("Failure during IO operation.")]
+    #[error("Io error.")]
     Io,
     #[error("Failure parsing 'Cargo.toml'.")]
     TomlParseError,
-    #[error("Manifest found but parent path not. This might imply that your manifest is at the root '/' or 'C:/'.")]
+    #[error("Manifest found but parent path not. This might imply that your manifest is at the root '/Cargo.toml' or 'C:/Cargo.toml'.")]
     ManifestParentPathNotFound,
 }
 
@@ -41,8 +40,7 @@ fn valid_cargo_toml_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromPa
         uncertain_file_path
             .file_name()
             .ok_or(FromPathError::ManifestNotFound)
-            .attach_printable_lazy(|| "Path to file provided has an invalid file name.")
-            .inspect_err(|e| error!("{}", e))?
+            .attach_printable("Path to file provided has an invalid file name.")?
             == "Cargo.toml",
         FromPathError::ManifestNotFound
     );
@@ -54,13 +52,7 @@ fn find_valid_cargo_toml_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, Fr
     debug_assert!(uncertain_dir_path.is_dir());
 
     read_dir(&uncertain_dir_path)
-        .change_context(FromPathError::Io)
-        .attach_printable_lazy(|| {
-            format!(
-                "Error during reading of directory: '{:?}'",
-                &uncertain_dir_path
-            )
-        })?
+        .change_context(FromPathError::Io)?
         .filter_map(|e| e.ok())
         .find(|e| e.file_type().map_or(false, |e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
@@ -91,17 +83,9 @@ impl ConfigBuilder {
 
         let manifest_file_path = manifest_file_path(manifest_path)?;
 
-        let cargo_toml: CargoToml = toml::from_str(
-            &read_to_string(&manifest_file_path)
-                .change_context(FromPathError::Io)
-                .attach_printable_lazy(|| {
-                    format!(
-                        "Failed to read 'Cargo.toml' file at path: '{:?}'",
-                        &manifest_file_path
-                    )
-                })?,
-        )
-        .change_context(FromPathError::TomlParseError)?;
+        let cargo_toml: CargoToml =
+            toml::from_str(&read_to_string(&manifest_file_path).change_context(FromPathError::Io)?)
+                .change_context(FromPathError::TomlParseError)?;
 
         let package_name = cargo_toml.package.name;
         let manifest_dir = manifest_file_path
@@ -119,10 +103,13 @@ impl ConfigBuilder {
 
 #[cfg(test)]
 mod test {
+    use crate::build::debug::test_setup;
+
     use super::*;
 
     #[test]
     fn test_from_path_with_file_path() -> Result<(), FromPathError> {
+        test_setup();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
@@ -133,6 +120,7 @@ mod test {
 
     #[test]
     fn test_from_path_with_dir_path() -> Result<(), FromPathError> {
+        test_setup();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));

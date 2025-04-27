@@ -17,6 +17,7 @@ use serde_json::from_slice;
 
 /// Configuration structs and builders.
 pub mod config;
+mod debug;
 /// Errors that might appear during build.
 pub mod error;
 mod fetch;

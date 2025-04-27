@@ -7,6 +7,8 @@ use std::{
 
 use error_stack::{Result, ResultExt};
 
+use crate::build::debug::install_logger_build_env;
+
 use super::ConfigBuilder;
 
 impl ConfigBuilder {
@@ -14,7 +16,11 @@ impl ConfigBuilder {
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
+    ///
+    /// A tiny logger is being enabled as well.
     pub fn from_env() -> Result<Self, VarError> {
+        install_logger_build_env();
+
         let package_name = string_from_env("CARGO_PKG_NAME")?;
         let manifest_dir = path_buf_from_env("CARGO_MANIFEST_DIR")?;
         let cargo_path = path_buf_from_env("CARGO")?;
@@ -48,10 +54,13 @@ where
 
 #[cfg(test)]
 mod test {
+    use crate::build::debug::test_setup;
+
     use super::*;
 
     #[test]
     fn test_config_from_env() -> Result<(), VarError> {
+        test_setup();
         let conf = ConfigBuilder::from_env()?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));

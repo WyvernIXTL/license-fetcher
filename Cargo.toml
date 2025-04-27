@@ -24,7 +24,7 @@ exclude = [
 [dependencies]
 bincode = "2.0.1"
 directories = {version = "6.0.0", optional = true}
-error-stack = { version = "0.5.0", optional = true }
+error-stack = { version = "0.5.0", optional = true, features = ["hooks"]}
 log = { version = "0.4.22", optional = true }
 miniz_oxide = { version = "0.8.0", features = ["std"]}
 picolog = { version = "1.0.1", optional = true }
