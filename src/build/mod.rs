@@ -14,7 +14,6 @@ use std::time::Instant;
 
 use log::info;
 use serde_json::from_slice;
-use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 
 /// Configuration structs and builders.
 pub mod config;
@@ -264,13 +263,7 @@ pub fn generate_package_list_with_licenses_without_env_calls(
 /// }
 /// ```
 pub fn generate_package_list_with_licenses() -> PackageList {
-    TermLogger::init(
-        LevelFilter::Trace,
-        Config::default(),
-        TerminalMode::Stderr,
-        ColorChoice::Auto,
-    )
-    .unwrap();
+    picolog::PicoLogger::new(log::LevelFilter::Info).init();
 
     let cargo_path = var_os("CARGO").unwrap();
     let manifest_dir_path = var_os("CARGO_MANIFEST_DIR").unwrap();

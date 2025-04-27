@@ -4,6 +4,8 @@
         "docsrs",
         "Kellar",
         "miniz",
+        "Pico",
+        "picolog",
         "rustdoc",
         "serde",
         "simplelog",
