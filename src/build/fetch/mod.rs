@@ -4,34 +4,18 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 use std::collections::HashMap;
-use std::env::var_os;
 use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
-use directories::BaseDirs;
 use log::{info, trace, warn};
 use regex_lite::Regex;
 
-use crate::PackageList;
+mod cargo_folder;
 
-fn cargo_folder() -> PathBuf {
-    if let Some(path) = var_os("CARGO_HOME") {
-        path.into()
-    } else {
-        let base_dir = BaseDirs::new().expect("Failed to find home dir.");
-        let home_dir = base_dir.home_dir();
-        let mut cargo_dir = home_dir.to_path_buf();
-        cargo_dir.push(".cargo");
-        if !cargo_dir.exists() {
-            panic!(
-                "Failed finding cargo dir: {:#?}. Set it manually with CARGO_HOME variable.",
-                &cargo_dir
-            );
-        }
-        cargo_dir
-    }
-}
+use cargo_folder::cargo_folder;
+
+use crate::PackageList;
 
 fn src_registry_folders(path: PathBuf) -> impl Iterator<Item = PathBuf> {
     let src_subfolder = PathBuf::from("registry/src");
@@ -75,7 +59,7 @@ pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList
         package_hash_map.insert(format!("{}-{}", &p.name, &p.version), p);
     }
 
-    src_registry_folders(cargo_folder()).for_each(|src_folder| {
+    src_registry_folders(cargo_folder().unwrap()).for_each(|src_folder| {
         info!("src folder: {:?}", &src_folder);
 
         read_dir(src_folder)
