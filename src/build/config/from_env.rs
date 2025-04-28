@@ -7,6 +7,8 @@ use std::{
 
 use error_stack::{Result, ResultExt};
 
+use crate::build::error::CEnvVar;
+
 use super::ConfigBuilder;
 
 impl ConfigBuilder {
@@ -30,9 +32,7 @@ impl ConfigBuilder {
 fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, VarError> {
     let env_value = var_os(&env)
         .ok_or_else(|| VarError::NotPresent)
-        .attach_printable_lazy(|| {
-            format!("Environment Variable: '{}'", env.as_ref().to_string_lossy())
-        })?;
+        .attach_printable_lazy(|| CEnvVar::from(env))?;
 
     Ok(PathBuf::from(env_value))
 }
@@ -41,9 +41,7 @@ fn string_from_env<K>(env: K) -> Result<String, VarError>
 where
     K: AsRef<OsStr>,
 {
-    Ok(var(&env).attach_printable_lazy(|| {
-        format!("Environment Variable: '{}'", env.as_ref().to_string_lossy())
-    })?)
+    Ok(var(&env).attach_printable_lazy(|| CEnvVar::from(env))?)
 }
 
 #[cfg(test)]

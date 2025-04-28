@@ -1,9 +1,11 @@
 use std::fs::{read_dir, read_to_string};
 
-use error_stack::ensure;
+use error_stack::{ensure, Report};
 use error_stack::{Result, ResultExt};
 use serde::Deserialize;
 use thiserror::Error;
+
+use crate::build::error::CPath;
 
 use super::*;
 
@@ -18,8 +20,6 @@ pub enum FromPathError {
     Io,
     #[error("Failure parsing 'Cargo.toml'.")]
     TomlParseError,
-    #[error("Manifest found but parent path not. This might imply that your manifest is at the root '/Cargo.toml' or 'C:/Cargo.toml'.")]
-    ManifestParentPathNotFound,
 }
 
 #[derive(Deserialize)]
@@ -40,9 +40,12 @@ fn valid_cargo_toml_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromPa
         uncertain_file_path
             .file_name()
             .ok_or(FromPathError::ManifestNotFound)
-            .attach_printable("Path to file provided has an invalid file name.")?
+            .attach_printable("Path to file provided has an invalid file name.")
+            .attach_printable_lazy(|| CPath::from(&uncertain_file_path))?
             == "Cargo.toml",
-        FromPathError::ManifestNotFound
+        Report::new(FromPathError::ManifestNotFound)
+            .attach_printable("The provided path points to a file that is not 'Cargo.toml'.")
+            .attach_printable(CPath::from(&uncertain_file_path))
     );
 
     Ok(uncertain_file_path)
@@ -52,11 +55,13 @@ fn find_valid_cargo_toml_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, Fr
     debug_assert!(uncertain_dir_path.is_dir());
 
     read_dir(&uncertain_dir_path)
+        .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
         .change_context(FromPathError::Io)?
         .filter_map(|e| e.ok())
         .find(|e| e.file_type().map_or(false, |e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
-        .ok_or(FromPathError::ManifestNotFound.into())
+        .ok_or_else(|| Report::new(FromPathError::ManifestNotFound))
+        .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
 }
 
 fn manifest_file_path(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
@@ -77,20 +82,27 @@ impl ConfigBuilder {
         ensure!(
             manifest_path
                 .try_exists()
+                .attach_printable_lazy(|| CPath::from(&manifest_path))
+                .attach_printable("Failed verifying existence of provided path.")
                 .change_context(FromPathError::Io)?,
-            FromPathError::PathDoesNotExist
+            Report::new(FromPathError::PathDoesNotExist)
+                .attach_printable(CPath::from(&manifest_path))
         );
 
         let manifest_file_path = manifest_file_path(manifest_path)?;
 
-        let cargo_toml: CargoToml =
-            toml::from_str(&read_to_string(&manifest_file_path).change_context(FromPathError::Io)?)
-                .change_context(FromPathError::TomlParseError)?;
+        let cargo_toml: CargoToml = toml::from_str(
+            &read_to_string(&manifest_file_path)
+                .attach_printable_lazy(|| CPath::from(&manifest_file_path))
+                .change_context(FromPathError::Io)?,
+        )
+        .change_context(FromPathError::TomlParseError)?;
 
         let package_name = cargo_toml.package.name;
         let manifest_dir = manifest_file_path
             .parent()
-            .ok_or_else(|| FromPathError::ManifestParentPathNotFound)?
+            .ok_or_else(|| FromPathError::Io)
+            .attach_printable_lazy(|| CPath::from(&manifest_file_path))?
             .to_path_buf();
 
         Ok(ConfigBuilder::custom(
