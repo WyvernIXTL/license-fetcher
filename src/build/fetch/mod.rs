@@ -12,20 +12,12 @@ use log::{info, trace, warn};
 use regex_lite::Regex;
 
 mod cargo_folder;
+mod src_registry_folders;
 
 use cargo_folder::cargo_folder;
 
 use crate::PackageList;
-
-fn src_registry_folders(path: PathBuf) -> impl Iterator<Item = PathBuf> {
-    let src_subfolder = PathBuf::from("registry/src");
-    let src_dir = path.join(src_subfolder);
-    read_dir(src_dir)
-        .expect("Src path is not a dir.")
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().map_or(false, |ft| ft.is_dir()))
-        .map(|e| e.path())
-}
+use src_registry_folders::src_registry_folders;
 
 pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
     trace!("Fetching license in folder: {:?}", &path);
@@ -59,23 +51,25 @@ pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList
         package_hash_map.insert(format!("{}-{}", &p.name, &p.version), p);
     }
 
-    src_registry_folders(cargo_folder().unwrap()).for_each(|src_folder| {
-        info!("src folder: {:?}", &src_folder);
+    src_registry_folders(cargo_folder().unwrap())
+        .unwrap()
+        .for_each(|src_folder| {
+            info!("src folder: {:?}", &src_folder);
 
-        read_dir(src_folder)
-            .expect("Failed reading source folder.")
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().map_or(false, |e| e.is_dir()))
-            .for_each(|e| {
-                let folder_name_os = e.file_name();
-                let folder_name = folder_name_os.to_string_lossy();
-                if let Some((e, p)) = package_hash_map
-                    .get_mut(folder_name.as_ref())
-                    .and_then(|p| Some((e, p)))
-                {
-                    info!("Fetching license for: {}", &p.name);
-                    (**p).license_text = license_text_from_folder(&e.path());
-                }
-            });
-    });
+            read_dir(src_folder)
+                .expect("Failed reading source folder.")
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().map_or(false, |e| e.is_dir()))
+                .for_each(|e| {
+                    let folder_name_os = e.file_name();
+                    let folder_name = folder_name_os.to_string_lossy();
+                    if let Some((e, p)) = package_hash_map
+                        .get_mut(folder_name.as_ref())
+                        .and_then(|p| Some((e, p)))
+                    {
+                        info!("Fetching license for: {}", &p.name);
+                        (**p).license_text = license_text_from_folder(&e.path());
+                    }
+                });
+        });
 }
