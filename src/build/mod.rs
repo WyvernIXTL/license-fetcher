@@ -235,7 +235,8 @@ pub fn generate_package_list_with_licenses_without_env_calls(
         .position(|e| e.name == this_package_name)
         .unwrap();
     package_list.swap(this_package_index, 0);
-    package_list[0].license_text = license_text_from_folder(&PathBuf::from(manifest_dir_path));
+    package_list[0].license_text =
+        license_text_from_folder(&PathBuf::from(manifest_dir_path)).unwrap();
 
     package_list[1..].sort();
 

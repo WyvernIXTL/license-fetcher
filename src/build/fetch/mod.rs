@@ -8,7 +8,8 @@ use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
-use log::{info, trace, warn};
+use error_stack::{Result, ResultExt};
+use log::{error, info, trace, warn};
 use regex_lite::Regex;
 
 mod cargo_folder;
@@ -16,21 +17,29 @@ mod src_registry_folders;
 
 use cargo_folder::cargo_folder;
 
+use crate::build::error::CPath;
 use crate::PackageList;
 use src_registry_folders::src_registry_folders;
 
-pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
+pub(super) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>, std::io::Error> {
     trace!("Fetching license in folder: {:?}", &path);
 
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
     let license_text = read_dir(&path)
-        .unwrap()
+        .attach_printable_lazy(|| CPath::from(path))?
         .filter_map(|e| e.ok())
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .filter(|e| e.file_type().map_or(false, |e| e.is_file()))
-        .filter_map(|e| read_to_string(e.path()).ok())
+        .filter_map(|e| {
+            read_to_string(e.path())
+                .map_err(|err| {
+                    let path = e.path();
+                    error!(path:debug, err:err ; "Error during reading of license file. Skipping.")
+                })
+                .ok()
+        })
         .fold(String::new(), |mut a, b| {
             a += &b;
             a += "\n\n";
@@ -39,10 +48,10 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Option<String> {
 
     if license_text.is_empty() {
         warn!("Found no licenses in folder: {:?}", &path);
-        return None;
+        return Ok(None);
     }
 
-    Some(license_text)
+    Ok(Some(license_text))
 }
 
 pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList) {
@@ -68,7 +77,7 @@ pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList
                         .and_then(|p| Some((e, p)))
                     {
                         info!("Fetching license for: {}", &p.name);
-                        (**p).license_text = license_text_from_folder(&e.path());
+                        (**p).license_text = license_text_from_folder(&e.path()).unwrap();
                     }
                 });
         });
