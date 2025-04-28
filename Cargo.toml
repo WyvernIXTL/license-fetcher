@@ -38,6 +38,7 @@ toml = { version = "0.8.21", optional = true, default-features = false, features
 criterion = "0.5.1"
 pretty_assertions = "1.4.0"
 simplelog = "0.12.2"
+supports-color = "3.0.2"
 
 [features]
 default = []
