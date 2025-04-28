@@ -17,6 +17,7 @@ use serde_json::from_slice;
 
 /// Configuration structs and builders.
 pub mod config;
+#[cfg(test)]
 mod debug;
 /// Errors that might appear during build.
 pub mod error;
@@ -264,8 +265,6 @@ pub fn generate_package_list_with_licenses_without_env_calls(
 /// }
 /// ```
 pub fn generate_package_list_with_licenses() -> PackageList {
-    picolog::PicoLogger::new(log::LevelFilter::Info).init();
-
     let cargo_path = var_os("CARGO").unwrap();
     let manifest_dir_path = var_os("CARGO_MANIFEST_DIR").unwrap();
     let this_package_name = var("CARGO_PKG_NAME").unwrap();

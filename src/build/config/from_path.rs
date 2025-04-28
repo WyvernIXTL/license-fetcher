@@ -103,13 +103,13 @@ impl ConfigBuilder {
 
 #[cfg(test)]
 mod test {
-    use crate::build::debug::test_setup;
+    use crate::build::debug::setup_test;
 
     use super::*;
 
     #[test]
     fn test_from_path_with_file_path() -> Result<(), FromPathError> {
-        test_setup();
+        setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
@@ -120,7 +120,7 @@ mod test {
 
     #[test]
     fn test_from_path_with_dir_path() -> Result<(), FromPathError> {
-        test_setup();
+        setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build();
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));

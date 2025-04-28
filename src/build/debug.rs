@@ -2,20 +2,19 @@ use std::sync::Once;
 
 static LOGGER_ONCE: Once = Once::new();
 
-pub(crate) fn install_logger_build_env() {
+pub(crate) fn setup_logger() {
+    use simplelog::Config;
+
     LOGGER_ONCE.call_once(|| {
-        picolog::PicoLogger::new(log::LevelFilter::Debug).init();
+        simplelog::TermLogger::new(
+            log::LevelFilter::Debug,
+            Config::default(),
+            simplelog::TerminalMode::Mixed,
+            simplelog::ColorChoice::Auto,
+        );
     });
 }
 
-#[cfg(test)]
-pub(crate) fn install_logger_test_env() {
-    LOGGER_ONCE.call_once(|| {
-        picolog::PicoLogger::new(log::LevelFilter::Trace).init();
-    });
-}
-
-#[cfg(test)]
-pub(crate) fn test_setup() {
-    install_logger_test_env();
+pub(crate) fn setup_test() {
+    setup_logger();
 }
