@@ -16,12 +16,25 @@ mod cargo_folder;
 mod src_registry_folders;
 
 use cargo_folder::cargo_folder;
+use thiserror::Error;
 
 use crate::build::error::CPath;
 use crate::PackageList;
 use src_registry_folders::src_registry_folders;
 
-pub(super) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>, std::io::Error> {
+#[derive(Debug, Clone, Copy, Error)]
+pub enum LicenseFetchError {
+    #[error("Failed to infer the cargo folders location.")]
+    CargoFolder,
+    #[error("Failed to infer the registry src folder location.")]
+    RegistrySrc,
+    #[error("Failure during the fetching of licenses for a package.")]
+    LicenseFetchForPackage,
+    #[error("Failed reading a src folder of a registry.")]
+    SrcFolderRecursion,
+}
+
+pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>, std::io::Error> {
     trace!("Fetching license in folder: {:?}", &path);
 
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
@@ -54,31 +67,51 @@ pub(super) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
     Ok(Some(license_text))
 }
 
-pub(super) fn licenses_text_from_cargo_src_folder(package_list: &mut PackageList) {
+pub(crate) fn licenses_text_from_cargo_src_folder(
+    package_list: &mut PackageList,
+) -> Result<(), LicenseFetchError> {
     let mut package_hash_map = HashMap::new();
     for p in package_list.iter_mut().filter(|p| p.license_text.is_none()) {
         package_hash_map.insert(format!("{}-{}", &p.name, &p.version), p);
     }
 
-    src_registry_folders(cargo_folder().unwrap())
-        .unwrap()
-        .for_each(|src_folder| {
-            info!("src folder: {:?}", &src_folder);
+    let mut src_folder_iterator =
+        src_registry_folders(cargo_folder().change_context(LicenseFetchError::CargoFolder)?)
+            .change_context(LicenseFetchError::RegistrySrc)?;
 
-            read_dir(src_folder)
-                .expect("Failed reading source folder.")
-                .filter_map(|e| e.ok())
-                .filter(|e| e.file_type().map_or(false, |e| e.is_dir()))
-                .for_each(|e| {
-                    let folder_name_os = e.file_name();
-                    let folder_name = folder_name_os.to_string_lossy();
-                    if let Some((e, p)) = package_hash_map
-                        .get_mut(folder_name.as_ref())
-                        .and_then(|p| Some((e, p)))
-                    {
-                        info!("Fetching license for: {}", &p.name);
-                        (**p).license_text = license_text_from_folder(&e.path()).unwrap();
+    let mut result: Result<(), LicenseFetchError> = Ok(());
+
+    while let Some(src_folder) = src_folder_iterator.next() {
+        info!("src folder: {:?}", &src_folder);
+
+        read_dir(&src_folder)
+            .attach_printable_lazy(|| CPath::from(src_folder))
+            .change_context(LicenseFetchError::SrcFolderRecursion)?
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().map_or(false, |e| e.is_dir()))
+            .for_each(|e| {
+                let folder_name_os = e.file_name();
+                let folder_name = folder_name_os.to_string_lossy();
+                if let Some((e, p)) = package_hash_map
+                    .get_mut(folder_name.as_ref())
+                    .and_then(|p| Some((e, p)))
+                {
+                    info!("Fetching license for: {}", &p.name);
+
+                    match license_text_from_folder(&e.path()) {
+                        Ok(res) => (**p).license_text = res,
+                        Err(err) => {
+                            error!("Failure");
+                            let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);
+                            match result.as_mut() {
+                                Ok(_) => result = Err(err),
+                                Err(e) => e.extend_one(err),
+                            }
+                        }
                     }
-                });
-        });
+                }
+            });
+    }
+
+    result
 }
