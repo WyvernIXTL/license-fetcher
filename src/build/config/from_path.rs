@@ -72,29 +72,6 @@ fn manifest_file_path(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError>
     }
 }
 
-impl ConfigBuilder {
-    /// Fills in needed values from a manifest (`Cargo.toml`).
-    ///
-    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-    pub fn with_path(self, manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
-        let meta = MetadataManifest::new(manifest_path)
-            .change_context(ConfigBuildError::FailedFromPath)?;
-
-        let builder = self
-            .package_name(meta.package_name)
-            .manifest_dir(meta.manifest_dir);
-
-        Ok(builder)
-    }
-
-    /// New builder with needed values being filled from a manifest (`Cargo.toml`).
-    ///
-    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
-        Ok(ConfigBuilder::default().with_path(manifest_path)?)
-    }
-}
-
 struct MetadataManifest {
     package_name: String,
     manifest_dir: PathBuf,
@@ -134,6 +111,29 @@ impl MetadataManifest {
             package_name,
             manifest_dir,
         })
+    }
+}
+
+impl ConfigBuilder {
+    /// Fills in needed values from a manifest (`Cargo.toml`).
+    ///
+    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
+    pub fn with_path(self, manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
+        let meta = MetadataManifest::new(manifest_path)
+            .change_context(ConfigBuildError::FailedFromPath)?;
+
+        let builder = self
+            .package_name(meta.package_name)
+            .manifest_dir(meta.manifest_dir);
+
+        Ok(builder)
+    }
+
+    /// New builder with needed values being filled from a manifest (`Cargo.toml`).
+    ///
+    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
+    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
+        Ok(ConfigBuilder::default().with_path(manifest_path)?)
     }
 }
 

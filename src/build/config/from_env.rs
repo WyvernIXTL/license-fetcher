@@ -11,31 +11,6 @@ use crate::build::error::CEnvVar;
 
 use super::{ConfigBuildError, ConfigBuilder};
 
-impl ConfigBuilder {
-    /// Adds needed values from environment variables to builder.
-    ///
-    /// This method is meant to be used from a build script (`build.rs`)!
-    /// The environment variables used are set by cargo during build.
-    pub fn with_build_env(self) -> Result<Self, ConfigBuildError> {
-        let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
-
-        let builder = self
-            .package_name(meta.package_name)
-            .manifest_dir(meta.manifest_dir)
-            .cargo_path(meta.cargo_path);
-
-        Ok(builder)
-    }
-
-    /// New builder with needed values being filled in from environment variables.
-    ///
-    /// This constructor is meant to be used from a build script (`build.rs`)!
-    /// The environment variables used are set by cargo during build.
-    pub fn from_build_env() -> Result<Self, ConfigBuildError> {
-        Ok(ConfigBuilder::default().with_build_env()?)
-    }
-}
-
 struct MetadataEnv {
     package_name: String,
     manifest_dir: PathBuf,
@@ -65,6 +40,31 @@ where
     K: AsRef<OsStr>,
 {
     Ok(var(&env).attach_printable_lazy(|| CEnvVar::from(env))?)
+}
+
+impl ConfigBuilder {
+    /// Adds needed values from environment variables to builder.
+    ///
+    /// This method is meant to be used from a build script (`build.rs`)!
+    /// The environment variables used are set by cargo during build.
+    pub fn with_build_env(self) -> Result<Self, ConfigBuildError> {
+        let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
+
+        let builder = self
+            .package_name(meta.package_name)
+            .manifest_dir(meta.manifest_dir)
+            .cargo_path(meta.cargo_path);
+
+        Ok(builder)
+    }
+
+    /// New builder with needed values being filled in from environment variables.
+    ///
+    /// This constructor is meant to be used from a build script (`build.rs`)!
+    /// The environment variables used are set by cargo during build.
+    pub fn from_build_env() -> Result<Self, ConfigBuildError> {
+        Ok(ConfigBuilder::default().with_build_env()?)
+    }
 }
 
 #[cfg(test)]
