@@ -197,7 +197,18 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 
 /// Struct to configure the behavior of the license fetching.
 ///
-/// It is recommended to create this struct via [ConfigBuilder].
+/// It is recommended to create this struct via [ConfigBuilder]:
+/// ```
+/// use license_fetcher::build::config::ConfigBuilder;
+///
+/// let config = ConfigBuilder::default()
+///     .with_build_env()
+///     .expect("Failed fetching build env metadata for config build.")
+///     .build()
+///     .expect("Failed validating config build.");
+///
+/// assert_eq!(config.package_name, "license-fetcher".to_owned());
+/// ```
 #[derive(Debug, Clone, Builder)]
 #[builder(pattern = "owned")]
 #[builder(build_fn(error = "ConfigBuildReport"))]
