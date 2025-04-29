@@ -91,14 +91,7 @@ impl ConfigBuilder {
     ///
     /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
     pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
-        let meta = MetadataManifest::new(manifest_path)
-            .change_context(ConfigBuildError::FailedFromPath)?;
-
-        let builder = ConfigBuilder::default()
-            .package_name(meta.package_name)
-            .manifest_dir(meta.manifest_dir);
-
-        Ok(builder)
+        Ok(ConfigBuilder::default().with_path(manifest_path)?)
     }
 }
 

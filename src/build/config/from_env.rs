@@ -32,14 +32,7 @@ impl ConfigBuilder {
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
     pub fn from_build_env() -> Result<Self, ConfigBuildError> {
-        let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
-
-        let builder = ConfigBuilder::default()
-            .package_name(meta.package_name)
-            .manifest_dir(meta.manifest_dir)
-            .cargo_path(meta.cargo_path);
-
-        Ok(builder)
+        Ok(ConfigBuilder::default().with_build_env()?)
     }
 }
 
