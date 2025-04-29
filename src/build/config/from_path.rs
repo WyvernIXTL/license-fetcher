@@ -118,7 +118,10 @@ impl ConfigBuilder {
     /// Fills in needed values from a manifest (`Cargo.toml`).
     ///
     /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-    pub fn with_path(self, manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
+    pub fn with_path(
+        self,
+        manifest_path: impl Into<PathBuf>,
+    ) -> std::result::Result<Self, ConfigBuildReport> {
         let meta = MetadataManifest::new(manifest_path)
             .change_context(ConfigBuildError::FailedFromPath)?;
 
@@ -132,7 +135,9 @@ impl ConfigBuilder {
     /// New builder with needed values being filled from a manifest (`Cargo.toml`).
     ///
     /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
+    pub fn from_path(
+        manifest_path: impl Into<PathBuf>,
+    ) -> std::result::Result<Self, ConfigBuildReport> {
         Ok(ConfigBuilder::default().with_path(manifest_path)?)
     }
 }
@@ -144,7 +149,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_from_path_with_file_path() -> Result<(), ConfigBuildError> {
+    fn test_from_path_with_file_path() -> std::result::Result<(), ConfigBuildReport> {
         setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build()?;
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
@@ -155,7 +160,7 @@ mod test {
     }
 
     #[test]
-    fn test_from_path_with_dir_path() -> Result<(), ConfigBuildError> {
+    fn test_from_path_with_dir_path() -> std::result::Result<(), ConfigBuildReport> {
         setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build()?;
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));

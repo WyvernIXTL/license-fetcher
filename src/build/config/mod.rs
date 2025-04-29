@@ -5,15 +5,22 @@
 
 #![doc = include_str!("../../../docs/build_config.md")]
 
-use std::{ops::Deref, path::PathBuf};
+use std::{
+    ops::{Deref, DerefMut},
+    path::PathBuf,
+};
 
+use cargo_folder::cargo_folder;
 use derive_builder::{Builder, UninitializedFieldError};
+use error_stack::{Report, ResultExt};
 use thiserror::Error;
 
 pub mod from_env;
 
 #[cfg(feature = "config_from_path")]
 pub mod from_path;
+
+mod cargo_folder;
 
 /// Configures what backend is used for walking the registry source folder.
 #[derive(Debug, Clone, Copy, Default)]
@@ -193,7 +200,7 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 /// It is recommended to create this struct via [ConfigBuilder].
 #[derive(Debug, Clone, Builder)]
 #[builder(pattern = "owned")]
-#[builder(build_fn(error = "ConfigBuildError"))]
+#[builder(build_fn(error = "ConfigBuildReport"))]
 #[builder(derive(Debug, Clone))]
 pub struct Config {
     /// Name (underscore name / module name) of the package that you are fetching licenses for.
@@ -203,6 +210,12 @@ pub struct Config {
     /// Optional path to `cargo`.
     #[builder(default=PathBuf::from("cargo"))]
     pub cargo_path: PathBuf,
+    /// Optional cargo home directory path.
+    ///
+    /// By default cargo home is inferred from the `CARGO_HOME` environment variable, or if not set,
+    /// the standard location at the users home folder `~/.cargo`.
+    #[builder(default=cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?)]
+    pub cargo_home_dir: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
     #[builder(default)]
     pub fetch_backend: FetchBackend,
@@ -222,24 +235,47 @@ pub struct Config {
 
 #[derive(Debug, Error)]
 pub enum ConfigBuildError {
-    #[error("Required field in builder is not initialized: {0}")]
-    UninitializedField(&'static str),
+    #[error("Required field in builder is not initialized.")]
+    UninitializedField,
     #[error("Validation of input failed.")]
-    ValidationError(String),
+    ValidationError,
     #[error("Failed fetching required fields from build environment variables.")]
     FailedFromEnvVars,
     #[error("Failed fetching  required fields from manifest in path.")]
     FailedFromPath,
+    #[error(
+        "Failed inferring cargo home dir from environment variables or standard home dir location."
+    )]
+    CargoHomeDir,
 }
 
-impl From<UninitializedFieldError> for ConfigBuildError {
-    fn from(value: UninitializedFieldError) -> Self {
-        Self::UninitializedField(value.field_name())
+#[derive(Debug)]
+pub struct ConfigBuildReport(pub Report<ConfigBuildError>);
+
+impl Deref for ConfigBuildReport {
+    type Target = Report<ConfigBuildError>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-impl From<String> for ConfigBuildError {
-    fn from(s: String) -> Self {
-        Self::ValidationError(s)
+impl DerefMut for ConfigBuildReport {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<UninitializedFieldError> for ConfigBuildReport {
+    fn from(value: UninitializedFieldError) -> Self {
+        Report::new(value)
+            .change_context(ConfigBuildError::UninitializedField)
+            .into()
+    }
+}
+
+impl From<Report<ConfigBuildError>> for ConfigBuildReport {
+    fn from(value: Report<ConfigBuildError>) -> Self {
+        ConfigBuildReport(value)
     }
 }
