@@ -9,23 +9,53 @@ use error_stack::{Result, ResultExt};
 
 use crate::build::error::CEnvVar;
 
-use super::ConfigBuilder;
+use super::{ConfigBuildError, ConfigBuilder};
 
 impl ConfigBuilder {
+    /// Adds needed values from environment variables to builder.
+    ///
+    /// This method is meant to be used from a build script (`build.rs`)!
+    /// The environment variables used are set by cargo during build.
+    pub fn with_build_env(self) -> Result<Self, ConfigBuildError> {
+        let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
+
+        let builder = self
+            .package_name(meta.package_name)
+            .manifest_dir(meta.manifest_dir)
+            .cargo_path(meta.cargo_path);
+
+        Ok(builder)
+    }
+
     /// New builder with needed values being filled in from environment variables.
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn from_build_env() -> Result<Self, VarError> {
-        let package_name = string_from_env("CARGO_PKG_NAME")?;
-        let manifest_dir = path_buf_from_env("CARGO_MANIFEST_DIR")?;
-        let cargo_path = path_buf_from_env("CARGO")?;
+    pub fn from_build_env() -> Result<Self, ConfigBuildError> {
+        let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
 
-        Ok(ConfigBuilder::custom(
-            package_name,
-            manifest_dir,
-            cargo_path,
-        ))
+        let builder = ConfigBuilder::default()
+            .package_name(meta.package_name)
+            .manifest_dir(meta.manifest_dir)
+            .cargo_path(meta.cargo_path);
+
+        Ok(builder)
+    }
+}
+
+struct MetadataEnv {
+    package_name: String,
+    manifest_dir: PathBuf,
+    cargo_path: PathBuf,
+}
+
+impl MetadataEnv {
+    fn new() -> Result<Self, VarError> {
+        Ok(Self {
+            package_name: string_from_env("CARGO_PKG_NAME")?,
+            manifest_dir: path_buf_from_env("CARGO_MANIFEST_DIR")?,
+            cargo_path: path_buf_from_env("CARGO")?,
+        })
     }
 }
 
@@ -51,9 +81,9 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_config_from_env() -> Result<(), VarError> {
+    fn test_config_from_env() -> Result<(), ConfigBuildError> {
         setup_test();
-        let conf = ConfigBuilder::from_build_env()?.build();
+        let conf = ConfigBuilder::from_build_env()?.build()?;
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         assert_eq!(conf.cargo_path, PathBuf::from(env!("CARGO")));

@@ -73,10 +73,42 @@ fn manifest_file_path(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError>
 }
 
 impl ConfigBuilder {
+    /// Fills in needed values from a manifest (`Cargo.toml`).
+    ///
+    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
+    pub fn with_path(self, manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
+        let meta = MetadataManifest::new(manifest_path)
+            .change_context(ConfigBuildError::FailedFromPath)?;
+
+        let builder = self
+            .package_name(meta.package_name)
+            .manifest_dir(meta.manifest_dir);
+
+        Ok(builder)
+    }
+
     /// New builder with needed values being filled from a manifest (`Cargo.toml`).
     ///
     /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
-    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, FromPathError> {
+    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
+        let meta = MetadataManifest::new(manifest_path)
+            .change_context(ConfigBuildError::FailedFromPath)?;
+
+        let builder = ConfigBuilder::default()
+            .package_name(meta.package_name)
+            .manifest_dir(meta.manifest_dir);
+
+        Ok(builder)
+    }
+}
+
+struct MetadataManifest {
+    package_name: String,
+    manifest_dir: PathBuf,
+}
+
+impl MetadataManifest {
+    fn new(manifest_path: impl Into<PathBuf>) -> Result<Self, FromPathError> {
         let manifest_path: PathBuf = manifest_path.into();
 
         ensure!(
@@ -105,11 +137,10 @@ impl ConfigBuilder {
             .attach_printable_lazy(|| CPath::from(&manifest_file_path))?
             .to_path_buf();
 
-        Ok(ConfigBuilder::custom(
+        Ok(MetadataManifest {
             package_name,
             manifest_dir,
-            PathBuf::from("cargo"),
-        ))
+        })
     }
 }
 
@@ -120,9 +151,9 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_from_path_with_file_path() -> Result<(), FromPathError> {
+    fn test_from_path_with_file_path() -> Result<(), ConfigBuildError> {
         setup_test();
-        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build();
+        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build()?;
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         assert_eq!(conf.cargo_path, PathBuf::from("cargo"));
@@ -131,9 +162,9 @@ mod test {
     }
 
     #[test]
-    fn test_from_path_with_dir_path() -> Result<(), FromPathError> {
+    fn test_from_path_with_dir_path() -> Result<(), ConfigBuildError> {
         setup_test();
-        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build();
+        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build()?;
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         assert_eq!(conf.cargo_path, PathBuf::from("cargo"));

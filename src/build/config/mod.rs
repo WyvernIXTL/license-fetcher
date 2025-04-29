@@ -7,6 +7,9 @@
 
 use std::{ops::Deref, path::PathBuf};
 
+use derive_builder::{Builder, UninitializedFieldError};
+use thiserror::Error;
+
 pub mod from_env;
 
 #[cfg(feature = "config_from_path")]
@@ -188,100 +191,55 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 /// Struct to configure the behavior of the license fetching.
 ///
 /// It is recommended to create this struct via [ConfigBuilder].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Builder)]
+#[builder(pattern = "owned")]
+#[builder(build_fn(error = "ConfigBuildError"))]
+#[builder(derive(Debug, Clone))]
 pub struct Config {
     /// Name (underscore name / module name) of the package that you are fetching licenses for.
     pub package_name: String,
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
+    #[builder(default=PathBuf::from("cargo"))]
     pub cargo_path: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
+    #[builder(default)]
     pub fetch_backend: FetchBackend,
     /// Set the cache type.
+    #[builder(default)]
     pub cache_backend: CacheBackend,
     /// Set the location where the cache should be saved to.
+    #[builder(default)]
     pub cache_save_location: CacheSaveLocation,
     /// Set Cargo directives for fetching metadata.
+    #[builder(default)]
     pub cargo_directives: CargoDirectiveList,
     /// Set cache behavior during fetching.
+    #[builder(default)]
     pub cache_behavior: CacheBehavior,
 }
 
-/// Builder for [Config].
-///
-/// Use this builder to construct a [Config] struct with various options.
-/// You can initialize the builder with required values using [ConfigBuilder::custom]
-/// or populate them from environment variables using [ConfigBuilder::from_build_env].
-pub struct ConfigBuilder {
-    package_name: String,
-    manifest_dir: PathBuf,
-    cargo_path: PathBuf,
-    fetch_backend: Option<FetchBackend>,
-    cache_backend: Option<CacheBackend>,
-    cache_save_location: Option<CacheSaveLocation>,
-    cargo_directives: Option<CargoDirectiveList>,
-    cache_behavior: Option<CacheBehavior>,
+#[derive(Debug, Error)]
+pub enum ConfigBuildError {
+    #[error("Required field in builder is not initialized: {0}")]
+    UninitializedField(&'static str),
+    #[error("Validation of input failed.")]
+    ValidationError(String),
+    #[error("Failed fetching required fields from build environment variables.")]
+    FailedFromEnvVars,
+    #[error("Failed fetching  required fields from manifest in path.")]
+    FailedFromPath,
 }
 
-impl ConfigBuilder {
-    /// Creates a new builder with the required fields explicitly provided.
-    pub fn custom(package_name: String, manifest_dir: PathBuf, cargo_path: PathBuf) -> Self {
-        Self {
-            package_name,
-            manifest_dir,
-            cargo_path,
-            fetch_backend: None,
-            cache_backend: None,
-            cache_save_location: None,
-            cargo_directives: None,
-            cache_behavior: None,
-        }
+impl From<UninitializedFieldError> for ConfigBuildError {
+    fn from(value: UninitializedFieldError) -> Self {
+        Self::UninitializedField(value.field_name())
     }
+}
 
-    /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
-    pub fn fetch_backend(mut self, fetch_backend: FetchBackend) -> Self {
-        self.fetch_backend = Some(fetch_backend);
-        self
-    }
-
-    /// Set the cache type.
-    pub fn cache_backend(mut self, cache_backend: CacheBackend) -> Self {
-        self.cache_backend = Some(cache_backend);
-        self
-    }
-
-    /// Set the location where the cache should be saved to.
-    pub fn cache_save_location(mut self, cache_save_location: CacheSaveLocation) -> Self {
-        self.cache_save_location = Some(cache_save_location);
-        self
-    }
-
-    /// Set Cargo directives for fetching metadata.
-    pub fn cargo_directives(mut self, cargo_directives: impl Into<CargoDirectiveList>) -> Self {
-        self.cargo_directives = Some(cargo_directives.into());
-        self
-    }
-
-    /// Set cache behavior during fetching.
-    pub fn cache_behavior(mut self, cache_behavior: CacheBehavior) -> Self {
-        self.cache_behavior = Some(cache_behavior);
-        self
-    }
-
-    /// Builds the [Config] struct from the builder's current state.
-    ///
-    /// Default values will be used for any options that were not explicitly set.
-    pub fn build(self) -> Config {
-        Config {
-            package_name: self.package_name,
-            manifest_dir: self.manifest_dir,
-            cargo_path: self.cargo_path,
-            fetch_backend: self.fetch_backend.unwrap_or_default(),
-            cache_backend: self.cache_backend.unwrap_or_default(),
-            cache_save_location: self.cache_save_location.unwrap_or_default(),
-            cargo_directives: self.cargo_directives.unwrap_or_default(),
-            cache_behavior: self.cache_behavior.unwrap_or_default(),
-        }
+impl From<String> for ConfigBuildError {
+    fn from(s: String) -> Self {
+        Self::ValidationError(s)
     }
 }

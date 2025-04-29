@@ -23,6 +23,7 @@ exclude = [
 
 [dependencies]
 bincode = "2.0.1"
+derive_builder = { version = "0.20.2", optional = true }
 directories = {version = "6.0.0", optional = true}
 error-stack = { version = "0.5.0", optional = true}
 log = { version = "0.4.22", optional = true, features = ["kv", "kv_std"]}
@@ -42,7 +43,7 @@ supports-color = "3.0.2"
 
 [features]
 default = []
-build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:thiserror", "dep:regex-lite", "dep:error-stack"]
+build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:thiserror", "dep:regex-lite", "dep:error-stack", "dep:derive_builder"]
 config_from_path = ["dep:toml"]
 
 
