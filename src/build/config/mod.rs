@@ -5,14 +5,10 @@
 
 #![doc = include_str!("../../../docs/build_config.md")]
 
-use std::{
-    ops::{Deref, DerefMut},
-    path::PathBuf,
-};
+use std::{ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
-use derive_builder::{Builder, UninitializedFieldError};
-use error_stack::{Report, ResultExt};
+use error_stack::{Report, Result, ResultExt};
 use thiserror::Error;
 
 pub mod from_env;
@@ -196,52 +192,123 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 }
 
 /// Struct to configure the behavior of the license fetching.
-///
-/// It is recommended to create this struct via [ConfigBuilder]:
-/// ```
-/// use license_fetcher::build::config::ConfigBuilder;
-///
-/// let config = ConfigBuilder::default()
-///     .with_build_env()
-///     .expect("Failed fetching build env metadata for config build.")
-///     .build()
-///     .expect("Failed validating config build.");
-///
-/// assert_eq!(config.package_name, "license-fetcher".to_owned());
-/// ```
-#[derive(Debug, Clone, Builder)]
-#[builder(pattern = "owned")]
-#[builder(build_fn(error = "ConfigBuildReport"))]
-#[builder(derive(Debug, Clone))]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Name (underscore name / module name) of the package that you are fetching licenses for.
     pub package_name: String,
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
-    #[builder(default=PathBuf::from("cargo"))]
     pub cargo_path: PathBuf,
     /// Optional cargo home directory path.
     ///
     /// By default cargo home is inferred from the `CARGO_HOME` environment variable, or if not set,
     /// the standard location at the users home folder `~/.cargo`.
-    #[builder(default=cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?)]
     pub cargo_home_dir: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
-    #[builder(default)]
     pub fetch_backend: FetchBackend,
     /// Set the cache type.
-    #[builder(default)]
     pub cache_backend: CacheBackend,
     /// Set the location where the cache should be saved to.
-    #[builder(default)]
     pub cache_save_location: CacheSaveLocation,
     /// Set Cargo directives for fetching metadata.
-    #[builder(default)]
     pub cargo_directives: CargoDirectiveList,
     /// Set cache behavior during fetching.
-    #[builder(default)]
     pub cache_behavior: CacheBehavior,
+}
+
+/// Builder for Config struct.
+#[derive(Debug, Clone, Default)]
+pub struct ConfigBuilder {
+    package_name: Option<String>,
+    manifest_dir: Option<PathBuf>,
+    cargo_path: Option<PathBuf>,
+    cargo_home_dir: Option<PathBuf>,
+    fetch_backend: Option<FetchBackend>,
+    cache_backend: Option<CacheBackend>,
+    cache_save_location: Option<CacheSaveLocation>,
+    cargo_directives: Option<CargoDirectiveList>,
+    cache_behavior: Option<CacheBehavior>,
+}
+
+impl ConfigBuilder {
+    /// Sets the package name.
+    pub fn package_name(mut self, name: String) -> Self {
+        self.package_name = Some(name);
+        self
+    }
+
+    /// Sets the manifest directory path.
+    pub fn manifest_dir(mut self, dir: PathBuf) -> Self {
+        self.manifest_dir = Some(dir);
+        self
+    }
+
+    /// Sets the cargo executable path.
+    pub fn cargo_path(mut self, path: PathBuf) -> Self {
+        self.cargo_path = Some(path);
+        self
+    }
+
+    /// Sets the cargo home directory path
+    pub fn cargo_home_dir(mut self, dir: PathBuf) -> Self {
+        self.cargo_home_dir = Some(dir);
+        self
+    }
+
+    /// Sets the fetch backend.
+    pub fn fetch_backend(mut self, backend: FetchBackend) -> Self {
+        self.fetch_backend = Some(backend);
+        self
+    }
+
+    /// Sets the cache backend.
+    pub fn cache_backend(mut self, backend: CacheBackend) -> Self {
+        self.cache_backend = Some(backend);
+        self
+    }
+
+    /// Sets the cache save location.
+    pub fn cache_save_location(mut self, location: CacheSaveLocation) -> Self {
+        self.cache_save_location = Some(location);
+        self
+    }
+
+    /// Sets the cargo directives.
+    pub fn cargo_directives(mut self, directives: CargoDirectiveList) -> Self {
+        self.cargo_directives = Some(directives);
+        self
+    }
+
+    /// Sets the cache behavior.
+    pub fn cache_behavior(mut self, behavior: CacheBehavior) -> Self {
+        self.cache_behavior = Some(behavior);
+        self
+    }
+
+    /// Builds the Config with all required fields.
+    pub fn build(self) -> Result<Config, ConfigBuildError> {
+        Ok(Config {
+            package_name: self.package_name.ok_or_else(|| {
+                Report::new(ConfigBuildError::UninitializedField)
+                    .attach_printable("Field 'package_name' is required but not set.")
+            })?,
+            manifest_dir: self.manifest_dir.ok_or_else(|| {
+                Report::new(ConfigBuildError::UninitializedField)
+                    .attach_printable("Field 'manifest_dir' is required but not set.")
+            })?,
+            cargo_path: self.cargo_path.unwrap_or_else(|| PathBuf::from("cargo")),
+            cargo_home_dir: match self.cargo_home_dir {
+                Some(dir) => dir,
+                None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
+            },
+            fetch_backend: self.fetch_backend.unwrap_or_default(),
+            cache_backend: self.cache_backend.unwrap_or_default(),
+            cache_save_location: self.cache_save_location.unwrap_or_default(),
+            cargo_directives: self.cargo_directives.unwrap_or_default(),
+            cache_behavior: self.cache_behavior.unwrap_or_default(),
+        })
+    }
 }
 
 #[derive(Debug, Error)]
@@ -258,35 +325,4 @@ pub enum ConfigBuildError {
         "Failed inferring cargo home dir from environment variables or standard home dir location."
     )]
     CargoHomeDir,
-}
-
-#[derive(Debug)]
-pub struct ConfigBuildReport(pub Report<ConfigBuildError>);
-
-impl Deref for ConfigBuildReport {
-    type Target = Report<ConfigBuildError>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ConfigBuildReport {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl From<UninitializedFieldError> for ConfigBuildReport {
-    fn from(value: UninitializedFieldError) -> Self {
-        Report::new(value)
-            .change_context(ConfigBuildError::UninitializedField)
-            .into()
-    }
-}
-
-impl From<Report<ConfigBuildError>> for ConfigBuildReport {
-    fn from(value: Report<ConfigBuildError>) -> Self {
-        ConfigBuildReport(value)
-    }
 }

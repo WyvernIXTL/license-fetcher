@@ -9,7 +9,7 @@ use error_stack::{Result, ResultExt};
 
 use crate::build::error::CEnvVar;
 
-use super::{ConfigBuildError, ConfigBuildReport, ConfigBuilder};
+use super::{ConfigBuildError, ConfigBuilder};
 
 struct MetadataEnv {
     package_name: String,
@@ -47,7 +47,7 @@ impl ConfigBuilder {
     ///
     /// This method is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn with_build_env(self) -> std::result::Result<Self, ConfigBuildReport> {
+    pub fn with_build_env(self) -> Result<Self, ConfigBuildError> {
         let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
 
         let builder = self
@@ -62,7 +62,7 @@ impl ConfigBuilder {
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn from_build_env() -> std::result::Result<Self, ConfigBuildReport> {
+    pub fn from_build_env() -> Result<Self, ConfigBuildError> {
         Ok(ConfigBuilder::default().with_build_env()?)
     }
 }
@@ -74,7 +74,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_config_from_env() -> std::result::Result<(), ConfigBuildReport> {
+    fn test_config_from_env() -> Result<(), ConfigBuildError> {
         setup_test();
         let conf = ConfigBuilder::from_build_env()?.build()?;
         assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
