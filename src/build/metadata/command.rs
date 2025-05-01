@@ -52,7 +52,8 @@ where
         Ok(output)
     } else {
         Err(Report::new(ExecCargoError::FailedExecution)
-            .attach_printable(format!("cargo directive: {}", cargo_directive)))
+            .attach_printable(format!("cargo directive: {}", cargo_directive))
+            .attach_printable(String::from_utf8_lossy(&output.stderr).into_owned()))
     }
 }
 

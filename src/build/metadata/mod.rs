@@ -4,10 +4,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::path::Path;
+use std::{
+    path::{Path, PathBuf},
+    thread::spawn,
+};
 
 use command::exec_cargo;
-use error_stack::{Result, ResultExt};
+use error_stack::{report, Result, ResultExt};
 use fnv::{FnvHashMap, FnvHashSet};
 use metadata::{Metadata, MetadataResolveNode};
 use serde_json::from_slice;
@@ -28,6 +31,8 @@ pub enum PkgListFromCargoMetadataError {
     ParseJson,
     #[error("Failed to parse `cargo` output to utf-8 string.")]
     ParseString,
+    #[error("Error occurred with thread.")]
+    Thread,
 }
 
 fn walk_dependencies<'a>(
@@ -51,7 +56,7 @@ fn package_list_from_cargo_metadata<P>(
     cargo: P,
     cargo_directives: &CargoDirectiveList,
     manifest_dir: P,
-) -> Result<PackageList, PkgListFromCargoMetadataError>
+) -> Result<Vec<Package>, PkgListFromCargoMetadataError>
 where
     P: AsRef<Path>,
 {
@@ -90,8 +95,7 @@ where
             homepage: package.homepage,
             repository: package.repository,
         })
-        .collect::<Vec<Package>>()
-        .into())
+        .collect())
 }
 
 fn used_pkg_names_from_cargo_tree<P>(
@@ -125,4 +129,47 @@ where
         .filter(|s| !s.is_empty())
         .map(|s| s.to_owned())
         .collect::<FnvHashSet<String>>())
+}
+
+pub fn package_list_from_cargo(
+    cargo: PathBuf,
+    cargo_directives: &CargoDirectiveList,
+    manifest_dir: PathBuf,
+) -> Result<PackageList, PkgListFromCargoMetadataError> {
+    let packages_handle = {
+        let cargo = cargo.clone();
+        let cargo_directives = cargo_directives.clone();
+        let manifest_dir = manifest_dir.clone();
+        spawn(move || package_list_from_cargo_metadata(cargo, &cargo_directives, manifest_dir))
+    };
+
+    // TODO: Check if not spawning this thread makes a difference.
+    let used_package_names_handle = {
+        let cargo_directives = cargo_directives.clone();
+        spawn(move || used_pkg_names_from_cargo_tree(cargo, &cargo_directives, manifest_dir))
+    };
+
+    let packages = packages_handle.join().map_err(|e| {
+        report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
+    })?;
+    let used_packages = used_package_names_handle.join().map_err(|e| {
+        report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
+    })?;
+    if packages.is_err() && used_packages.is_err() {
+        let mut pkgs_err = packages.unwrap_err();
+        let used_pkgs_err = used_packages.unwrap_err();
+        pkgs_err.extend_one(used_pkgs_err);
+        return Err(pkgs_err);
+    }
+
+    let packages = packages?;
+    let used_package_names = used_packages?;
+
+    let mut filtered_packages = Vec::with_capacity(packages.capacity());
+    let filtered_packages_iter = packages
+        .into_iter()
+        .filter(|e| used_package_names.contains(&e.name));
+    filtered_packages.extend(filtered_packages_iter);
+
+    Ok(filtered_packages.into())
 }
