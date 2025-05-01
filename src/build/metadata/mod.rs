@@ -6,7 +6,7 @@
 
 use std::{
     path::{Path, PathBuf},
-    thread::spawn,
+    thread::scope,
 };
 
 use command::exec_cargo;
@@ -53,9 +53,9 @@ fn walk_dependencies<'a>(
 }
 
 fn package_list_from_cargo_metadata<P>(
-    cargo: P,
+    cargo: &P,
     cargo_directives: &CargoDirectiveList,
-    manifest_dir: P,
+    manifest_dir: &P,
 ) -> Result<Vec<Package>, PkgListFromCargoMetadataError>
 where
     P: AsRef<Path>,
@@ -99,9 +99,9 @@ where
 }
 
 fn used_pkg_names_from_cargo_tree<P>(
-    cargo: P,
+    cargo: &P,
     cargo_directives: &CargoDirectiveList,
-    manifest_dir: P,
+    manifest_dir: &P,
 ) -> Result<FnvHashSet<String>, PkgListFromCargoMetadataError>
 where
     P: AsRef<Path>,
@@ -133,43 +133,39 @@ where
 
 pub fn package_list_from_cargo(
     cargo: PathBuf,
-    cargo_directives: &CargoDirectiveList,
+    cargo_directives: CargoDirectiveList,
     manifest_dir: PathBuf,
 ) -> Result<PackageList, PkgListFromCargoMetadataError> {
-    let packages_handle = {
-        let cargo = cargo.clone();
-        let cargo_directives = cargo_directives.clone();
-        let manifest_dir = manifest_dir.clone();
-        spawn(move || package_list_from_cargo_metadata(cargo, &cargo_directives, manifest_dir))
-    };
+    scope(|scope| {
+        let packages_handle = scope
+            .spawn(|| package_list_from_cargo_metadata(&cargo, &cargo_directives, &manifest_dir));
 
-    // TODO: Check if not spawning this thread makes a difference.
-    let used_package_names_handle = {
-        let cargo_directives = cargo_directives.clone();
-        spawn(move || used_pkg_names_from_cargo_tree(cargo, &cargo_directives, manifest_dir))
-    };
+        // TODO: Check if not spawning this thread makes a difference.
+        let used_package_names_handle = scope
+            .spawn(|| used_pkg_names_from_cargo_tree(&cargo, &cargo_directives, &manifest_dir));
 
-    let packages = packages_handle.join().map_err(|e| {
-        report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
-    })?;
-    let used_packages = used_package_names_handle.join().map_err(|e| {
-        report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
-    })?;
-    if packages.is_err() && used_packages.is_err() {
-        let mut pkgs_err = packages.unwrap_err();
-        let used_pkgs_err = used_packages.unwrap_err();
-        pkgs_err.extend_one(used_pkgs_err);
-        return Err(pkgs_err);
-    }
+        let packages = packages_handle.join().map_err(|e| {
+            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
+        })?;
+        let used_packages = used_package_names_handle.join().map_err(|e| {
+            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
+        })?;
+        if packages.is_err() && used_packages.is_err() {
+            let mut pkgs_err = packages.unwrap_err();
+            let used_pkgs_err = used_packages.unwrap_err();
+            pkgs_err.extend_one(used_pkgs_err);
+            return Err(pkgs_err);
+        }
 
-    let packages = packages?;
-    let used_package_names = used_packages?;
+        let packages = packages?;
+        let used_package_names = used_packages?;
 
-    let mut filtered_packages = Vec::with_capacity(packages.capacity());
-    let filtered_packages_iter = packages
-        .into_iter()
-        .filter(|e| used_package_names.contains(&e.name));
-    filtered_packages.extend(filtered_packages_iter);
+        let mut filtered_packages = Vec::with_capacity(packages.capacity());
+        let filtered_packages_iter = packages
+            .into_iter()
+            .filter(|e| used_package_names.contains(&e.name));
+        filtered_packages.extend(filtered_packages_iter);
 
-    Ok(filtered_packages.into())
+        Ok(filtered_packages.into())
+    })
 }
