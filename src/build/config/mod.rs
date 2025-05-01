@@ -1,7 +1,8 @@
-//              Copyright Adam McKellar 2025
-// Distributed under the Boost Software License, Version 1.0.
-//         (See accompanying file LICENSE or copy at
-//          https://www.boost.org/LICENSE_1_0.txt)
+// Copyright Adam McKellar 2025
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #![doc = include_str!("../../../docs/build_config.md")]
 

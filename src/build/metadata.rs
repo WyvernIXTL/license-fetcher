@@ -1,8 +1,8 @@
-//               Copyright Adam McKellar 2024
-// Distributed under the Boost Software License, Version 1.0.
-//         (See accompanying file LICENSE or copy at
-//          https://www.boost.org/LICENSE_1_0.txt)
-
+// Copyright Adam McKellar 2024
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::cmp;
 
@@ -44,24 +44,23 @@ pub(super) struct MetadataResolveNode {
 #[derive(Deserialize, Debug)]
 pub(super) struct MetadataResolve {
     pub nodes: Vec<MetadataResolveNode>,
-    pub root: Option<String>
+    pub root: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 pub(super) struct Metadata {
     pub packages: Vec<MetadataPackage>,
-    pub resolve: MetadataResolve
+    pub resolve: MetadataResolve,
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     use serde_json::from_slice;
-    use std::fs::read;
-    use std::ffi::OsString;
     use std::env;
+    use std::ffi::OsString;
+    use std::fs::read;
 
     fn get_path() -> OsString {
         env::var_os("CARGO_MANIFEST_DIR").unwrap()
