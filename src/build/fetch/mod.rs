@@ -13,10 +13,8 @@ use error_stack::{Result, ResultExt};
 use log::{error, info, trace, warn};
 use regex_lite::Regex;
 
-mod cargo_folder;
 mod src_registry_folders;
 
-use cargo_folder::cargo_folder;
 use thiserror::Error;
 
 use crate::build::error::CPath;
@@ -70,6 +68,7 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
 
 pub(crate) fn licenses_text_from_cargo_src_folder(
     package_list: &mut PackageList,
+    cargo_home_dir: PathBuf,
 ) -> Result<(), LicenseFetchError> {
     let mut package_hash_map = HashMap::new();
     for p in package_list.iter_mut().filter(|p| p.license_text.is_none()) {
@@ -77,8 +76,7 @@ pub(crate) fn licenses_text_from_cargo_src_folder(
     }
 
     let mut src_folder_iterator =
-        src_registry_folders(cargo_folder().change_context(LicenseFetchError::CargoFolder)?)
-            .change_context(LicenseFetchError::RegistrySrc)?;
+        src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;
 
     let mut result: Result<(), LicenseFetchError> = Ok(());
 

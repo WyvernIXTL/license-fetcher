@@ -6,7 +6,7 @@
 
 #![doc = include_str!("../../../docs/build_config.md")]
 
-use std::{ops::Deref, path::PathBuf};
+use std::{fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
@@ -20,7 +20,7 @@ pub mod from_path;
 mod cargo_folder;
 
 /// Configures what backend is used for walking the registry source folder.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum FetchBackend {
     /// Use functions provided by the rusts standard library.
     ///
@@ -30,7 +30,7 @@ pub enum FetchBackend {
 }
 
 /// Configures what type of cache is used.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum CacheBackend {
     /// Serialize and compress to file.
     ///
@@ -43,7 +43,7 @@ pub enum CacheBackend {
 }
 
 /// Configure where the cache is saved.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum CacheSaveLocation {
     /// Save the cache in a global cache.
     ///
@@ -81,7 +81,7 @@ pub enum CacheSaveLocation {
 }
 
 /// Configures how the cache behaves during fetching.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum CacheBehavior {
     /// The first cache that is found is used.
     ///
@@ -104,7 +104,7 @@ pub enum CacheBehavior {
 /// This configuration enum is meant to be used with [CargoDirectiveList].
 ///
 /// [fetches metadata]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#manifest-options
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CargoDirective {
     /// Fetch metadata normally.
     Default,
@@ -112,6 +112,27 @@ pub enum CargoDirective {
     Locked,
     /// Fetch metadata with versions locked and offline.
     Frozen,
+}
+
+impl Into<&'static str> for CargoDirective {
+    fn into(self) -> &'static str {
+        match self {
+            Self::Default => "",
+            Self::Locked => "--locked",
+            Self::Frozen => "--frozen",
+        }
+    }
+}
+
+impl fmt::Display for CargoDirective {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let printable = match self {
+            Self::Default => "default",
+            Self::Locked => "locked",
+            Self::Frozen => "frozen",
+        };
+        write!(f, "{}", printable)
+    }
 }
 
 /// Configure how Cargo fetches metadata.
