@@ -4,13 +4,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{
-    collections::{HashMap, HashSet},
-    path::Path,
-};
+use std::path::Path;
 
 use command::exec_cargo;
 use error_stack::{Result, ResultExt};
+use fnv::{FnvHashMap, FnvHashSet};
 use metadata::{Metadata, MetadataResolveNode};
 use serde_json::from_slice;
 use thiserror::Error;
@@ -31,8 +29,8 @@ pub enum PkgListFromCargoMetadataError {
 }
 
 fn walk_dependencies<'a>(
-    used_dependencies: &mut HashSet<&'a String>,
-    dependencies: &'a HashMap<&String, &MetadataResolveNode>,
+    used_dependencies: &mut FnvHashSet<&'a String>,
+    dependencies: &'a FnvHashMap<&String, &MetadataResolveNode>,
     root: &String,
 ) {
     let package = match dependencies.get(root) {
@@ -71,8 +69,8 @@ where
         .attach_printable("Failed to resolve package id from output.")?;
     let dependencies = metadata_parsed.resolve.nodes;
 
-    let mut used_packages = HashSet::new(); // TODO: Check if there is a speed bump with Vec.
-    let dependencies_hash_map = HashMap::from_iter(dependencies.iter().map(|d| (&d.id, d))); // TODO: Check if there is a speed bump with Vec.
+    let mut used_packages = FnvHashSet::default(); // TODO: Check if there is a speed bump with Vec.
+    let dependencies_hash_map = FnvHashMap::from_iter(dependencies.iter().map(|d| (&d.id, d))); // TODO: Check if there is a speed bump with Vec.
 
     walk_dependencies(&mut used_packages, &dependencies_hash_map, &package_id);
 

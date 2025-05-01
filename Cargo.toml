@@ -25,6 +25,7 @@ exclude = [
 bincode = "2.0.1"
 directories = {version = "6.0.0", optional = true}
 error-stack = { version = "0.5.0", optional = true}
+fnv = { version = "1.0.7", optional = true }
 log = { version = "0.4.22", optional = true, features = ["kv", "kv_std"]}
 miniz_oxide = { version = "0.8.0", features = ["std"]}
 regex-lite = { version = "0.1.6", optional = true }
@@ -42,7 +43,7 @@ supports-color = "3.0.2"
 
 [features]
 default = []
-build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:thiserror", "dep:regex-lite", "dep:error-stack"]
+build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:thiserror", "dep:regex-lite", "dep:error-stack", "dep:fnv"]
 config_from_path = ["dep:toml"]
 
 
