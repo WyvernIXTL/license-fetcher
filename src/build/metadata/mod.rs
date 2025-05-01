@@ -23,9 +23,11 @@ mod metadata;
 #[derive(Debug, Clone, Copy, Error)]
 pub enum PkgListFromCargoMetadataError {
     #[error("Failed to execute `cargo metadata`.")]
-    ExecCargoError,
+    ExecCargo,
     #[error("Failed to parse output of `cargo metadata`.")]
-    ParseJsonError,
+    ParseJson,
+    #[error("Failed to parse `cargo` output to utf-8 string.")]
+    ParseString,
 }
 
 fn walk_dependencies<'a>(
@@ -53,19 +55,20 @@ fn package_list_from_cargo_metadata<P>(
 where
     P: AsRef<Path>,
 {
-    const ARGUMENTS: [&str; 5] = ["metadata", "--format-version", "1", "--color", "never"];
+    const ARGUMENTS: &'static [&'static str] =
+        &["metadata", "--format-version", "1", "--color", "never"];
 
     let output = exec_cargo(cargo, cargo_directives, manifest_dir, ARGUMENTS)
-        .change_context(PkgListFromCargoMetadataError::ExecCargoError)?;
+        .change_context(PkgListFromCargoMetadataError::ExecCargo)?;
 
     let metadata_parsed: Metadata =
-        from_slice(&output.stdout).change_context(PkgListFromCargoMetadataError::ParseJsonError)?;
+        from_slice(&output.stdout).change_context(PkgListFromCargoMetadataError::ParseJson)?;
 
     let packages = metadata_parsed.packages;
     let package_id = metadata_parsed
         .resolve
         .root
-        .ok_or(PkgListFromCargoMetadataError::ParseJsonError)
+        .ok_or(PkgListFromCargoMetadataError::ParseJson)
         .attach_printable("Failed to resolve package id from output.")?;
     let dependencies = metadata_parsed.resolve.nodes;
 
@@ -89,4 +92,37 @@ where
         })
         .collect::<Vec<Package>>()
         .into())
+}
+
+fn used_pkg_names_from_cargo_tree<P>(
+    cargo: P,
+    cargo_directives: &CargoDirectiveList,
+    manifest_dir: P,
+) -> Result<FnvHashSet<String>, PkgListFromCargoMetadataError>
+where
+    P: AsRef<Path>,
+{
+    const ARGUMENTS: &'static [&'static str] = &[
+        "tree",
+        "-e",
+        "normal",
+        "-f",
+        "{p}",
+        "--prefix",
+        "none",
+        "--color",
+        "never",
+        "--no-dedupe",
+    ];
+
+    let output = exec_cargo(cargo, cargo_directives, manifest_dir, ARGUMENTS)
+        .change_context(PkgListFromCargoMetadataError::ExecCargo)?;
+
+    Ok(String::from_utf8(output.stdout)
+        .change_context(PkgListFromCargoMetadataError::ParseString)?
+        .lines()
+        .map(|l| l.trim())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_owned())
+        .collect::<FnvHashSet<String>>())
 }
