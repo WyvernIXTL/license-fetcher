@@ -38,6 +38,8 @@ pub struct Package {
     pub repository: Option<String>,
     pub license_identifier: Option<String>,
     pub license_text: Option<String>,
+    restored_from_cache: bool,
+    is_root_pkg: bool,
 }
 
 impl Package {

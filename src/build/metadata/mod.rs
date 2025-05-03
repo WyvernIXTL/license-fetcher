@@ -85,15 +85,20 @@ where
     Ok(packages
         .into_iter()
         .filter(|e| used_packages.contains(&e.id))
-        .map(|package| Package {
-            license_text: None,
-            authors: package.authors,
-            license_identifier: package.license,
-            name: package.name,
-            version: package.version,
-            description: package.description,
-            homepage: package.homepage,
-            repository: package.repository,
+        .map(|package| {
+            let is_root = package.name.as_ref() == package_id;
+            Package {
+                license_text: None,
+                authors: package.authors,
+                license_identifier: package.license,
+                name: package.name,
+                version: package.version,
+                description: package.description,
+                homepage: package.homepage,
+                repository: package.repository,
+                restored_from_cache: false,
+                is_root_pkg: is_root,
+            }
         })
         .collect())
 }
@@ -165,6 +170,8 @@ pub fn package_list_from_cargo(
             .into_iter()
             .filter(|e| used_package_names.contains(&e.name));
         filtered_packages.extend(filtered_packages_iter);
+
+        debug_assert!(filtered_packages.iter().any(|e| e.is_root_pkg));
 
         Ok(filtered_packages.into())
     })
