@@ -112,8 +112,11 @@ mod test {
     fn test_from_path_with_file_path() -> Result<(), ConfigBuildError> {
         setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build()?;
-        assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
-        assert_eq!(conf.cargo_path, PathBuf::from("cargo"));
+        assert_eq!(
+            conf.metadata_config.manifest_dir,
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        );
+        assert_eq!(conf.metadata_config.cargo_path, PathBuf::from("cargo"));
 
         Ok(())
     }
@@ -122,8 +125,11 @@ mod test {
     fn test_from_path_with_dir_path() -> Result<(), ConfigBuildError> {
         setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build()?;
-        assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
-        assert_eq!(conf.cargo_path, PathBuf::from("cargo"));
+        assert_eq!(
+            conf.metadata_config.manifest_dir,
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        );
+        assert_eq!(conf.metadata_config.cargo_path, PathBuf::from("cargo"));
 
         Ok(())
     }

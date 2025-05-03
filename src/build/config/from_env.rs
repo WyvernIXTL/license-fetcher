@@ -80,8 +80,14 @@ mod test {
     fn test_config_from_env() -> Result<(), ConfigBuildError> {
         setup_test();
         let conf = ConfigBuilder::from_build_env()?.build()?;
-        assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
-        assert_eq!(conf.cargo_path, PathBuf::from(env!("CARGO")));
+        assert_eq!(
+            conf.metadata_config.manifest_dir,
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        );
+        assert_eq!(
+            conf.metadata_config.cargo_path,
+            PathBuf::from(env!("CARGO"))
+        );
 
         Ok(())
     }

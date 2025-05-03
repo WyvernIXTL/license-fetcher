@@ -141,26 +141,38 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
     }
 }
 
-/// Struct to configure the behavior of the license fetching.
+/// Struct to configure data that is needed to fetch metadata.
 #[derive(Debug, Clone)]
-pub struct Config {
+pub struct MetadataConfig {
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
     pub cargo_path: PathBuf,
-    /// Optional cargo home directory path.
+    /// Set Cargo directives for fetching metadata.
+    pub cargo_directives: CargoDirectiveList,
+}
+
+/// Configures the fetching of the license texts.
+#[derive(Debug, Clone)]
+pub struct FetchConfig {
+    // Optional cargo home directory path.
     ///
     /// By default cargo home is inferred from the `CARGO_HOME` environment variable, or if not set,
     /// the standard location at the users home folder `~/.cargo`.
     pub cargo_home_dir: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
     pub fetch_backend: FetchBackend,
-    /// Set Cargo directives for fetching metadata.
-    pub cargo_directives: CargoDirectiveList,
     /// Enables cache during license fetching.
     ///
     /// Setting this will use the already fetched licenses from prior runs.
     pub cache: bool,
+}
+
+/// Struct to configure the behavior of the license fetching.
+#[derive(Debug, Clone)]
+pub struct Config {
+    pub metadata_config: MetadataConfig,
+    pub fetching_config: FetchConfig,
 }
 
 /// Builder for Config struct.
@@ -222,21 +234,29 @@ impl ConfigBuilder {
 
     /// Builds the Config with all required fields.
     pub fn build(self) -> Result<Config, ConfigBuildError> {
-        Ok(Config {
+        let metadata_config = MetadataConfig {
             manifest_dir: self.manifest_dir.ok_or_else(|| {
                 Report::new(ConfigBuildError::UninitializedField)
                     .attach_printable("Field 'manifest_dir' is required but not set.")
             })?,
             cargo_path: self.cargo_path.unwrap_or_else(|| PathBuf::from("cargo")),
+            cargo_directives: self.cargo_directives.unwrap_or_default(),
+        };
+        let fetching_config = FetchConfig {
             cargo_home_dir: match self.cargo_home_dir {
                 Some(dir) => dir,
                 None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
             },
             fetch_backend: self.fetch_backend.unwrap_or_default(),
-            cargo_directives: self.cargo_directives.unwrap_or_default(),
+
             cache: self
                 .cache
                 .unwrap_or_else(|| var_os("CARGO_CFG_FEATURE").is_some()),
+        };
+
+        Ok(Config {
+            metadata_config,
+            fetching_config,
         })
     }
 }

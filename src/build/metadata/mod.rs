@@ -4,10 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{
-    path::{Path, PathBuf},
-    thread::scope,
-};
+use std::{path::Path, thread::scope};
 
 use command::exec_cargo;
 use error_stack::{report, Result, ResultExt};
@@ -18,7 +15,7 @@ use thiserror::Error;
 
 use crate::{Package, PackageList};
 
-use super::config::CargoDirectiveList;
+use super::config::{CargoDirectiveList, MetadataConfig};
 
 mod command;
 mod metadata;
@@ -136,18 +133,24 @@ where
         .collect::<FnvHashSet<String>>())
 }
 
-pub fn package_list(
-    cargo: PathBuf,
-    cargo_directives: CargoDirectiveList,
-    manifest_dir: PathBuf,
-) -> Result<PackageList, PkgListFromCargoMetadataError> {
+pub fn package_list(config: MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {
-        let packages_handle = scope
-            .spawn(|| package_list_from_cargo_metadata(&cargo, &cargo_directives, &manifest_dir));
+        let packages_handle = scope.spawn(|| {
+            package_list_from_cargo_metadata(
+                &config.cargo_path,
+                &config.cargo_directives,
+                &config.manifest_dir,
+            )
+        });
 
         // TODO: Check if not spawning this thread makes a difference.
-        let used_package_names_handle = scope
-            .spawn(|| used_pkg_names_from_cargo_tree(&cargo, &cargo_directives, &manifest_dir));
+        let used_package_names_handle = scope.spawn(|| {
+            used_pkg_names_from_cargo_tree(
+                &config.cargo_path,
+                &config.cargo_directives,
+                &config.manifest_dir,
+            )
+        });
 
         let packages = packages_handle.join().map_err(|e| {
             report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
