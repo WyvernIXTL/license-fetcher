@@ -136,7 +136,7 @@ where
         .collect::<FnvHashSet<String>>())
 }
 
-pub fn package_list_from_cargo(
+pub fn package_list(
     cargo: PathBuf,
     cargo_directives: CargoDirectiveList,
     manifest_dir: PathBuf,

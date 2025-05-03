@@ -18,7 +18,6 @@ use crate::build::error::CEnvVar;
 use super::{ConfigBuildError, ConfigBuilder};
 
 struct MetadataEnv {
-    package_name: String,
     manifest_dir: PathBuf,
     cargo_path: PathBuf,
 }
@@ -26,7 +25,6 @@ struct MetadataEnv {
 impl MetadataEnv {
     fn new() -> Result<Self, VarError> {
         Ok(Self {
-            package_name: string_from_env("CARGO_PKG_NAME")?,
             manifest_dir: path_buf_from_env("CARGO_MANIFEST_DIR")?,
             cargo_path: path_buf_from_env("CARGO")?,
         })
@@ -57,7 +55,6 @@ impl ConfigBuilder {
         let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
 
         let builder = self
-            .package_name(meta.package_name)
             .manifest_dir(meta.manifest_dir)
             .cargo_path(meta.cargo_path);
 
@@ -83,7 +80,6 @@ mod test {
     fn test_config_from_env() -> Result<(), ConfigBuildError> {
         setup_test();
         let conf = ConfigBuilder::from_build_env()?.build()?;
-        assert_eq!(conf.package_name, env!("CARGO_PKG_NAME"));
         assert_eq!(conf.manifest_dir, PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         assert_eq!(conf.cargo_path, PathBuf::from(env!("CARGO")));
 

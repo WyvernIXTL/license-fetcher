@@ -33,7 +33,6 @@ serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
 simplelog = { version = "0.12.2", optional = true, default-features = false}
 thiserror = { version = "2.0.12", optional = true }
-toml = { version = "0.8.21", optional = true, default-features = false, features = ["parse"]}
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -44,7 +43,6 @@ supports-color = "3.0.2"
 [features]
 default = []
 build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:thiserror", "dep:regex-lite", "dep:error-stack", "dep:fnv"]
-config_from_path = ["dep:toml"]
 
 
 [[bench]]

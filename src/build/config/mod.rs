@@ -13,8 +13,6 @@ use error_stack::{Report, Result, ResultExt};
 use thiserror::Error;
 
 pub mod from_env;
-
-#[cfg(feature = "config_from_path")]
 pub mod from_path;
 
 mod cargo_folder;
@@ -216,8 +214,6 @@ impl From<Vec<CargoDirective>> for CargoDirectiveList {
 /// Struct to configure the behavior of the license fetching.
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// Name (underscore name / module name) of the package that you are fetching licenses for.
-    pub package_name: String,
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
@@ -242,7 +238,6 @@ pub struct Config {
 /// Builder for Config struct.
 #[derive(Debug, Clone, Default)]
 pub struct ConfigBuilder {
-    package_name: Option<String>,
     manifest_dir: Option<PathBuf>,
     cargo_path: Option<PathBuf>,
     cargo_home_dir: Option<PathBuf>,
@@ -254,12 +249,6 @@ pub struct ConfigBuilder {
 }
 
 impl ConfigBuilder {
-    /// Sets the package name.
-    pub fn package_name(mut self, name: String) -> Self {
-        self.package_name = Some(name);
-        self
-    }
-
     /// Sets the manifest directory path.
     pub fn manifest_dir(mut self, dir: PathBuf) -> Self {
         self.manifest_dir = Some(dir);
@@ -311,10 +300,6 @@ impl ConfigBuilder {
     /// Builds the Config with all required fields.
     pub fn build(self) -> Result<Config, ConfigBuildError> {
         Ok(Config {
-            package_name: self.package_name.ok_or_else(|| {
-                Report::new(ConfigBuildError::UninitializedField)
-                    .attach_printable("Field 'package_name' is required but not set.")
-            })?,
             manifest_dir: self.manifest_dir.ok_or_else(|| {
                 Report::new(ConfigBuildError::UninitializedField)
                     .attach_printable("Field 'manifest_dir' is required but not set.")

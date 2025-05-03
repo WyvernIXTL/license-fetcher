@@ -23,7 +23,7 @@ mod debug;
 /// Errors that might appear during build.
 pub mod error;
 mod fetch;
-mod metadata;
+pub mod metadata;
 
 use crate::*;
 use build::metadata::*;
