@@ -80,9 +80,10 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
 }
 
 impl ConfigBuilder {
-    /// Fills in needed values from a manifest (`Cargo.toml`).
+    /// Sets [manifest_dir](Self::manifest_dir) from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
-    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
+    /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
+    /// Essentially a sanity check.
     pub fn with_path(self, manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
         let manifest_dir =
             manifest_dir(manifest_path.into()).change_context(ConfigBuildError::FailedFromPath)?;
@@ -92,9 +93,10 @@ impl ConfigBuilder {
         Ok(builder)
     }
 
-    /// New builder with needed values being filled from a manifest (`Cargo.toml`).
+    /// New builder with [manifest_dir](Self::manifest_dir) being set from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
-    /// Expects either a path directly to the `Cargo.toml` file or to it's parent directory.
+    /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
+    /// Essentially a sanity check.
     pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
         Ok(ConfigBuilder::default().with_path(manifest_path)?)
     }

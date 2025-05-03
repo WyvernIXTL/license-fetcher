@@ -6,7 +6,7 @@
 
 #![doc = include_str!("../../../docs/build_config.md")]
 
-use std::{fmt, ops::Deref, path::PathBuf};
+use std::{env::var_os, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
@@ -25,76 +25,6 @@ pub enum FetchBackend {
     /// This is fairly performant and does not need an external dependency.
     #[default]
     Std,
-}
-
-/// Configures what type of cache is used.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum CacheBackend {
-    /// Serialize and compress to file.
-    ///
-    /// Use the default naive approach of saving all the cached licenses at once
-    /// and reading the all again at the next build step.
-    ///
-    /// This approach brings the advantage of not pulling in more dependencies.
-    #[default]
-    BincodeZip,
-}
-
-/// Configure where the cache is saved.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum CacheSaveLocation {
-    /// Save the cache in a global cache.
-    ///
-    /// This results in a good performance, when using `license-fetcher` in many projects.
-    ///
-    /// Uses [ProjectDirs::cache_dir](directories::ProjectDirs::cache_dir) for the location.
-    /// When compiling multiple projects at the same time and a [CacheBackend] is used,
-    /// that does not support concurrent reads and writes, then there might be some minor waiting
-    /// on file locks or some entries might be missing in the cache, as it was overwritten.
-    #[default]
-    Global,
-    /// Uses the [`OUT_DIR`] for caching.
-    ///
-    /// Panics if [`OUT_DIR`] is not set!
-    ///
-    /// This should only be used in the context of fetching licenses during the building step and embedding them into your program.
-    ///
-    /// [`OUT_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
-    Local,
-    /// Writes the cache into [`.license-fetcher/CARGO_MANIFEST_DIR`].
-    ///
-    /// Panics if [`CARGO_MANIFEST_DIR`] is not set!
-    ///
-    /// This is very useful if you wish to supply this cache with your sources. This then guarantees that
-    /// builds never fail due errors during license fetching like `cargo` not being in path, or not having permissions to read the `~/.cargo` folder,
-    /// or a file erroring and one of the many unwraps being called. That is if the cache was build with every operating system you are targeting.
-    ///
-    /// **Be sure to track said directory with [`git lfs`](https://git-lfs.com/)!**
-    ///
-    /// [`CARGO_MANIFEST_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
-    /// [`.license-fetcher/CARGO_MANIFEST_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
-    Repository,
-    /// Disables writing cache.
-    None,
-}
-
-/// Configures how the cache behaves during fetching.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum CacheBehavior {
-    /// The first cache that is found is used.
-    ///
-    /// The following order applies for the search:
-    /// 1. [Repository](CacheSaveLocation::Repository) *(only if `CARGO_MANIFEST_DIR` env var is set)*
-    /// 2. [Local](CacheSaveLocation::Local) *(only if `OUT_DIR` env var is set)*
-    /// 3. [Global](CacheSaveLocation::Global)
-    #[default]
-    CheckAllTakeFirst,
-    /// Checks only global cache.
-    ///
-    /// Useful if you do not intend to fetch licenses during a build step.
-    Global,
-    /// Checking for cache is disabled.
-    Disabled,
 }
 
 /// Configures how Cargo [fetches metadata].
@@ -225,14 +155,12 @@ pub struct Config {
     pub cargo_home_dir: PathBuf,
     /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
     pub fetch_backend: FetchBackend,
-    /// Set the cache type.
-    pub cache_backend: CacheBackend,
-    /// Set the location where the cache should be saved to.
-    pub cache_save_location: CacheSaveLocation,
     /// Set Cargo directives for fetching metadata.
     pub cargo_directives: CargoDirectiveList,
-    /// Set cache behavior during fetching.
-    pub cache_behavior: CacheBehavior,
+    /// Enables cache during license fetching.
+    ///
+    /// Setting this will use the already fetched licenses from prior runs.
+    pub cache: bool,
 }
 
 /// Builder for Config struct.
@@ -242,10 +170,8 @@ pub struct ConfigBuilder {
     cargo_path: Option<PathBuf>,
     cargo_home_dir: Option<PathBuf>,
     fetch_backend: Option<FetchBackend>,
-    cache_backend: Option<CacheBackend>,
-    cache_save_location: Option<CacheSaveLocation>,
     cargo_directives: Option<CargoDirectiveList>,
-    cache_behavior: Option<CacheBehavior>,
+    cache: Option<bool>,
 }
 
 impl ConfigBuilder {
@@ -273,27 +199,24 @@ impl ConfigBuilder {
         self
     }
 
-    /// Sets the cache backend.
-    pub fn cache_backend(mut self, backend: CacheBackend) -> Self {
-        self.cache_backend = Some(backend);
-        self
-    }
-
-    /// Sets the cache save location.
-    pub fn cache_save_location(mut self, location: CacheSaveLocation) -> Self {
-        self.cache_save_location = Some(location);
-        self
-    }
-
     /// Sets the cargo directives.
     pub fn cargo_directives(mut self, directives: CargoDirectiveList) -> Self {
         self.cargo_directives = Some(directives);
         self
     }
 
-    /// Sets the cache behavior.
-    pub fn cache_behavior(mut self, behavior: CacheBehavior) -> Self {
-        self.cache_behavior = Some(behavior);
+    /// Enables cache during license fetching.
+    ///
+    /// Setting this will use the already fetched licenses from prior runs.
+    ///
+    /// By default, there is a detection step with environment variables, that sets
+    /// cache to `true` if this code is run inside a build script and `false` otherwise.
+    ///
+    /// [`CARGO_CFG_FEATURE`] is used.
+    ///
+    /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+    pub fn cache(mut self, cache: bool) -> Self {
+        self.cache = Some(cache);
         self
     }
 
@@ -310,10 +233,10 @@ impl ConfigBuilder {
                 None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
             },
             fetch_backend: self.fetch_backend.unwrap_or_default(),
-            cache_backend: self.cache_backend.unwrap_or_default(),
-            cache_save_location: self.cache_save_location.unwrap_or_default(),
             cargo_directives: self.cargo_directives.unwrap_or_default(),
-            cache_behavior: self.cache_behavior.unwrap_or_default(),
+            cache: self
+                .cache
+                .unwrap_or_else(|| var_os("CARGO_CFG_FEATURE").is_some()),
         })
     }
 }
