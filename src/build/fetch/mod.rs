@@ -39,10 +39,33 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
+    // TODO: Split this up.
     let license_text = read_dir(&path)
         .attach_printable_lazy(|| CPath::from(path))?
         .filter_map(|e| e.ok())
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
+        .filter_map(|e| {
+            if e.file_type().map_or(false, |e| e.is_dir()) {
+                Some(
+                    read_dir(e.path())
+                        .map_err(|err| {
+                            let path = e.path();
+                            error!(err:err, path:debug; "Failed reading sub license directory.")
+                        })
+                        .ok()?
+                        .into_iter()
+                        .filter_map(|e| e.ok())
+                        .filter(|e| {
+                            LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy())
+                        })
+                        .collect(),
+                )
+            } else {
+                Some(vec![e])
+            }
+        })
+        .map(|e| e.into_iter())
+        .flatten()
         .filter(|e| e.file_type().map_or(false, |e| e.is_file()))
         .filter_map(|e| {
             read_to_string(e.path())
