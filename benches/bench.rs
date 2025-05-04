@@ -1,11 +1,13 @@
 use criterion::{criterion_group, criterion_main, Criterion};
+use license_fetcher::build::config::ConfigBuilder;
 
 fn test_fetch_licenses_test() {
-    let _a = license_fetcher::build::generate_package_list_with_licenses_without_env_calls(
-        Some(env!("CARGO").into()),
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate").into(),
-        "test_crate".to_owned(),
-    );
+    let config = ConfigBuilder::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
+        .unwrap()
+        .build()
+        .unwrap();
+
+    let _a = license_fetcher::build::package_list_with_licenses(config);
 }
 
 fn bench_fetch_licenses(c: &mut Criterion) {
