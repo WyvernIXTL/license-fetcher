@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use config::Config;
 use miniz_oxide::deflate::compress_to_vec;
 use std::collections::{BTreeSet, HashSet};
 use std::env::{var, var_os};
@@ -12,6 +13,7 @@ use std::fs::write;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::Instant;
+use thiserror::Error;
 
 use log::info;
 use serde_json::from_slice;
@@ -24,165 +26,18 @@ mod debug;
 /// Errors that might appear during build.
 pub mod error;
 mod fetch;
+
+/// Logic for reading metadata of a package.
 pub mod metadata;
 
 use crate::*;
-use build::metadata::*;
 use fetch::{license_text_from_folder, licenses_text_from_cargo_src_folder};
 
-fn walk_dependencies<'a>(
-    used_dependencies: &mut BTreeSet<&'a String>,
-    dependencies: &'a Vec<MetadataResolveNode>,
-    root: &String,
-) {
-    let package = match dependencies.iter().find(|&dep| dep.id == *root) {
-        Some(pack) => pack,
-        None => return,
-    };
-    used_dependencies.insert(&package.id);
-    for dep in package.deps.iter() {
-        if dep.dep_kinds.iter().map(|d| &d.kind).any(|o| o.is_none()) {
-            walk_dependencies(used_dependencies, dependencies, &dep.pkg);
-        }
-    }
-}
+#[derive(Debug, Clone, Copy, Error)]
+pub enum BuildError {}
 
-fn generate_package_list(cargo_path: OsString, manifest_dir_path: OsString) -> PackageList {
-    let mut metadata_output = Command::new(&cargo_path)
-        .current_dir(&manifest_dir_path)
-        .args([
-            "metadata",
-            "--format-version",
-            "1",
-            "--frozen",
-            "--color",
-            "never",
-        ])
-        .output()
-        .unwrap();
-
-    if !metadata_output.status.success() {
-        metadata_output = Command::new(&cargo_path)
-            .current_dir(&manifest_dir_path)
-            .args(["metadata", "--format-version", "1", "--color", "never"])
-            .output()
-            .unwrap();
-    }
-
-    if !metadata_output.status.success() {
-        panic!(
-            "Failed executing cargo metadata with:\n{}",
-            String::from_utf8_lossy(&metadata_output.stderr)
-        );
-    }
-
-    let metadata_parsed: Metadata = from_slice(&metadata_output.stdout).unwrap();
-
-    let packages = metadata_parsed.packages;
-    let package_id = metadata_parsed.resolve.root.unwrap();
-    let dependencies = metadata_parsed.resolve.nodes;
-
-    let mut used_packages = BTreeSet::new();
-
-    walk_dependencies(&mut used_packages, &dependencies, &package_id);
-
-    // Add dependencies:
-
-    let mut package_list = vec![];
-
-    for package in packages {
-        if used_packages.contains(&package.id) {
-            package_list.push(Package {
-                license_text: None,
-                authors: package.authors,
-                license_identifier: package.license,
-                name: package.name,
-                version: package.version,
-                description: package.description,
-                homepage: package.homepage,
-                repository: package.repository,
-            });
-        }
-    }
-
-    PackageList(package_list)
-}
-
-fn cargo_tree(cargo_path: OsString, manifest_dir_path: OsString) -> Option<String> {
-    let mut output = Command::new(&cargo_path)
-        .current_dir(&manifest_dir_path)
-        .args([
-            "tree",
-            "-e",
-            "normal",
-            "-f",
-            "{p}",
-            "--prefix",
-            "none",
-            "--frozen",
-            "--color",
-            "never",
-            "--no-dedupe",
-        ])
-        .output()
-        .unwrap();
-
-    if !output.status.success() {
-        output = Command::new(&cargo_path)
-            .current_dir(&manifest_dir_path)
-            .args([
-                "tree",
-                "-e",
-                "normal",
-                "-f",
-                "{p}",
-                "--prefix",
-                "none",
-                "--color",
-                "never",
-                "--no-dedupe",
-            ])
-            .output()
-            .unwrap();
-    }
-
-    if !output.status.success() {
-        log::error!(
-            "Failed executing cargo tree with:\n{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        return None;
-    }
-
-    Some(String::from_utf8(output.stdout).unwrap())
-}
-
-/// Filters [PackageList] with output of `cargo tree`.
-///
-/// Workaround for `cargo metadata`'s inability to differentiate between dependencies
-/// of packages that are used in build scripts and normally.
-fn filter_package_list_with_cargo_tree(
-    package_list: PackageList,
-    cargo_tree_output: String,
-) -> PackageList {
-    let mut used_package_set = HashSet::new();
-
-    for package in cargo_tree_output.lines() {
-        let mut split_line_iter = package.split_whitespace();
-        if let Some(s) = split_line_iter.next() {
-            used_package_set.insert(s.to_owned());
-        }
-    }
-
-    let mut filtered_package_list = PackageList(vec![]);
-
-    for pkg in package_list.iter() {
-        if used_package_set.contains(&pkg.name) {
-            filtered_package_list.push(pkg.clone());
-        }
-    }
-
-    filtered_package_list
+pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildError> {
+    todo!()
 }
 
 /// Generates a package list with package name, authors and license text.

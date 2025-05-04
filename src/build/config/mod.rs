@@ -6,7 +6,7 @@
 
 #![doc = include_str!("../../../docs/build_config.md")]
 
-use std::{env::var_os, fmt, ops::Deref, path::PathBuf};
+use std::{env::var_os, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
@@ -150,6 +150,8 @@ pub struct MetadataConfig {
     pub cargo_path: PathBuf,
     /// Set Cargo directives for fetching metadata.
     pub cargo_directives: CargoDirectiveList,
+    /// Set enabled features used when detecting package metadata.
+    pub enabled_features: Option<OsString>,
 }
 
 /// Configures the fetching of the license texts.
@@ -184,6 +186,7 @@ pub struct ConfigBuilder {
     fetch_backend: Option<FetchBackend>,
     cargo_directives: Option<CargoDirectiveList>,
     cache: Option<bool>,
+    enabled_features: Option<OsString>,
 }
 
 impl ConfigBuilder {
@@ -221,7 +224,7 @@ impl ConfigBuilder {
     ///
     /// Setting this will use the already fetched licenses from prior runs.
     ///
-    /// By default, there is a detection step with environment variables, that sets
+    ///  If not set, the builder defaults to a detection step with environment variables, that sets
     /// cache to `true` if this code is run inside a build script and `false` otherwise.
     ///
     /// [`CARGO_CFG_FEATURE`] is used.
@@ -229,6 +232,19 @@ impl ConfigBuilder {
     /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
     pub fn cache(mut self, cache: bool) -> Self {
         self.cache = Some(cache);
+        self
+    }
+
+    /// Set features used explicitly.
+    ///
+    /// The format is a comma separated list of features described [here].
+    ///
+    /// If not set and inside a build script (`build.rs`), the builder defaults to features enabled via the [`CARGO_CFG_FEATURE`] environment variable.
+    ///
+    /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+    /// [here]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#feature-selection
+    pub fn enabled_features(mut self, features: OsString) -> Self {
+        self.enabled_features = Some(features);
         self
     }
 
@@ -241,6 +257,9 @@ impl ConfigBuilder {
             })?,
             cargo_path: self.cargo_path.unwrap_or_else(|| PathBuf::from("cargo")),
             cargo_directives: self.cargo_directives.unwrap_or_default(),
+            enabled_features: self
+                .enabled_features
+                .or_else(|| var_os("CARGO_CFG_FEATURE")),
         };
         let fetching_config = FetchConfig {
             cargo_home_dir: match self.cargo_home_dir {

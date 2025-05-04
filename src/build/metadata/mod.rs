@@ -135,6 +135,15 @@ where
         .collect::<FnvHashSet<String>>())
 }
 
+/// Get a list of dependencies.
+///
+/// [`cargo metadata`] and [`cargo tree`] are use in combination to get all used dependencies and their metadata.
+///
+/// (The reason for using `cargo tree` as well is, that I had some issues at some time, with `cargo metadata`
+/// including unused dependencies. I am not sure why this was the case, as I am failing to reproduce this problem currently.)
+///
+/// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
+/// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 pub fn package_list(config: MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {
         let packages_handle = scope.spawn(|| {
