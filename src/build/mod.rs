@@ -4,19 +4,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use config::Config;
-use miniz_oxide::deflate::compress_to_vec;
-use std::collections::{BTreeSet, HashSet};
-use std::env::{var, var_os};
-use std::ffi::OsString;
+use std::env::var_os;
 use std::fs::write;
-use std::path::PathBuf;
-use std::process::Command;
 use std::time::Instant;
-use thiserror::Error;
-
-use log::info;
-use serde_json::from_slice;
 
 mod cache;
 /// Configuration structs and builders.
@@ -30,108 +20,68 @@ mod fetch;
 /// Logic for reading metadata of a package.
 pub mod metadata;
 
+use cache::{populate_with_cache, CacheError};
+use config::Config;
+use error_stack::Result;
+use error_stack::ResultExt;
+use fetch::license_text_from_folder;
+use log::{error, info, warn};
+use metadata::package_list;
+use miniz_oxide::deflate::compress_to_vec;
+use thiserror::Error;
+
 use crate::*;
-use fetch::{license_text_from_folder, licenses_text_from_cargo_src_folder};
+use fetch::licenses_text_from_cargo_src_folder;
 
 #[derive(Debug, Clone, Copy, Error)]
-pub enum BuildError {}
-
-pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildError> {
-    todo!()
+pub enum BuildError {
+    #[error("Failed to fetch metadata and generate a package list.")]
+    FailedMetadataFetching,
+    #[error("Failed loading cache with a read error.")]
+    CacheReadError,
+    #[error("Failed fetching licenses from cargo src folders.")]
+    FailedLicenseFetch,
+    #[error("Unexpected error. (ꞋꞋŏ_ŏ)")]
+    Unexpected,
 }
 
 /// Generates a package list with package name, authors and license text.
 ///
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
-/// This function is not dependant on environment variables and thus also useful outside of build scripts.
-///
-/// ### Arguments
-///
-/// * **cargo_path** - Absolute path to cargo executable. If omitted, tries to fetch the path from `PATH`.
-/// * **manifest_dir_path** - Relative or absolute path to manifest dir.
-/// * **this_package_name** - Name of the package. `cargo metadata` does not disclose the name, but it is needed for parsing the used licenses.
-///
-/// ### Inner Workings
-///
-/// This function:
-/// 1. Calls `cargo metadata --frozen`.
-/// 2. Traverses all dependencies not marked as `build` or as `dev` dependencies and writes the metadata like name and version to a [PackageList].
-/// 3. Calls `cargo tree -e normal --frozen`.
-/// 4. Filters the [PackageList] from step 2. to only contain crates / packages, that `cargo tree` outputted. (This is to omit crates, that are not used.)
-/// 5. Licenses are fetched from the subfolders of the `~/.cargo/registry/src` folder, by checking the name and the license version of the crates contained in the [PackageList] against the folders names in said folders.
-/// 6. The root crate / package is put at index 0 and all other crates / packages are sorted by their name and version.
-///
-/// If the executions of the `cargo` commands error and if the `frozen` flag is not set, `cargo` is executed without the `--frozen` argument and is free to write to `Cargo.lock`.
-pub fn generate_package_list_with_licenses_without_env_calls(
-    cargo_path: Option<OsString>,
-    manifest_dir_path: OsString,
-    this_package_name: String,
-) -> PackageList {
-    let cargo_path = cargo_path.unwrap_or_else(|| OsString::from("cargo"));
+pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildError> {
+    let mut package_list =
+        package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
 
-    let cargo_tree_handle = {
-        let cargo_path = cargo_path.clone();
-        let manifest_dir_path = manifest_dir_path.clone();
-        std::thread::spawn(move || cargo_tree(cargo_path, manifest_dir_path))
-    };
-
-    let mut package_list = generate_package_list(cargo_path.clone(), manifest_dir_path.clone());
-
-    if let Some(output) = cargo_tree_handle
-        .join()
-        .expect("Failed executing cargo tree.")
-    {
-        package_list = filter_package_list_with_cargo_tree(package_list, output);
+    if config.fetching_config.cache {
+        if let Err(err) = populate_with_cache(&mut package_list) {
+            match err.current_context() {
+                CacheError::Invalid => {
+                    error!(err:%; "Cache is invalid. Skipping cache.");
+                }
+                CacheError::NotBuildScript => {
+                    warn!(err:%; "Loading licenses from cache is not available for non build script environments.")
+                }
+                CacheError::ReadError => return Err(err.change_context(BuildError::CacheReadError)),
+            }
+        }
     }
 
-    licenses_text_from_cargo_src_folder(&mut package_list).unwrap();
+    licenses_text_from_cargo_src_folder(&mut package_list, config.fetching_config.cargo_home_dir)
+        .change_context(BuildError::FailedLicenseFetch)?;
 
-    // Put root crate at front.
-    let this_package_index = package_list
+    let root_pos = package_list
         .iter()
-        .position(|e| e.name == this_package_name)
-        .unwrap();
-    package_list.swap(this_package_index, 0);
-    package_list[0].license_text =
-        license_text_from_folder(&PathBuf::from(manifest_dir_path)).unwrap();
+        .position(|e| e.is_root_pkg)
+        .ok_or(BuildError::Unexpected)
+        .attach_printable_lazy(|| "Root package is not in package list.")?;
 
+    package_list.swap(0, root_pos);
     package_list[1..].sort();
 
-    package_list
-}
+    package_list[0].license_text = license_text_from_folder(&config.metadata_config.manifest_dir)
+        .change_context(BuildError::FailedLicenseFetch)?;
 
-/// Generates a package list with package name, authors and license text. Uses environment variables supplied by cargo during build.
-///
-/// This functions usage is in your cargo build script (`build.rs`), that is being run during compilation of your program.
-///
-/// Uses the [generate_package_list_with_licenses_without_env_calls] function under the hood.
-/// The remaining arguments are fetched via the environment variables that cargo sets during compilation:
-/// * `CARGO` - The path to the `cargo` executable that compiled this code.
-/// * `CARGO_MANIFEST_DIR` - The path to the directory that contains the `Cargo.toml` that this code is compiled for.
-/// * `CARGO_PKG_NAME` - The package name of the package this code is compiled for.
-///
-/// # Example
-/// In `build.rs`:
-/// ```no_run
-/// use license_fetcher::build::generate_package_list_with_licenses;
-///
-/// fn main() {
-///     generate_package_list_with_licenses().write();
-///     println!("cargo::rerun-if-changed=build.rs");
-///     println!("cargo::rerun-if-changed=Cargo.lock");
-///     println!("cargo::rerun-if-changed=Cargo.toml");
-/// }
-/// ```
-pub fn generate_package_list_with_licenses() -> PackageList {
-    let cargo_path = var_os("CARGO").unwrap();
-    let manifest_dir_path = var_os("CARGO_MANIFEST_DIR").unwrap();
-    let this_package_name = var("CARGO_PKG_NAME").unwrap();
-
-    generate_package_list_with_licenses_without_env_calls(
-        Some(cargo_path),
-        manifest_dir_path,
-        this_package_name,
-    )
+    Ok(package_list)
 }
 
 impl PackageList {

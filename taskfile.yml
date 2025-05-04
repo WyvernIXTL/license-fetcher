@@ -15,7 +15,7 @@ tasks:
       - test
       - t
     cmds:
-      - cargo test -F build,config_from_path
+      - cargo test -F build
 
   test:check:
     desc: call cargo check on all applicable features
@@ -23,7 +23,6 @@ tasks:
       - check
       - c
     cmds:
-      - cargo check -F build,config_from_path
       - cargo check -F build
       - cargo check
     

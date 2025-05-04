@@ -23,8 +23,6 @@ use src_registry_folders::src_registry_folders;
 
 #[derive(Debug, Clone, Copy, Error)]
 pub enum LicenseFetchError {
-    #[error("Failed to infer the cargo folders location.")]
-    CargoFolder,
     #[error("Failed to infer the registry src folder location.")]
     RegistrySrc,
     #[error("Failure during the fetching of licenses for a package.")]

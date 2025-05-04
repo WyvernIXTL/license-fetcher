@@ -5,11 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::env::VarError;
-use std::{
-    env::{var, var_os},
-    ffi::OsStr,
-    path::PathBuf,
-};
+use std::{env::var_os, ffi::OsStr, path::PathBuf};
 
 use error_stack::{Result, ResultExt};
 
@@ -37,13 +33,6 @@ fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, VarError> {
         .attach_printable_lazy(|| CEnvVar::from(env))?;
 
     Ok(PathBuf::from(env_value))
-}
-
-fn string_from_env<K>(env: K) -> Result<String, VarError>
-where
-    K: AsRef<OsStr>,
-{
-    Ok(var(&env).attach_printable_lazy(|| CEnvVar::from(env))?)
 }
 
 impl ConfigBuilder {

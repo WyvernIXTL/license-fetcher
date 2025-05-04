@@ -4,12 +4,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::thread::scope;
+use std::{sync::LazyLock, thread::scope};
 
 use command::exec_cargo;
 use error_stack::{report, Result, ResultExt};
 use fnv::{FnvHashMap, FnvHashSet};
 use metadata::{Metadata, MetadataResolveNode};
+use regex_lite::Regex;
 use serde_json::from_slice;
 use thiserror::Error;
 
@@ -30,6 +31,8 @@ pub enum PkgListFromCargoMetadataError {
     ParseString,
     #[error("Error occurred with thread.")]
     Thread,
+    #[error("Failed to parse package id to package name.")]
+    PackageNameParseError,
 }
 
 fn walk_dependencies<'a>(
@@ -46,6 +49,22 @@ fn walk_dependencies<'a>(
         if dep.dep_kinds.iter().map(|d| &d.kind).any(|o| o.is_none()) {
             walk_dependencies(used_dependencies, dependencies, &dep.pkg);
         }
+    }
+}
+
+fn extract_package_name_from_id(
+    package_id: &String,
+) -> Result<String, PkgListFromCargoMetadataError> {
+    static PARSE_REGEX: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r".*?\/(?<name>[a-z\-\_]+)#[\d\.]+").unwrap());
+
+    if let Some(caps) = PARSE_REGEX.captures(&package_id) {
+        Ok(caps["name"].to_owned())
+    } else {
+        Err(
+            report!(PkgListFromCargoMetadataError::PackageNameParseError)
+                .attach_printable(format!("package id: {}", package_id)),
+        )
     }
 }
 
@@ -74,11 +93,13 @@ fn package_list_from_cargo_metadata(
 
     walk_dependencies(&mut used_packages, &dependencies_hash_map, &package_id);
 
+    let root_package_name = extract_package_name_from_id(&package_id)?;
+
     Ok(packages
         .into_iter()
         .filter(|e| used_packages.contains(&e.id))
         .map(|package| {
-            let is_root = package.name.as_ref() == package_id;
+            let is_root = package.name.as_ref() == root_package_name;
             let name_version = format!("{}-{}", package.name, package.version);
             Package {
                 license_text: None,
@@ -121,6 +142,7 @@ fn used_pkg_names_from_cargo_tree(
         .lines()
         .map(|l| l.trim())
         .filter(|s| !s.is_empty())
+        .map(|e| e.split(" ").next().unwrap_or_else(|| e))
         .map(|s| s.to_owned())
         .collect::<FnvHashSet<String>>())
 }
@@ -134,12 +156,12 @@ fn used_pkg_names_from_cargo_tree(
 ///
 /// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
-pub fn package_list(config: MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
+pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {
-        let packages_handle = scope.spawn(|| package_list_from_cargo_metadata(&config));
+        let packages_handle = scope.spawn(|| package_list_from_cargo_metadata(config));
 
         // TODO: Check if not spawning this thread makes a difference.
-        let used_package_names_handle = scope.spawn(|| used_pkg_names_from_cargo_tree(&config));
+        let used_package_names_handle = scope.spawn(|| used_pkg_names_from_cargo_tree(config));
 
         let packages = packages_handle.join().map_err(|e| {
             report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
@@ -167,4 +189,16 @@ pub fn package_list(config: MetadataConfig) -> Result<PackageList, PkgListFromCa
 
         Ok(filtered_packages.into())
     })
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_extract_package_name_from_id() {
+        let pkg_id = "path+file:///M:/DEV/Projects/Rust/projects/license-fetcher#0.7.3".to_owned();
+        let pkg_name = extract_package_name_from_id(&pkg_id).unwrap();
+        assert_eq!(pkg_name, "license-fetcher");
+    }
 }

@@ -178,6 +178,17 @@ pub struct Config {
 }
 
 /// Builder for Config struct.
+///
+/// Default config for build scripts with cache:
+/// ```
+/// use license_fetcher::build::config::ConfigBuilder;
+///
+/// let config = ConfigBuilder::default()
+///     .with_build_env()
+///     .unwrap()
+///     .build()
+///     .unwrap();
+/// ```
 #[derive(Debug, Clone, Default)]
 pub struct ConfigBuilder {
     manifest_dir: Option<PathBuf>,
