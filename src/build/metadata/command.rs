@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::{
-    ffi::OsStr,
+    ffi::{OsStr, OsString},
     path::Path,
     process::{Command, Output},
 };
@@ -13,7 +13,7 @@ use std::{
 use error_stack::{Report, Result, ResultExt};
 use thiserror::Error;
 
-use crate::build::config::{CargoDirective, CargoDirectiveList};
+use crate::build::config::{CargoDirective, MetadataConfig};
 
 #[derive(Debug, Clone, Copy, Error)]
 pub enum ExecCargoError {
@@ -27,6 +27,7 @@ fn exec_cargo_single<P, S, I>(
     cargo: P,
     cargo_directive: &CargoDirective,
     manifest_dir: P,
+    features_opt: &Option<OsString>,
     arguments: I,
 ) -> Result<Output, ExecCargoError>
 where
@@ -37,6 +38,10 @@ where
     let mut command = Command::new(cargo.as_ref());
 
     command.current_dir(manifest_dir.as_ref()).args(arguments);
+
+    if let Some(features) = features_opt {
+        command.arg("-F").arg(features);
+    }
 
     if *cargo_directive != CargoDirective::Default {
         let cargo_directive: &'static str = (*cargo_directive).into();
@@ -57,23 +62,23 @@ where
     }
 }
 
-pub fn exec_cargo<P, S, I>(
-    cargo: P,
-    cargo_directives: &CargoDirectiveList,
-    manifest_dir: P,
-    arguments: I,
-) -> Result<Output, ExecCargoError>
+pub fn exec_cargo<I, S>(config: &MetadataConfig, arguments: I) -> Result<Output, ExecCargoError>
 where
-    P: AsRef<Path>,
     I: IntoIterator<Item = S> + Clone,
     S: AsRef<OsStr> + Clone,
 {
-    debug_assert!(!cargo_directives.is_empty());
+    debug_assert!(!config.cargo_directives.is_empty());
 
     let mut err: Option<Report<ExecCargoError>> = None;
 
-    for directive in cargo_directives.iter() {
-        let result_single = exec_cargo_single(&cargo, directive, &manifest_dir, arguments.clone());
+    for directive in config.cargo_directives.iter() {
+        let result_single = exec_cargo_single(
+            &config.cargo_path,
+            directive,
+            &config.manifest_dir,
+            &config.enabled_features,
+            arguments.clone(),
+        );
         match result_single {
             Ok(_) => return result_single,
             Err(e) => match err.as_mut() {

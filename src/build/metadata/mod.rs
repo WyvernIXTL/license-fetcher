@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{path::Path, thread::scope};
+use std::thread::scope;
 
 use command::exec_cargo;
 use error_stack::{report, Result, ResultExt};
@@ -15,7 +15,7 @@ use thiserror::Error;
 
 use crate::{Package, PackageList};
 
-use super::config::{CargoDirectiveList, MetadataConfig};
+use super::config::MetadataConfig;
 
 mod command;
 mod metadata;
@@ -49,19 +49,14 @@ fn walk_dependencies<'a>(
     }
 }
 
-fn package_list_from_cargo_metadata<P>(
-    cargo: &P,
-    cargo_directives: &CargoDirectiveList,
-    manifest_dir: &P,
-) -> Result<Vec<Package>, PkgListFromCargoMetadataError>
-where
-    P: AsRef<Path>,
-{
+fn package_list_from_cargo_metadata(
+    config: &MetadataConfig,
+) -> Result<Vec<Package>, PkgListFromCargoMetadataError> {
     const ARGUMENTS: &'static [&'static str] =
         &["metadata", "--format-version", "1", "--color", "never"];
 
-    let output = exec_cargo(cargo, cargo_directives, manifest_dir, ARGUMENTS)
-        .change_context(PkgListFromCargoMetadataError::ExecCargo)?;
+    let output =
+        exec_cargo(config, ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
 
     let metadata_parsed: Metadata =
         from_slice(&output.stdout).change_context(PkgListFromCargoMetadataError::ParseJson)?;
@@ -102,14 +97,9 @@ where
         .collect())
 }
 
-fn used_pkg_names_from_cargo_tree<P>(
-    cargo: &P,
-    cargo_directives: &CargoDirectiveList,
-    manifest_dir: &P,
-) -> Result<FnvHashSet<String>, PkgListFromCargoMetadataError>
-where
-    P: AsRef<Path>,
-{
+fn used_pkg_names_from_cargo_tree(
+    config: &MetadataConfig,
+) -> Result<FnvHashSet<String>, PkgListFromCargoMetadataError> {
     const ARGUMENTS: &'static [&'static str] = &[
         "tree",
         "-e",
@@ -123,8 +113,8 @@ where
         "--no-dedupe",
     ];
 
-    let output = exec_cargo(cargo, cargo_directives, manifest_dir, ARGUMENTS)
-        .change_context(PkgListFromCargoMetadataError::ExecCargo)?;
+    let output =
+        exec_cargo(config, ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
 
     Ok(String::from_utf8(output.stdout)
         .change_context(PkgListFromCargoMetadataError::ParseString)?
@@ -146,22 +136,10 @@ where
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 pub fn package_list(config: MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {
-        let packages_handle = scope.spawn(|| {
-            package_list_from_cargo_metadata(
-                &config.cargo_path,
-                &config.cargo_directives,
-                &config.manifest_dir,
-            )
-        });
+        let packages_handle = scope.spawn(|| package_list_from_cargo_metadata(&config));
 
         // TODO: Check if not spawning this thread makes a difference.
-        let used_package_names_handle = scope.spawn(|| {
-            used_pkg_names_from_cargo_tree(
-                &config.cargo_path,
-                &config.cargo_directives,
-                &config.manifest_dir,
-            )
-        });
+        let used_package_names_handle = scope.spawn(|| used_pkg_names_from_cargo_tree(&config));
 
         let packages = packages_handle.join().map_err(|e| {
             report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
