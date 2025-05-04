@@ -1,11 +1,12 @@
 #[cfg(feature = "build")]
 #[test]
 fn test_generate_licenses() {
-    use license_fetcher::build::config::ConfigBuilder;
+    use license_fetcher::build::config::{CargoDirective, ConfigBuilder};
 
     let config = ConfigBuilder::default()
         .with_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
         .unwrap()
+        .cargo_directives([CargoDirective::Locked])
         .build()
         .unwrap();
 

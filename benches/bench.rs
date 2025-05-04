@@ -1,9 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use license_fetcher::build::config::ConfigBuilder;
+use license_fetcher::build::config::{CargoDirective, ConfigBuilder};
 
 fn test_fetch_licenses_test() {
     let config = ConfigBuilder::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
         .unwrap()
+        .cargo_directives([CargoDirective::Locked])
         .build()
         .unwrap();
 

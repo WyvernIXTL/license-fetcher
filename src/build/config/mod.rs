@@ -135,9 +135,12 @@ impl CargoDirectiveList {
     }
 }
 
-impl From<Vec<CargoDirective>> for CargoDirectiveList {
-    fn from(value: Vec<CargoDirective>) -> Self {
-        CargoDirectiveList(value)
+impl<T> From<T> for CargoDirectiveList
+where
+    T: IntoIterator<Item = CargoDirective>,
+{
+    fn from(value: T) -> Self {
+        CargoDirectiveList(value.into_iter().collect())
     }
 }
 
@@ -226,8 +229,8 @@ impl ConfigBuilder {
     }
 
     /// Sets the cargo directives.
-    pub fn cargo_directives(mut self, directives: CargoDirectiveList) -> Self {
-        self.cargo_directives = Some(directives);
+    pub fn cargo_directives(mut self, directives: impl Into<CargoDirectiveList>) -> Self {
+        self.cargo_directives = Some(directives.into());
         self
     }
 
