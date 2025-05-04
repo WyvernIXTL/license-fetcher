@@ -40,6 +40,7 @@ pub struct Package {
     pub license_text: Option<String>,
     restored_from_cache: bool,
     is_root_pkg: bool,
+    name_version: String,
 }
 
 impl Package {
@@ -172,16 +173,16 @@ impl fmt::Display for PackageList {
 /// ## Example
 /// Called from within main program:
 /// ```no_run
-/// use license_fetcher::get_package_list;
+/// use license_fetcher::load_package_list;
 /// fn main() {
-///     let package_list = get_package_list(
+///     let package_list = load_package_list(
 ///                             std::include_bytes!(
-///                                 std::concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY.bincode")
+///                                 std::concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY.bincode.deflate")
 ///                             )
 ///                         ).unwrap();
 /// }
 /// ```
-pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
+pub fn load_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
     let uncompressed_bytes = decompress_to_vec(bytes).expect("Failed decompressing license data.");
 
     let (package_list, _) =
@@ -194,17 +195,17 @@ pub fn get_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
 ///
 /// ## Example
 /// ```no_run
-/// use license_fetcher::get_package_list_macro;
+/// use license_fetcher::load_package_list_from_out_dir;
 /// fn main() {
-///     let package_list = get_package_list_macro!();
+///     let package_list = load_package_list_from_out_dir!();
 /// }
 /// ```
 #[macro_export]
-macro_rules! get_package_list_macro {
+macro_rules! load_package_list_from_out_dir {
     () => {
-        license_fetcher::get_package_list(std::include_bytes!(std::concat!(
+        license_fetcher::load_package_list(std::include_bytes!(std::concat!(
             env!("OUT_DIR"),
-            "/LICENSE-3RD-PARTY.bincode"
+            "/LICENSE-3RD-PARTY.bincode.deflate"
         )))
     };
 }

@@ -4,12 +4,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
 use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
 use error_stack::{Result, ResultExt};
+use fnv::FnvHashMap;
 use log::{error, info, trace, warn};
 use regex_lite::Regex;
 
@@ -70,10 +70,12 @@ pub(crate) fn licenses_text_from_cargo_src_folder(
     package_list: &mut PackageList,
     cargo_home_dir: PathBuf,
 ) -> Result<(), LicenseFetchError> {
-    let mut package_hash_map = HashMap::new();
-    for p in package_list.iter_mut().filter(|p| p.license_text.is_none()) {
-        package_hash_map.insert(format!("{}-{}", &p.name, &p.version), p);
-    }
+    let mut package_hash_map = FnvHashMap::from_iter(
+        package_list
+            .iter_mut()
+            .filter(|p| p.license_text.is_none() && !p.restored_from_cache)
+            .map(|p| (p.name_version.clone(), p)),
+    );
 
     let mut src_folder_iterator =
         src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;

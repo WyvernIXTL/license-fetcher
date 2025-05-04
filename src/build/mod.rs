@@ -16,6 +16,7 @@ use std::time::Instant;
 use log::info;
 use serde_json::from_slice;
 
+mod cache;
 /// Configuration structs and builders.
 pub mod config;
 #[cfg(test)]

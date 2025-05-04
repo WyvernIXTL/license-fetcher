@@ -84,6 +84,7 @@ where
         .filter(|e| used_packages.contains(&e.id))
         .map(|package| {
             let is_root = package.name.as_ref() == package_id;
+            let name_version = format!("{}-{}", package.name, package.version);
             Package {
                 license_text: None,
                 authors: package.authors,
@@ -95,6 +96,7 @@ where
                 repository: package.repository,
                 restored_from_cache: false,
                 is_root_pkg: is_root,
+                name_version,
             }
         })
         .collect())
