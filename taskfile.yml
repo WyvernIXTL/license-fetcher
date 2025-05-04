@@ -37,3 +37,19 @@ tasks:
       RUSTDOCFLAGS: "--cfg docsrs"
     cmds:
       - cargo +nightly doc --all-features
+
+  flamegraph:
+    desc: generate flame graph
+    cmds:
+      - sudo cargo flamegraph --test test_generate_licenses -f build --profile flame --image-width 14000
+
+  flamechart:
+    desc: generate flame graph
+    cmds:
+      - sudo cargo flamegraph --test test_generate_licenses -f build --profile flame --image-width 14000 --flamechart -o flamechart.svg
+
+  flame:
+    desc: generate flamegraph and chart
+    cmds:
+      - task: flamegraph
+      - task: flamechart

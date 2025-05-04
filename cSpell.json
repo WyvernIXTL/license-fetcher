@@ -1,11 +1,16 @@
 {
     "words": [
+        "aiderignore",
         "dedupe",
         "docsrs",
+        "flamechart",
+        "flamegraph",
         "Kellar",
         "miniz",
+        "MSVC",
         "Pico",
         "picolog",
+        "rustc",
         "rustdoc",
         "RUSTDOCFLAGS",
         "serde",
