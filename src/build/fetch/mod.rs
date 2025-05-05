@@ -87,7 +87,7 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
     Ok(Some(license_text))
 }
 
-pub(crate) fn licenses_text_from_cargo_src_folder(
+pub fn licenses_text_from_cargo_src_folder(
     package_list: &mut PackageList,
     cargo_home_dir: PathBuf,
 ) -> Result<(), LicenseFetchError> {

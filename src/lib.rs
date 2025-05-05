@@ -119,7 +119,7 @@ impl fmt::Display for Package {
 }
 
 /// Holds information of all crates and licenses used for a release build.
-#[derive(Encode, Decode, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(serde::Serialize))]
 pub struct PackageList(pub Vec<Package>);
 

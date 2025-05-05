@@ -15,7 +15,7 @@ pub mod config;
 mod debug;
 /// Errors that might appear during build.
 pub mod error;
-mod fetch;
+pub mod fetch;
 
 /// Logic for reading metadata of a package.
 pub mod metadata;
