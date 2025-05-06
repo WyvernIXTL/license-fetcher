@@ -87,6 +87,10 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
     Ok(Some(license_text))
 }
 
+/// Populate a package list with licenses from the cargo source folder.
+///
+/// If a package was loaded from a cache, it is ignored.
+/// Failure of reading directories of packages are ignored.
 pub fn licenses_text_from_cargo_src_folder(
     package_list: &mut PackageList,
     cargo_home_dir: PathBuf,
