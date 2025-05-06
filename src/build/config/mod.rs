@@ -150,6 +150,8 @@ pub struct MetadataConfig {
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: PathBuf,
     /// Optional path to `cargo`.
+    ///
+    /// By default the `CARGO` environment variable is used, or if not set `cargo` from path is used.
     pub cargo_path: PathBuf,
     /// Set Cargo directives for fetching metadata.
     pub cargo_directives: CargoDirectiveList,
