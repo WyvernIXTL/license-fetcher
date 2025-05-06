@@ -116,7 +116,10 @@ mod test {
             conf.metadata_config.manifest_dir,
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         );
-        assert_eq!(conf.metadata_config.cargo_path, PathBuf::from("cargo"));
+        assert_eq!(
+            conf.metadata_config.cargo_path,
+            PathBuf::from(env!("CARGO"))
+        );
 
         Ok(())
     }
@@ -129,7 +132,10 @@ mod test {
             conf.metadata_config.manifest_dir,
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         );
-        assert_eq!(conf.metadata_config.cargo_path, PathBuf::from("cargo"));
+        assert_eq!(
+            conf.metadata_config.cargo_path,
+            PathBuf::from(env!("CARGO"))
+        );
 
         Ok(())
     }
