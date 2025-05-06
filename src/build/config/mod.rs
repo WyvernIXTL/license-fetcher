@@ -269,7 +269,9 @@ impl ConfigBuilder {
                 Report::new(ConfigBuildError::UninitializedField)
                     .attach_printable("Field 'manifest_dir' is required but not set.")
             })?,
-            cargo_path: self.cargo_path.unwrap_or_else(|| PathBuf::from("cargo")),
+            cargo_path: self.cargo_path.unwrap_or_else(|| {
+                PathBuf::from(var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+            }),
             cargo_directives: self.cargo_directives.unwrap_or_default(),
             enabled_features: self
                 .enabled_features
