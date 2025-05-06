@@ -31,7 +31,7 @@ use miniz_oxide::deflate::compress_to_vec;
 use thiserror::Error;
 
 use crate::*;
-use fetch::licenses_text_from_cargo_src_folder;
+use fetch::populate_package_list_licenses;
 
 #[derive(Debug, Clone, Copy, Error)]
 pub enum BuildError {
@@ -66,7 +66,7 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
         }
     }
 
-    licenses_text_from_cargo_src_folder(&mut package_list, config.cargo_home_dir)
+    populate_package_list_licenses(&mut package_list, config.cargo_home_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
     let root_pos = package_list

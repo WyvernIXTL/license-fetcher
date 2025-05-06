@@ -4,7 +4,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use license_fetcher::{
     build::{
         config::{CargoDirective, Config, ConfigBuilder},
-        fetch::licenses_text_from_cargo_src_folder,
+        fetch::populate_package_list_licenses,
         metadata::package_list,
     },
     PackageList,
@@ -42,7 +42,7 @@ fn bench_licenses_only(c: &mut Criterion) {
     c.bench_function("licenses_text_from_cargo_src_folder", |b| {
         b.iter(|| {
             let mut pkgs = PKGS.clone();
-            let _a = licenses_text_from_cargo_src_folder(&mut pkgs, CONFIG.cargo_home_dir.clone());
+            let _a = populate_package_list_licenses(&mut pkgs, CONFIG.cargo_home_dir.clone());
         })
     });
 }
