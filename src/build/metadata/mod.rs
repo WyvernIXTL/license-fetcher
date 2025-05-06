@@ -88,8 +88,8 @@ fn package_list_from_cargo_metadata(
         .attach_printable("Failed to resolve package id from output.")?;
     let dependencies = metadata_parsed.resolve.nodes;
 
-    let mut used_packages = FnvHashSet::default(); // TODO: Check if there is a speed bump with Vec.
-    let dependencies_hash_map = FnvHashMap::from_iter(dependencies.iter().map(|d| (&d.id, d))); // TODO: Check if there is a speed bump with Vec.
+    let mut used_packages = FnvHashSet::default();
+    let dependencies_hash_map = FnvHashMap::from_iter(dependencies.iter().map(|d| (&d.id, d)));
 
     walk_dependencies(&mut used_packages, &dependencies_hash_map, &package_id);
 
@@ -160,7 +160,6 @@ pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromC
     scope(|scope| {
         let packages_handle = scope.spawn(|| package_list_from_cargo_metadata(config));
 
-        // TODO: Check if not spawning this thread makes a difference.
         let used_package_names_handle = scope.spawn(|| used_pkg_names_from_cargo_tree(config));
 
         let packages = packages_handle.join().map_err(|e| {
