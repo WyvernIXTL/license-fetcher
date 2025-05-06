@@ -42,10 +42,7 @@ fn bench_licenses_only(c: &mut Criterion) {
     c.bench_function("licenses_text_from_cargo_src_folder", |b| {
         b.iter(|| {
             let mut pkgs = PKGS.clone();
-            let _a = licenses_text_from_cargo_src_folder(
-                &mut pkgs,
-                CONFIG.fetching_config.cargo_home_dir.clone(),
-            );
+            let _a = licenses_text_from_cargo_src_folder(&mut pkgs, CONFIG.cargo_home_dir.clone());
         })
     });
 }

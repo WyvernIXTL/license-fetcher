@@ -52,7 +52,7 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
     let mut package_list =
         package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
 
-    if config.fetching_config.cache {
+    if config.cache {
         if let Err(err) = populate_with_cache(&mut package_list) {
             match err.current_context() {
                 CacheError::Invalid => {
@@ -66,7 +66,7 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
         }
     }
 
-    licenses_text_from_cargo_src_folder(&mut package_list, config.fetching_config.cargo_home_dir)
+    licenses_text_from_cargo_src_folder(&mut package_list, config.cargo_home_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
     let root_pos = package_list

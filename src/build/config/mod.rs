@@ -158,28 +158,20 @@ pub struct MetadataConfig {
     /// Set enabled features used when detecting package metadata.
     pub enabled_features: Option<OsString>,
 }
-
-/// Configures the fetching of the license texts.
+/// Struct to configure the behavior of the license fetching.
 #[derive(Debug, Clone)]
-pub struct FetchConfig {
+pub struct Config {
+    /// Configuration for fetching metadata.
+    pub metadata_config: MetadataConfig,
     // Optional cargo home directory path.
     ///
     /// By default cargo home is inferred from the `CARGO_HOME` environment variable, or if not set,
     /// the standard location at the users home folder `~/.cargo`.
     pub cargo_home_dir: PathBuf,
-    /// Set the backend used for traversing the `~/.cargo/registry/src` folder and reading the license files.
-    pub fetch_backend: FetchBackend,
     /// Enables cache during license fetching.
     ///
     /// Setting this will use the already fetched licenses from prior runs.
     pub cache: bool,
-}
-
-/// Struct to configure the behavior of the license fetching.
-#[derive(Debug, Clone)]
-pub struct Config {
-    pub metadata_config: MetadataConfig,
-    pub fetching_config: FetchConfig,
 }
 
 /// Builder for Config struct.
@@ -199,7 +191,6 @@ pub struct ConfigBuilder {
     manifest_dir: Option<PathBuf>,
     cargo_path: Option<PathBuf>,
     cargo_home_dir: Option<PathBuf>,
-    fetch_backend: Option<FetchBackend>,
     cargo_directives: Option<CargoDirectiveList>,
     cache: Option<bool>,
     enabled_features: Option<OsString>,
@@ -221,12 +212,6 @@ impl ConfigBuilder {
     /// Sets the cargo home directory path
     pub fn cargo_home_dir(mut self, dir: PathBuf) -> Self {
         self.cargo_home_dir = Some(dir);
-        self
-    }
-
-    /// Sets the fetch backend.
-    pub fn fetch_backend(mut self, backend: FetchBackend) -> Self {
-        self.fetch_backend = Some(backend);
         self
     }
 
@@ -279,21 +264,16 @@ impl ConfigBuilder {
                 .enabled_features
                 .or_else(|| var_os("CARGO_CFG_FEATURE")),
         };
-        let fetching_config = FetchConfig {
+
+        Ok(Config {
+            metadata_config,
             cargo_home_dir: match self.cargo_home_dir {
                 Some(dir) => dir,
                 None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
             },
-            fetch_backend: self.fetch_backend.unwrap_or_default(),
-
             cache: self
                 .cache
                 .unwrap_or_else(|| var_os("CARGO_CFG_FEATURE").is_some()),
-        };
-
-        Ok(Config {
-            metadata_config,
-            fetching_config,
         })
     }
 }
