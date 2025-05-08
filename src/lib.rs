@@ -164,46 +164,45 @@ impl fmt::Display for PackageList {
     }
 }
 
-/// Decompresses and deserializes the crate and license information.
-///
-/// This function decompresses (`compress` feature) and then deserializes the supplied bytes.
-/// The the the supplied bytes should be the embedded license information from
-/// the build step, else this function is going to panic.
-///
-/// ## Example
-/// Called from within main program:
-/// ```no_run
-/// use license_fetcher::load_package_list;
-/// fn main() {
-///     let package_list = load_package_list(
-///                             std::include_bytes!(
-///                                 std::concat!(env!("OUT_DIR"), "/LICENSE-3RD-PARTY.bincode.deflate")
-///                             )
-///                         ).unwrap();
-/// }
-/// ```
-pub fn load_package_list(bytes: &[u8]) -> Result<PackageList, UnpackError> {
-    let uncompressed_bytes = decompress_to_vec(bytes).expect("Failed decompressing license data.");
+impl PackageList {
+    /// Decompresses and deserializes the crate and license information.
+    ///
+    /// ## Example
+    /// If you intend to embed license information:
+    /// ```no_run
+    /// use license_fetcher::PackageList;
+    /// fn main() {
+    ///     let package_list = PackageList::from_encoded(std::include_bytes!(std::concat!(
+    ///        env!("OUT_DIR"),
+    ///        "/LICENSE-3RD-PARTY.bincode.deflate"
+    ///     ))).unwrap();
+    /// }
+    /// ```
+    pub fn from_encoded(bytes: &[u8]) -> Result<PackageList, UnpackError> {
+        let uncompressed_bytes = decompress_to_vec(bytes)?;
 
-    let (package_list, _) =
-        bincode::decode_from_slice(&uncompressed_bytes[..], bincode::config::standard())?;
+        let (package_list, _) =
+            bincode::decode_from_slice(&uncompressed_bytes, bincode::config::standard())?;
 
-    Ok(package_list)
+        Ok(package_list)
+    }
 }
 
-/// Calls [get_package_list] with parameters expected from a call from `main.rs`.
+/// Embed and decode a [PackageList], which you expect to be in `$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`, via [PackageList::from_encoded].
+///
+/// This macro is only meant to be used in conjunction with [PackageList::write_package_list_to_out_dir].
 ///
 /// ## Example
 /// ```no_run
-/// use license_fetcher::load_package_list_from_out_dir;
+/// use license_fetcher::read_package_list_from_out_dir;
 /// fn main() {
-///     let package_list = load_package_list_from_out_dir!();
+///     let package_list = read_package_list_from_out_dir!().expect("Failed to decode the embedded package list.");
 /// }
 /// ```
 #[macro_export]
-macro_rules! load_package_list_from_out_dir {
+macro_rules! read_package_list_from_out_dir {
     () => {
-        license_fetcher::load_package_list(std::include_bytes!(std::concat!(
+        license_fetcher::PackageList::from_encoded(std::include_bytes!(std::concat!(
             env!("OUT_DIR"),
             "/LICENSE-3RD-PARTY.bincode.deflate"
         )))

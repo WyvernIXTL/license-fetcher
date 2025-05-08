@@ -20,6 +20,7 @@ pub mod fetch;
 /// Logic for reading metadata of a package.
 pub mod metadata;
 
+use bincode::error::EncodeError;
 use cache::{populate_with_cache, CacheError};
 use config::Config;
 use error_stack::Result;
@@ -84,17 +85,20 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
     Ok(package_list)
 }
 
-impl PackageList {
-    /// Writes the [PackageList] into [`env!("OUT_DIR")/LICENSE-3RD-PARTY.bincode`](`env!("OUT_DIR")`)
-    ///
-    /// If the `compress` feature is set, the output is is compressed as well.
-    ///
-    /// [`env!("OUT_DIR")`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
-    pub fn write(self) {
-        let mut path = var_os("OUT_DIR").unwrap();
-        path.push("/LICENSE-3RD-PARTY.bincode");
+#[derive(Debug, Clone, Copy, Error)]
+pub enum WriteError {
+    #[error("Failed to encode package list.")]
+    Encode,
+    #[error("Failed to write encoded package list.")]
+    Write,
+    #[error("Executed not inside a build script.")]
+    NotBuildScript,
+}
 
-        let data = bincode::encode_to_vec(self, bincode::config::standard()).unwrap();
+impl PackageList {
+    /// Encodes and compresses a [PackageList].
+    pub fn encode(&self) -> Result<Vec<u8>, EncodeError> {
+        let data = bincode::encode_to_vec(self, bincode::config::standard())?;
 
         info!("License data size: {} Bytes", data.len());
         let instant_before_compression = Instant::now();
@@ -107,7 +111,24 @@ impl PackageList {
             instant_before_compression.elapsed().as_millis()
         );
 
+        Ok(compressed_data)
+    }
+
+    /// Writes the [PackageList] into [`$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`](`env!("OUT_DIR")`)
+    ///
+    /// `$OUT_DIR` is set by cargo during build. This function is meant to be only used inside a build script
+    /// and only in conjunction with [read_package_list_from_out_dir].
+    ///
+    /// [`env!("OUT_DIR")`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
+    pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
+        let compressed_data = self.encode().change_context(WriteError::Encode)?;
+
+        let mut path = var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?;
+        path.push("/LICENSE-3RD-PARTY.bincode.deflate");
+
         info!("Writing to file: {:?}", &path);
-        write(path, compressed_data).unwrap();
+        write(path, compressed_data).change_context(WriteError::Write)?;
+
+        Ok(())
     }
 }
