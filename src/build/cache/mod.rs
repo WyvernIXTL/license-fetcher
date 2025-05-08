@@ -10,7 +10,7 @@ use error_stack::{ensure, report, Result, ResultExt};
 use fnv::FnvHashMap;
 use thiserror::Error;
 
-use crate::{build::error::CPath, load_package_list, PackageList};
+use crate::{build::error::CPath, PackageList};
 
 #[derive(Debug, Clone, Copy, Error)]
 pub enum CacheError {
@@ -35,7 +35,7 @@ fn load_package_list_from_out_dir_during_build_script() -> Result<PackageList, C
         report!(CacheError::Invalid).attach_printable(CPath::from(&old_pkg_list_path))
     );
     let old_pkg_list_bin = read(&old_pkg_list_path).change_context(CacheError::ReadError)?;
-    load_package_list(&old_pkg_list_bin).change_context(CacheError::Invalid)
+    PackageList::from_encoded(&old_pkg_list_bin).change_context(CacheError::Invalid)
 }
 
 /// Use previously fetched licenses to fill in a [PackageList].
