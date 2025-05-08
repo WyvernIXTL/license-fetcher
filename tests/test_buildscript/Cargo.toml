@@ -1,0 +1,10 @@
+[package]
+name = "test_buildscript"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+license-fetcher = { version = "0.7.3", path = "../.." }
+
+[build-dependencies]
+license-fetcher = { version = "0.7.3", path = "../..", features = ["build"] }

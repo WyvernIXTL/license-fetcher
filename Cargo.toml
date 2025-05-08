@@ -35,7 +35,6 @@ miniz_oxide = { version = "0.8.0", features = ["std"]}
 regex-lite = { version = "0.1.6", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }
-simplelog = { version = "0.12.2", optional = true, default-features = false}
 thiserror = { version = "2.0.12", optional = true }
 
 [dev-dependencies]

@@ -16,6 +16,14 @@ tasks:
       - t
     cmds:
       - cargo test -F build
+      - task: test:integration:build-script
+
+  test:integration:build-script:
+    desc: "Run integration test with build script."
+    dir: "./tests/test_buildscript"
+    cmds:
+      - cargo update
+      - cargo run
 
   test:check:
     desc: call cargo check on all applicable features

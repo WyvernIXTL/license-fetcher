@@ -192,6 +192,8 @@ impl PackageList {
 ///
 /// This macro is only meant to be used in conjunction with [PackageList::write_package_list_to_out_dir].
 ///
+/// If you get an error that `OUT_DIR` is not set, then please compile your project once and restart rust analyzer.
+///
 /// ## Example
 /// ```no_run
 /// use license_fetcher::read_package_list_from_out_dir;
