@@ -12,5 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Run Unit Tests
-        run: cargo test -F build
+      - uses: arduino/setup-task@v2
+      - run: task setup
+      - name: Run Tests
+        run: task t

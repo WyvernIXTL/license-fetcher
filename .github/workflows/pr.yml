@@ -14,11 +14,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: true # Cache PR builds
-      - name: Setup Integration Test
-        run: cargo fetch --locked
-        working-directory: ./tests/test_crate
-      - name: Run Unit Tests
-        run: cargo test -F build
+      - uses: arduino/setup-task@v2
+      - run: task setup
+      - name: Run Tests
+        run: task t
 
   benchmark:
     name: Benchmark
