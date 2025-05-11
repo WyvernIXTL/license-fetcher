@@ -84,21 +84,20 @@ impl ConfigBuilder {
     ///
     /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
     /// Essentially a sanity check.
-    pub fn with_path(self, manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
-        let manifest_dir =
-            manifest_dir(manifest_path.into()).change_context(ConfigBuildError::FailedFromPath)?;
-
-        let builder = self.manifest_dir(manifest_dir);
-
-        Ok(builder)
+    pub fn with_path(mut self, manifest_path: impl Into<PathBuf>) -> Self {
+        match manifest_dir(manifest_path.into()).change_context(ConfigBuildError::FailedFromPath) {
+            Ok(manifest_dir) => self = self.manifest_dir(manifest_dir),
+            Err(e) => self.error.add(e),
+        }
+        self
     }
 
     /// New builder with [manifest_dir](Self::manifest_dir) being set from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
     /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
     /// Essentially a sanity check.
-    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Result<Self, ConfigBuildError> {
-        Ok(ConfigBuilder::default().with_path(manifest_path)?)
+    pub fn from_path(manifest_path: impl Into<PathBuf>) -> Self {
+        ConfigBuilder::default().with_path(manifest_path)
     }
 }
 
@@ -111,7 +110,7 @@ mod test {
     #[test]
     fn test_from_path_with_file_path() -> Result<(), ConfigBuildError> {
         setup_test();
-        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH"))?.build()?;
+        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH")).build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -127,7 +126,7 @@ mod test {
     #[test]
     fn test_from_path_with_dir_path() -> Result<(), ConfigBuildError> {
         setup_test();
-        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR"))?.build()?;
+        let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR")).build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))

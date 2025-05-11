@@ -6,6 +6,8 @@
 
 use std::{ffi::OsStr, fmt, path::PathBuf};
 
+use error_stack::{Context, Report};
+
 #[derive(Debug, Clone)]
 pub struct CPath(pub PathBuf);
 
@@ -33,5 +35,42 @@ impl<T: AsRef<OsStr>> From<T> for CEnvVar {
 impl fmt::Display for CEnvVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Environment Variable: {}", self.0)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct ReportList<E: Context> {
+    errors: Vec<Report<E>>,
+}
+
+impl<E> ReportList<E>
+where
+    E: Context,
+{
+    pub fn result(mut self) -> Result<(), Report<E>> {
+        if self.errors.is_empty() {
+            Ok(())
+        } else if self.errors.len() == 1 {
+            Err(self.errors.pop().unwrap())
+        } else {
+            let mut error = self.errors.pop().unwrap();
+            for e in self.errors.into_iter() {
+                error.extend_one(e);
+            }
+            Err(error)
+        }
+    }
+
+    pub fn add(&mut self, e: Report<E>) {
+        self.errors.push(e);
+    }
+}
+
+impl<E> Default for ReportList<E>
+where
+    E: Context,
+{
+    fn default() -> Self {
+        Self { errors: vec![] }
     }
 }

@@ -1,7 +1,7 @@
 use license_fetcher::build::{config::ConfigBuilder, package_list_with_licenses};
 
 fn main() {
-    let config = ConfigBuilder::from_build_env().unwrap().build().unwrap();
+    let config = ConfigBuilder::from_build_env().build().unwrap();
 
     package_list_with_licenses(config)
         .unwrap()

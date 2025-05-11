@@ -3,6 +3,6 @@
     "build"
   ],
   "rust-analyzer.cargo.buildScripts": {
-    "enable": true,
+    "enable": true
   }
 }

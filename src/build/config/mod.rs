@@ -12,6 +12,8 @@ use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
 use thiserror::Error;
 
+use super::error::ReportList;
+
 pub mod from_env;
 pub mod from_path;
 
@@ -182,11 +184,10 @@ pub struct Config {
 ///
 /// let config = ConfigBuilder::default()
 ///     .with_build_env()
-///     .unwrap()
 ///     .build()
 ///     .unwrap();
 /// ```
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct ConfigBuilder {
     manifest_dir: Option<PathBuf>,
     cargo_path: Option<PathBuf>,
@@ -194,6 +195,7 @@ pub struct ConfigBuilder {
     cargo_directives: Option<CargoDirectiveList>,
     cache: Option<bool>,
     enabled_features: Option<OsString>,
+    error: ReportList<ConfigBuildError>,
 }
 
 impl ConfigBuilder {
@@ -251,6 +253,8 @@ impl ConfigBuilder {
 
     /// Builds the Config with all required fields.
     pub fn build(self) -> Result<Config, ConfigBuildError> {
+        self.error.result()?;
+
         let metadata_config = MetadataConfig {
             manifest_dir: self.manifest_dir.ok_or_else(|| {
                 Report::new(ConfigBuildError::UninitializedField)

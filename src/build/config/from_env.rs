@@ -40,22 +40,27 @@ impl ConfigBuilder {
     ///
     /// This method is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn with_build_env(self) -> Result<Self, ConfigBuildError> {
-        let meta = MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars)?;
+    pub fn with_build_env(mut self) -> Self {
+        match MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars) {
+            Ok(meta) => {
+                self = self
+                    .manifest_dir(meta.manifest_dir)
+                    .cargo_path(meta.cargo_path);
+            }
+            Err(e) => {
+                self.error.add(e);
+            }
+        }
 
-        let builder = self
-            .manifest_dir(meta.manifest_dir)
-            .cargo_path(meta.cargo_path);
-
-        Ok(builder)
+        self
     }
 
     /// New builder with needed values being filled in from environment variables.
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
-    pub fn from_build_env() -> Result<Self, ConfigBuildError> {
-        Ok(ConfigBuilder::default().with_build_env()?)
+    pub fn from_build_env() -> Self {
+        ConfigBuilder::default().with_build_env()
     }
 }
 
@@ -68,7 +73,7 @@ mod test {
     #[test]
     fn test_config_from_env() -> Result<(), ConfigBuildError> {
         setup_test();
-        let conf = ConfigBuilder::from_build_env()?.build()?;
+        let conf = ConfigBuilder::from_build_env().build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))

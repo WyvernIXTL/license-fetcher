@@ -12,7 +12,6 @@ use license_fetcher::{
 
 static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     ConfigBuilder::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
-        .unwrap()
         .cargo_directives([CargoDirective::Locked])
         .cache(false)
         .build()

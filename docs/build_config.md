@@ -7,13 +7,14 @@ it is recommended to use [`ConfigBuilder::from_build_env()`], as cargo sets the 
 variables during build. [See the docs.](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)
 
 `build.rs`:
+
 ```rs
 use license_fetcher::build::config::{ConfigBuilder, Config};
 
 let config: Config = ConfigBuilder::from_build_env()
     .expect("Failed configuration from env.")
-    .build();
-
+    .build()
+    .expect("Failed to build configuration.");
 ```
 
 ## In an Application
@@ -23,6 +24,7 @@ you'll probably want to fetch licenses for another project.
 In this case there exits the [`ConfigBuilder::from_path()`] method, that can be enabled by the `config_from_path` feature.
 
 `main.rs`:
+
 ```rs
 use license_fetcher::build::config::{ConfigBuilder, Config};
 

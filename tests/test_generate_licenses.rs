@@ -5,7 +5,6 @@ fn test_generate_licenses() {
 
     let config = ConfigBuilder::default()
         .with_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
-        .unwrap()
         .cargo_directives([CargoDirective::Locked])
         .build()
         .unwrap();
