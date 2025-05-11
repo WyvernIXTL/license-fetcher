@@ -1,3 +1,5 @@
 {
-    "rust-analyzer.cargo.features": ["build"],
+  "rust-analyzer.cargo.features": [
+    "build"
+  ]
 }
