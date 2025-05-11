@@ -13,10 +13,10 @@ exclude = [
     "/benches",
     "/img",
     "/.vscode",
+    "./zed",
     "/.github",
     "/build.rs",
     "/cSpell.json",
-    "/lic-fetcher.code-workspace",
     "/taskfile.yml"
 ]
 
