@@ -4,7 +4,109 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#![doc = include_str!("../docs/lib.md")]
+//! Fetch licenses of dependencies at build time and embed them into your program.
+//!
+//! `license-fetcher` is a crate for fetching actual license texts from the cargo source directory for
+//! crates that are compiled with your project. It does this in the build step
+//! in a build script. This means that the heavy dependencies of `license-fetcher`
+//! aren't your dependencies!
+//!
+//! ## Example
+//!
+//! Import `license-fetcher` as a normal AND as a build dependency:
+//! ```sh
+//! cargo add --build --features build license-fetcher
+//! cargo add license-fetcher
+//! ```
+//!
+//!
+//! `src/main.rs`
+//!
+//! ```
+//! use license_fetcher::read_package_list_from_out_dir;
+//! fn main() {
+//!     let package_list = read_package_list_from_out_dir!().unwrap();
+//! }
+//! ```
+//!
+//!
+//! `build.rs`
+//!
+//! ```
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! use license_fetcher::build::metadata::package_list;
+//! use license_fetcher::PackageList;
+//!
+//! fn main() {
+//!     // Config with environment variables set by cargo, to fetch licenses at build time.
+//!     let config: Config = ConfigBuilder::from_build_env()
+//!         .build()
+//!         .expect("Failed to build configuration.");
+//!
+//!     // `packages` does not hold any licenses!
+//!     let packages: PackageList = package_list(&config.metadata_config)
+//!                                                 .expect("Failed to fetch metadata.");
+//!
+//!     // Write packages to out dir to be embedded.
+//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!
+//!     // Rerun only if one of the following files changed:
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
+//! }
+//! ```
+//!
+//! For a more advanced example visit the [`build` module documentation](license_fetcher::build).
+//!
+//! ## Adding Packages that are not Crates
+//!
+//! Sometimes we have dependencies that are not crates. For these dependencies `license-fetcher` cannot
+//! automatically generate information. These dependencies can be added manually:
+//!
+//! ```
+//! use std::fs::read_to_string;
+//! use std::concat;
+//!
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! use license_fetcher::build::metadata::package_list;
+//! use license_fetcher::PackageList;
+//!
+//! fn main() {
+//!     // Config with environment variables set by cargo, to fetch licenses at build time.
+//!     let config: Config = ConfigBuilder::from_build_env()
+//!         .build()
+//!         .expect("Failed to build configuration.");
+//!
+//!     // `packages` does not hold any licenses!
+//!     let mut packages: PackageList = package_list(&config.metadata_config)
+//!                                                 .expect("Failed to fetch metadata.");
+//!
+//!     packages.push(Package {
+//!         name: "other dependency".to_owned(),
+//!         version: "0.1.0".to_owned(),
+//!         authors: vec!["Me".to_owned()],
+//!         description: Some("A dependency that is not a rust crate.".to_owned()),
+//!         homepage: None,
+//!         repository: None,
+//!         license_identifier: None,
+//!         license_text: Some(
+//!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/some_dependency/LICENSE"))
+//!             .expect("Failed reading license of other dependency")
+//!         )
+//!     });
+//!
+//!     // Write packages to out dir to be embedded.
+//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!
+//!     // Rerun only if one of the following files changed:
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
+//! }
+//! ```
+//!
+
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 use std::cmp::Ordering;
@@ -179,6 +281,10 @@ impl PackageList {
     /// }
     /// ```
     pub fn from_encoded(bytes: &[u8]) -> Result<PackageList, UnpackError> {
+        if bytes.is_empty() {
+            return Err(UnpackError::Empty);
+        }
+
         let uncompressed_bytes = decompress_to_vec(bytes)?;
 
         let (package_list, _) =

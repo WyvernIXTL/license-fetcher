@@ -12,6 +12,8 @@ use std::fmt;
 pub enum UnpackError {
     DecompressError(miniz_oxide::inflate::DecompressError),
     DecodeError(bincode::error::DecodeError),
+    /// The supplied byte array is empty.
+    Empty,
 }
 
 impl From<miniz_oxide::inflate::DecompressError> for UnpackError {
@@ -31,15 +33,17 @@ impl fmt::Display for UnpackError {
         match self {
             Self::DecompressError(e) => writeln!(f, "{}", e),
             Self::DecodeError(e) => writeln!(f, "{}", e),
+            Self::Empty => writeln!(f, "Supplied buffer is empty."),
         }
     }
 }
 
 impl Error for UnpackError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(match self {
-            Self::DecompressError(e) => e,
-            Self::DecodeError(e) => e,
-        })
+        match self {
+            Self::DecompressError(e) => Some(e),
+            Self::DecodeError(e) => Some(e),
+            Self::Empty => None,
+        }
     }
 }
