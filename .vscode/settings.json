@@ -1,5 +1,8 @@
 {
   "rust-analyzer.cargo.features": [
     "build"
-  ]
+  ],
+  "rust-analyzer.cargo.buildScripts": {
+    "enable": true,
+  }
 }
