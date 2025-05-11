@@ -34,7 +34,7 @@
 //!
 //! ```
 //! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::metadata::package_list;
+//! use license_fetcher::build::package_list_with_licenses;
 //! use license_fetcher::PackageList;
 //!
 //! fn main() {
@@ -43,9 +43,8 @@
 //!         .build()
 //!         .expect("Failed to build configuration.");
 //!
-//!     // `packages` does not hold any licenses!
-//!     let packages: PackageList = package_list(&config.metadata_config)
-//!                                                 .expect("Failed to fetch metadata.");
+//!     let packages: PackageList = package_list_with_licenses(config)
+//!                                     .expect("Failed to fetch metadata or licenses.");
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");

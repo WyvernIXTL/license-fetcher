@@ -1,9 +1,12 @@
 words = [
     "bincode",
+    "docsrs",
     "dyn",
+    "flicense",
     "kellar",
     "lossy",
     "miniz",
+    "mrt",
     "thiserr",
     "thiserror",
     "ꞋꞋŏ",
