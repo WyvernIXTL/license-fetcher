@@ -6,11 +6,13 @@
 
 //! This module holds functions to fetch metadata and licenses.
 //!
-//! ## Configuration
-//!
-//! There is some configuration. See the [`config` module](license-fetcher::build::config).
 //!
 //! ## Examples
+//!
+//! The examples here are directed for fetching licenses during build time.
+//! They can also applied for use with applications if configured correctly.
+//!
+//! See the [`config` module](license-fetcher::build::config).
 //!
 //! ### Fetch Metadata Only
 //!
@@ -31,7 +33,8 @@
 //!         .expect("Failed to build configuration.");
 //!
 //!     // `packages` does not hold any licenses!
-//!     let packages: PackageList = package_list(&config.metadata_config).expect("Failed to fetch metadata.");
+//!     let packages: PackageList = package_list(&config.metadata_config)
+//!                                                 .expect("Failed to fetch metadata.");
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
@@ -59,7 +62,8 @@
 //!         .build()
 //!         .expect("Failed to build configuration.");
 //!
-//!     let packages: PackageList = package_list_with_licenses(config).expect("Failed to fetch metadata or licenses.");
+//!     let packages: PackageList = package_list_with_licenses(config)
+//!                                     .expect("Failed to fetch metadata or licenses.");
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
@@ -80,43 +84,20 @@
 //! `build.rs`
 //!
 //!```
+//! use std::error::Error;
+//!
 //! use license_fetcher::build::config::{ConfigBuilder, Config};
 //! use license_fetcher::build::package_list_with_licenses;
 //! use license_fetcher::PackageList;
 //!
-//! // license-fetcher uses `error_stack` for structured errors.
-//! use error_stack::{Result, ResultExt};
-//!
-//! #[derive(Debug)]
-//! enum BuildScriptError {
-//!     ConfigBuild,
-//!     LicenseFetch,
-//!     WriteLicenses
-//! }
-//!
-//! impl std::fmt::Display for BuildScriptError {
-//!     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//!         match self {
-//!             Self::ConfigBuild => writeln!(f, "Failed to build config."),
-//!             Self::LicenseFetch => writeln!(f, "Failed to fetch licenses."),
-//!             Self::WriteLicenses => writeln!(f, "Failed to write licenses into out folder."),
-//!         }
-//!     }
-//! }
-//!
-//! impl std::error::Error for BuildScriptError {}
-//!
-//! fn fetch_and_embed_licenses() -> Result<(), BuildScriptError> {
+//! fn fetch_and_embed_licenses() -> Result<(), Box<dyn Error>> {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
-//!     let config: Config = ConfigBuilder::from_build_env()
-//!         .build()
-//!         .change_context(BuildScriptError::ConfigBuild)?;
+//!     let config: Config = ConfigBuilder::from_build_env().build()?;
 //!
-//!     let packages: PackageList = package_list_with_licenses(config)
-//!                                     .change_context(BuildScriptError::LicenseFetch)?;
+//!     let packages: PackageList = package_list_with_licenses(config)?;
 //!
 //!     // Write packages to out dir to be embedded.
-//!     packages.write_package_list_to_out_dir().change_context(BuildScriptError::WriteLicenses)?;
+//!     packages.write_package_list_to_out_dir()?;
 //!
 //!     Ok(())
 //! }
@@ -124,9 +105,10 @@
 //! // Create empty dummy file so that the embedding does not fail.
 //! fn dummy_file() {
 //!     let mut path = std::env::var_os("OUT_DIR")
-//!              .expect("The creation of a dummy file failed: Environment variable 'OUT_DIR' not set.");
+//!         .expect("Creation of dummy file failed: Environment variable 'OUT_DIR' not set.");
 //!     path.push("/LICENSE-3RD-PARTY.bincode.deflate");
-//!     let _ = std::fs::File::create(path).expect("The creation of a dummy file failed: Write failed.");
+//!     let _ = std::fs::File::create(path)
+//!         .expect("Creation of dummy file failed: Write failed.");
 //! }
 //!
 //! fn main() {
@@ -138,14 +120,16 @@
 //!                 dummy_file();
 //!             },
 //!             &_ => {
-//!                 eprintln!("Wrong environment variable!");
+//!                 eprintln!("Wrong environment variable `LICENSE_FETCHER`!");
+//!                 eprintln!("Expected either ``, `production` or `development`.");
+//!
 //!                 dummy_file();
 //!             }
 //!         }
 //!     } else {
 //!         if let Err(err) = fetch_and_embed_licenses() {
 //!             eprintln!("An error occurred during license fetch:\n\n");
-//!             eprintln!("{}", err);
+//!             eprintln!("{:?}", err);
 //!
 //!             dummy_file();
 //!         }
@@ -164,8 +148,6 @@
 //! * **Soft Fail**: If someone installs your software from source via `cargo install`, the build will never fail because of license fetcher.
 //!     On the other hand the execution might fail, when trying to print the licenses.
 //!
-//! I know that this is not pretty and I'll think about how to solve that in a future release.
-//! If you have a nicer `build.rs` don't shy away from sharing it :)
 //!
 //! ## Error Handling
 //!

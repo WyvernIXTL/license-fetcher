@@ -1,5 +1,6 @@
 words = [
     "bincode",
+    "dyn",
     "kellar",
     "lossy",
     "miniz",
