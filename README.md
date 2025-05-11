@@ -7,6 +7,7 @@
 [![Crates.io Version](https://img.shields.io/crates/v/license-fetcher)](https://crates.io/crates/license-fetcher)
 [![GitHub License](https://img.shields.io/github/license/WyvernIXTL/license-fetcher)](https://github.com/WyvernIXTL/license-fetcher/blob/main/LICENSE)
 [![docs.rs](https://img.shields.io/docsrs/license-fetcher)](https://docs.rs/license-fetcher)
+[![lib.rs link](https://badgen.net/badge/lib.rs/lib.rs/purple?label)](https://lib.rs/crates/license-fetcher)
 [![dependency status](https://deps.rs/repo/github/WyvernIXTL/license-fetcher/status.svg)](https://deps.rs/repo/github/WyvernIXTL/license-fetcher)
 
 </div>
@@ -82,6 +83,19 @@ fn main() {
     let package_list = read_package_list_from_out_dir!().unwrap();
 }
 ```
+
+## Caveats
+
+license-fetcher fetches licenses that are at the root of a package. This results in some caveats, mainly:
+
+- Some projects do not upload licenses with their packages. This might happen if a project is split up into many packages.
+- Some wrappers do not attribute the library they are wrapping.
+- Dependencies that are not packages, like dictionaries, are not detected.
+
+To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your package,
+to see what packages license-fetcher fetches.
+
+For the later point there is no workaround, as there is no automated way to detect the use of such dependencies.
 
 ## Alternatives
 
