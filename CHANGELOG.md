@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.8.0
+
 ### Added
 
 - Configuration
@@ -17,8 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Execution without panic
 - Nice error traces
 
-
 ### Changed
 
 - Switched to MPL-2.0 license.
-
+- Also fetches licenses in direct sub folders (`.*license.*` and the like).
