@@ -4,6 +4,170 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+//! This module holds functions to fetch metadata and licenses.
+//!
+//! ## Configuration
+//!
+//! There is some configuration. See the [`config` module](license-fetcher::build::config).
+//!
+//! ## Examples
+//!
+//! ### Fetch Metadata Only
+//!
+//! If you are not interested in fetching licenses, license-fetcher is able to
+//! only fetch metadata of packages:
+//!
+//! `build.rs`
+//!
+//! ```
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! use license_fetcher::build::metadata::package_list;
+//! use license_fetcher::PackageList;
+//!
+//! fn main() {
+//!     // Config with environment variables set by cargo, to fetch licenses at build time.
+//!     let config: Config = ConfigBuilder::from_build_env()
+//!         .build()
+//!         .expect("Failed to build configuration.");
+//!
+//!     // `packages` does not hold any licenses!
+//!     let packages: PackageList = package_list(&config.metadata_config).expect("Failed to fetch metadata.");
+//!
+//!     // Write packages to out dir to be embedded.
+//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!
+//!     // Rerun only if one of the following files changed:
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
+//! }
+//! ```
+//!
+//!
+//! ### Fetch Metadata and Licenses
+//!
+//! `build.rs`
+//!
+//! ```
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! use license_fetcher::build::package_list_with_licenses;
+//! use license_fetcher::PackageList;
+//!
+//! fn main() {
+//!     // Config with environment variables set by cargo, to fetch licenses at build time.
+//!     let config: Config = ConfigBuilder::from_build_env()
+//!         .build()
+//!         .expect("Failed to build configuration.");
+//!
+//!     let packages: PackageList = package_list_with_licenses(config).expect("Failed to fetch metadata or licenses.");
+//!
+//!     // Write packages to out dir to be embedded.
+//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!
+//!     // Rerun only if one of the following files changed:
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
+//! }
+//! ```
+//!
+//! ### Advanced
+//!
+//! Most often there is no need to fetch licenses during development.
+//! Also there is the potential issue of the build failing, just because license fetcher did.
+//! To counteract these issues, you might want to use environment variables to set the behavior during build time:
+//!
+//!```
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! use license_fetcher::build::package_list_with_licenses;
+//! use license_fetcher::PackageList;
+//!
+//! // license-fetcher uses `error_stack` for structured errors.
+//! use error_stack::{Result, ResultExt};
+//!
+//! #[derive(Debug)]
+//! enum BuildScriptError {
+//!     ConfigBuild,
+//!     LicenseFetch,
+//!     WriteLicenses
+//! }
+//!
+//! impl std::fmt::Display for BuildScriptError {
+//!     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//!         match self {
+//!             Self::ConfigBuild => writeln!(f, "Failed to build config."),
+//!             Self::LicenseFetch => writeln!(f, "Failed to fetch licenses."),
+//!             Self::WriteLicenses => writeln!(f, "Failed to write licenses into out folder."),
+//!         }
+//!     }
+//! }
+//!
+//! impl std::error::Error for BuildScriptError {}
+//!
+//! fn fetch_and_embed_licenses() -> Result<(), BuildScriptError> {
+//!     // Config with environment variables set by cargo, to fetch licenses at build time.
+//!     let config: Config = ConfigBuilder::from_build_env()
+//!         .build()
+//!         .change_context(BuildScriptError::ConfigBuild)?;
+//!
+//!     let packages: PackageList = package_list_with_licenses(config).change_context(BuildScriptError::LicenseFetch)?;
+//!
+//!     // Write packages to out dir to be embedded.
+//!     packages.write_package_list_to_out_dir().change_context(BuildScriptError::WriteLicenses)?;
+//!
+//!     Ok(())
+//! }
+//!
+//! // Create empty dummy file so that the embedding does not fail.
+//! fn dummy_file() {
+//!     let mut path = std::env::var_os("OUT_DIR").unwrap();
+//!     path.push("/LICENSE-3RD-PARTY.bincode.deflate");
+//!     let _ = std::fs::File::create(path);
+//! }
+//!
+//! fn main() {
+//!     if let Some(mode) = std::env::var_os("LICENSE_FETCHER") {
+//!         match mode.to_ascii_lowercase().to_string_lossy().as_ref() {
+//!             "production" => fetch_and_embed_licenses().unwrap(),
+//!             "development" => {
+//!                 eprintln!("Skipping license fetching.");
+//!                 dummy_file();
+//!             },
+//!             &_ => {
+//!                 eprintln!("Wrong environment variable!");
+//!                 dummy_file();
+//!             }
+//!         }
+//!     } else {
+//!         if let Err(err) = fetch_and_embed_licenses() {
+//!             eprintln!("An error occurred during license fetch:\n\n");
+//!             eprintln!("{}", err);
+//!
+//!             dummy_file();
+//!         }
+//!     }
+//!
+//!     // Rerun only if one of the following files changed:
+//!     println!("cargo::rerun-if-changed=build.rs");
+//!     println!("cargo::rerun-if-changed=Cargo.lock");
+//!     println!("cargo::rerun-if-changed=Cargo.toml");
+//! }
+//! ```
+//!
+//! This results in 3 modes:
+//! * **Production**: The build will fail, if license fetcher did not succeed. This will hinder you publishing a binary without attribution of your dependencies.
+//! * **Development**: license fetching step will be skipped.
+//! * **Soft Fail**: If someone installs your software from source via `cargo install`, the build will never fail because of license fetcher.
+//!     On the other hand the execution might fail, when trying to print the licenses.
+//!
+//! I know that this is not pretty and I'll think about how to solve that in a future release.
+//! If you have a nicer `build.rs` don't shy away from sharing it :)
+//!
+//! ## Error Handling
+//!
+//! See [error-stack](https://docs.rs/error-stack/latest/error_stack/struct.Report.html).
+//!
+
 use std::env::var_os;
 use std::fs::write;
 use std::time::Instant;

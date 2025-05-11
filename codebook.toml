@@ -1,6 +1,9 @@
 words = [
     "bincode",
     "kellar",
+    "lossy",
     "miniz",
+    "thiserr",
+    "thiserror",
     "ꞋꞋŏ",
 ]
