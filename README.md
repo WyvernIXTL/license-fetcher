@@ -28,6 +28,9 @@ The data is then serialized and compressed.
 
 ## Usage
 
+Here is a small rundown how to use this library for fetching licenses during build time.
+Though fetching licenses at runtime is also supported. See the docs.
+
 ### Include Dependency
 
 > [!WARNING]
