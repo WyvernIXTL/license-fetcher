@@ -48,7 +48,7 @@ impl ConfigBuilder {
                     .cargo_path(meta.cargo_path);
             }
             Err(e) => {
-                self.error.add(e);
+                self.error.join(e);
             }
         }
 

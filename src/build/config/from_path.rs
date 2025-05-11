@@ -87,7 +87,7 @@ impl ConfigBuilder {
     pub fn with_path(mut self, manifest_path: impl Into<PathBuf>) -> Self {
         match manifest_dir(manifest_path.into()).change_context(ConfigBuildError::FailedFromPath) {
             Ok(manifest_dir) => self = self.manifest_dir(manifest_dir),
-            Err(e) => self.error.add(e),
+            Err(e) => self.error.join(e),
         }
         self
     }

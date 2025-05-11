@@ -39,38 +39,31 @@ impl fmt::Display for CEnvVar {
 }
 
 #[derive(Debug)]
-pub(crate) struct ReportList<E: Context> {
-    errors: Vec<Report<E>>,
+pub(crate) struct ReportJoin<E: Context> {
+    error: Result<(), Report<E>>,
 }
 
-impl<E> ReportList<E>
+impl<E> ReportJoin<E>
 where
     E: Context,
 {
-    pub fn result(mut self) -> Result<(), Report<E>> {
-        if self.errors.is_empty() {
-            Ok(())
-        } else if self.errors.len() == 1 {
-            Err(self.errors.pop().unwrap())
-        } else {
-            let mut error = self.errors.pop().unwrap();
-            for e in self.errors.into_iter() {
-                error.extend_one(e);
-            }
-            Err(error)
-        }
+    pub fn result(self) -> Result<(), Report<E>> {
+        self.error
     }
 
-    pub fn add(&mut self, e: Report<E>) {
-        self.errors.push(e);
+    pub fn join(&mut self, e: Report<E>) {
+        match self.error.as_mut() {
+            Ok(_) => self.error = Err(e),
+            Err(error) => error.extend_one(e),
+        }
     }
 }
 
-impl<E> Default for ReportList<E>
+impl<E> Default for ReportJoin<E>
 where
     E: Context,
 {
     fn default() -> Self {
-        Self { errors: vec![] }
+        Self { error: Ok(()) }
     }
 }

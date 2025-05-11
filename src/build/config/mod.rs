@@ -12,7 +12,7 @@ use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
 use thiserror::Error;
 
-use super::error::ReportList;
+use super::error::ReportJoin;
 
 pub mod from_env;
 pub mod from_path;
@@ -195,7 +195,7 @@ pub struct ConfigBuilder {
     cargo_directives: Option<CargoDirectiveList>,
     cache: Option<bool>,
     enabled_features: Option<OsString>,
-    error: ReportList<ConfigBuildError>,
+    error: ReportJoin<ConfigBuildError>,
 }
 
 impl ConfigBuilder {

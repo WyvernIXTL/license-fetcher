@@ -21,6 +21,8 @@ use crate::build::error::CPath;
 use crate::PackageList;
 use src_registry_folders::src_registry_folders;
 
+use super::error::ReportJoin;
+
 #[derive(Debug, Clone, Copy, Error)]
 pub enum LicenseFetchError {
     #[error("Failed to infer the registry src folder location.")]
@@ -106,7 +108,7 @@ pub fn populate_package_list_licenses(
     let mut src_folder_iterator =
         src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;
 
-    let mut result: Result<(), LicenseFetchError> = Ok(());
+    let mut result = ReportJoin::default();
 
     while let Some(src_folder) = src_folder_iterator.next() {
         info!("src folder: {:?}", &src_folder);
@@ -130,15 +132,12 @@ pub fn populate_package_list_licenses(
                         Err(err) => {
                             error!("Failure");
                             let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);
-                            match result.as_mut() {
-                                Ok(_) => result = Err(err),
-                                Err(e) => e.extend_one(err),
-                            }
+                            result.join(err);
                         }
                     }
                 }
             });
     }
 
-    result
+    result.result()
 }
