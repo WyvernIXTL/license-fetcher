@@ -70,7 +70,7 @@
 //!
 //! use license_fetcher::build::config::{ConfigBuilder, Config};
 //! use license_fetcher::build::metadata::package_list;
-//! use license_fetcher::PackageList;
+//! use license_fetcher::{PackageList, Package, package};
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
@@ -82,7 +82,7 @@
 //!     let mut packages: PackageList = package_list(&config.metadata_config)
 //!                                                 .expect("Failed to fetch metadata.");
 //!
-//!     packages.push(Package {
+//!     packages.push(package! {
 //!         name: "other dependency".to_owned(),
 //!         version: "0.1.0".to_owned(),
 //!         authors: vec!["Me".to_owned()],
@@ -91,7 +91,7 @@
 //!         repository: None,
 //!         license_identifier: None,
 //!         license_text: Some(
-//!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/some_dependency/LICENSE"))
+//!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
 //!             .expect("Failed reading license of other dependency")
 //!         )
 //!     });
@@ -140,9 +140,42 @@ pub struct Package {
     pub repository: Option<String>,
     pub license_identifier: Option<String>,
     pub license_text: Option<String>,
-    restored_from_cache: bool,
-    is_root_pkg: bool,
-    name_version: String,
+    #[doc(hidden)]
+    pub restored_from_cache: bool,
+    #[doc(hidden)]
+    pub is_root_pkg: bool,
+    #[doc(hidden)]
+    pub name_version: String,
+}
+
+// TODO: Is there an alternative?
+/// Construct a [Package].
+#[macro_export]
+macro_rules! package {
+    (
+        name: $name:expr,
+        version: $version:expr,
+        authors: $authors:expr,
+        description: $description:expr,
+        homepage: $homepage:expr,
+        repository: $repository:expr,
+        license_identifier: $license_identifier:expr,
+        license_text: $license_text:expr $(,)?
+    ) => {
+        $crate::Package {
+            name: $name.clone(),
+            version: $version.clone(),
+            authors: $authors,
+            description: $description,
+            homepage: $homepage,
+            repository: $repository,
+            license_identifier: $license_identifier,
+            license_text: $license_text,
+            restored_from_cache: false,
+            is_root_pkg: false,
+            name_version: format!("{}-{}", $name, $version),
+        }
+    };
 }
 
 impl Package {
@@ -315,4 +348,28 @@ macro_rules! read_package_list_from_out_dir {
             "/LICENSE-3RD-PARTY.bincode.deflate"
         )))
     };
+}
+
+#[cfg(test)]
+mod test {
+    use std::fs::read_to_string;
+
+    use super::*;
+
+    #[test]
+    fn test_package_macro() {
+        let _pkg: Package = package! {
+            name: "dependency".to_owned(),
+            version: "0.1.0".to_owned(),
+            authors: vec!["Me".to_owned()],
+            description: Some("A dependency that is not a rust crate.".to_owned()),
+            homepage: None,
+            repository: None,
+            license_identifier: None,
+            license_text: Some(
+                read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
+                    .expect("Failed reading license of other dependency")
+            )
+        };
+    }
 }
