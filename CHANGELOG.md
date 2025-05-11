@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.8.2
+
+## Fixed
+
+- Some root id of cargo metadata output not being parsed correctly.
+
 ## v0.8.1
 
 ## Fixed
