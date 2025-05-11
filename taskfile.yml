@@ -1,5 +1,10 @@
 version: "3"
 
+output:
+  group:
+    begin: "::group::{{.TASK}}"
+    end: "::endgroup::"
+
 tasks:
   test:setup:
     desc: "Setup for tests and benchmarks."

@@ -1,7 +1,7 @@
 use license_fetcher::read_package_list_from_out_dir;
 
 fn main() {
-    println!("Hello, world!");
+    println!("Integration Test");
 
     let package_list = read_package_list_from_out_dir!().unwrap();
 
@@ -11,5 +11,7 @@ fn main() {
         "THIS IS NOT A LICENSE"
     );
 
-    println!("{}", package_list);
+    // println!("{}", package_list);
+
+    println!("All OK!");
 }
