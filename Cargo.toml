@@ -13,11 +13,13 @@ exclude = [
     "/benches",
     "/img",
     "/.vscode",
-    "./zed",
+    "/.zed",
     "/.github",
     "/build.rs",
     "/cSpell.json",
-    "/taskfile.yml"
+    "/taskfile.yml",
+    "/.aider*",
+    "/codebook.toml"
 ]
 
 [profile.flame]
