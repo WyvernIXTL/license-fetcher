@@ -22,7 +22,7 @@
 //!
 //! `src/main.rs`
 //!
-//! ```
+//! ```no_run
 //! use license_fetcher::read_package_list_from_out_dir;
 //! fn main() {
 //!     let package_list = read_package_list_from_out_dir!().unwrap();
