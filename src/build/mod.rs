@@ -12,7 +12,7 @@
 //! The examples here are directed for fetching licenses during build time.
 //! They can also applied for use with applications if configured correctly.
 //!
-//! See the [`config` module](license-fetcher::build::config).
+//! See the [`config` module](crate::build::config).
 //!
 //! ### Fetch Metadata Only
 //!

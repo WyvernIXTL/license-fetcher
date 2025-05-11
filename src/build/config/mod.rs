@@ -48,8 +48,8 @@
 //! }
 //! ```
 //!
-//! [`ConfigBuilder::from_build_env()`]: license-fetcher::build::config::ConfigBuilder::from_build_env
-//! [`ConfigBuilder::from_path()`]:  license-fetcher::build::config::ConfigBuilder::from_path
+//! [`ConfigBuilder::from_build_env()`]: crate::build::config::ConfigBuilder::from_build_env
+//! [`ConfigBuilder::from_path()`]:  crate::build::config::ConfigBuilder::from_path
 
 use std::{env::var_os, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
