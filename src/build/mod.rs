@@ -77,6 +77,8 @@
 //! Also there is the potential issue of the build failing, just because license fetcher did.
 //! To counteract these issues, you might want to use environment variables to set the behavior during build time:
 //!
+//! `build.rs`
+//!
 //!```
 //! use license_fetcher::build::config::{ConfigBuilder, Config};
 //! use license_fetcher::build::package_list_with_licenses;
@@ -110,7 +112,8 @@
 //!         .build()
 //!         .change_context(BuildScriptError::ConfigBuild)?;
 //!
-//!     let packages: PackageList = package_list_with_licenses(config).change_context(BuildScriptError::LicenseFetch)?;
+//!     let packages: PackageList = package_list_with_licenses(config)
+//!                                     .change_context(BuildScriptError::LicenseFetch)?;
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir().change_context(BuildScriptError::WriteLicenses)?;
@@ -120,9 +123,10 @@
 //!
 //! // Create empty dummy file so that the embedding does not fail.
 //! fn dummy_file() {
-//!     let mut path = std::env::var_os("OUT_DIR").unwrap();
+//!     let mut path = std::env::var_os("OUT_DIR")
+//!              .expect("The creation of a dummy file failed: Environment variable 'OUT_DIR' not set.");
 //!     path.push("/LICENSE-3RD-PARTY.bincode.deflate");
-//!     let _ = std::fs::File::create(path);
+//!     let _ = std::fs::File::create(path).expect("The creation of a dummy file failed: Write failed.");
 //! }
 //!
 //! fn main() {
