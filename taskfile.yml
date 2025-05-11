@@ -11,6 +11,8 @@ tasks:
 
   test:integration:
     desc: "Run integration test."
+    env:
+      RUST_BACKTRACE: full
     aliases:
       - test
       - t
@@ -22,18 +24,19 @@ tasks:
     desc: "Run integration test with build script."
     dir: "./tests/test_buildscript"
     cmds:
+      - cargo fetch
       - cargo update
       - cargo run
 
   test:check:
     desc: call cargo check on all applicable features
-    aliases: 
+    aliases:
       - check
       - c
     cmds:
       - cargo check -F build
       - cargo check
-    
+
   bench:
     desc: bench with criterion
     cmds:
