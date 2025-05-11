@@ -4,7 +4,52 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#![doc = include_str!("../../../docs/build_config.md")]
+//! This module holds the structs and enums to configure the fetching process.
+//!
+//! ## Build Scripts (`build.rs`)
+//!
+//! If you are using `license-fetcher` from within a build script to fetch licenses for your project,
+//! it is recommended to use [`ConfigBuilder::from_build_env()`], as cargo sets the necessary environment
+//! variables during build. [See the docs.](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)
+//!
+//! `build.rs`:
+//!
+//! ```rs
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//!
+//! fn main() {
+//!     let config: Config = ConfigBuilder::from_build_env()
+//!         .build()
+//!         .expect("Failed to build configuration.");
+//!
+//!     // ...
+//! }
+//! ```
+//!
+//! ## In an Application
+//!
+//! If you are using `license-fetcher` from inside another application to fetch licenses,
+//! you'll probably want to fetch licenses for another project.
+//! In this case there exits the [`ConfigBuilder::from_path()`] method.
+//!
+//! `main.rs`:
+//!
+//! ```rs
+//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//!
+//! fn main() {
+//!     let my_path = PathBuf::from(".");
+//!
+//!     let config: Config = ConfigBuilder::from_path(my_path)
+//!         .build()
+//!         .expect("Failed loading configuration from path.");
+//!
+//!     // ...
+//! }
+//! ```
+//!
+//! [`ConfigBuilder::from_build_env()`]: license-fetcher::build::config::ConfigBuilder::from_build_env
+//! [`ConfigBuilder::from_path()`]:  license-fetcher::build::config::ConfigBuilder::from_path
 
 use std::{env::var_os, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
@@ -14,7 +59,9 @@ use thiserror::Error;
 
 use super::error::ReportJoin;
 
+#[doc(hidden)]
 pub mod from_env;
+#[doc(hidden)]
 pub mod from_path;
 
 mod cargo_folder;
