@@ -2,7 +2,7 @@
 name = "license-fetcher"
 description = "Fetch licenses of dependencies at build time and embed them into your program."
 authors = ["Adam McKellar <dev@mckellar.eu>"]
-version = "0.8.2"
+version = "0.8.3"
 edition = "2021"
 readme = "README.md"
 repository = "https://github.com/WyvernIXTL/license-fetcher"
