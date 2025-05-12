@@ -7,7 +7,7 @@
 use std::{sync::LazyLock, thread::scope};
 
 use command::exec_cargo;
-use error_stack::{report, Result, ResultExt};
+use error_stack::{ensure, report, Result, ResultExt};
 use fnv::{FnvHashMap, FnvHashSet};
 use metadata::{Metadata, MetadataResolveNode};
 use regex_lite::Regex;
@@ -33,6 +33,8 @@ pub enum PkgListFromCargoMetadataError {
     Thread,
     #[error("Failed to parse package id to package name.")]
     PackageNameParseError,
+    #[error("The root/main package is missing.")]
+    RootPackageMissing,
 }
 
 fn walk_dependencies<'a>(
@@ -184,7 +186,10 @@ pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromC
             .filter(|e| used_package_names.contains(&e.name));
         filtered_packages.extend(filtered_packages_iter);
 
-        debug_assert!(filtered_packages.iter().any(|e| e.is_root_pkg));
+        ensure!(
+            filtered_packages.iter().any(|e| e.is_root_pkg),
+            PkgListFromCargoMetadataError::RootPackageMissing
+        );
 
         Ok(filtered_packages.into())
     })
