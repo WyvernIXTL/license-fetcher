@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.8.3
+
+### Added
+
+- Added caveat section in readme.
+
+### Changed
+
+- Error instead of panic when root package is missing in package list during metadata fetch step.
+
 ## v0.8.2
 
 ## Fixed
