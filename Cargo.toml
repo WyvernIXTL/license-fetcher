@@ -8,6 +8,7 @@ readme = "README.md"
 repository = "https://github.com/WyvernIXTL/license-fetcher"
 license = "MPL-2.0"
 keywords = ["license", "embed", "fetch", "about", "find"]
+categories = ["development-tools::build-utils", "parsing"]
 exclude = [
     "/tests",
     "/benches",
