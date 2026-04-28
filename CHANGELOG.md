@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Removed `thiserror` crate for small speed up for build script.
+
+
 ## v0.8.4
 
 ### Added
