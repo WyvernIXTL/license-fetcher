@@ -4,23 +4,34 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{env::var_os, fs::read, path::PathBuf};
+use std::{env::var_os, error::Error, fmt, fs::read, path::PathBuf};
 
 use error_stack::{ensure, report, Result, ResultExt};
 use fnv::FnvHashMap;
-use thiserror::Error;
 
 use crate::{build::error::CPath, PackageList};
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum CacheError {
-    #[error("You are running a build script (`build.rs`) only function during runtime.")]
     NotBuildScript,
-    #[error("Cache was not able to be found or is invalid.")]
     Invalid,
-    #[error("Failed to read valid cache path.")]
     ReadError,
 }
+
+impl fmt::Display for CacheError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::NotBuildScript => {
+                "You are running a build script (`build.rs`) only function during runtime."
+            }
+            Self::Invalid => "Cache was not able to be found or is invalid.",
+            Self::ReadError => "Failed to read valid cache path.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for CacheError {}
 
 fn load_package_list_from_out_dir_during_build_script() -> Result<PackageList, CacheError> {
     let mut old_pkg_list_path =

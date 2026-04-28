@@ -155,6 +155,8 @@
 //!
 
 use std::env::var_os;
+use std::error::Error;
+use std::fmt::{self, Display};
 use std::fs::write;
 use std::time::Instant;
 
@@ -180,22 +182,31 @@ use fetch::license_text_from_folder;
 use log::{error, info, warn};
 use metadata::package_list;
 use miniz_oxide::deflate::compress_to_vec;
-use thiserror::Error;
 
 use crate::*;
 use fetch::populate_package_list_licenses;
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum BuildError {
-    #[error("Failed to fetch metadata and generate a package list.")]
     FailedMetadataFetching,
-    #[error("Failed loading cache with a read error.")]
     CacheReadError,
-    #[error("Failed fetching licenses from cargo src folders.")]
     FailedLicenseFetch,
-    #[error("Unexpected error. (ꞋꞋŏ_ŏ)")]
     Unexpected,
 }
+
+impl Display for BuildError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let res = match self {
+            Self::FailedMetadataFetching => "Failed to fetch metadata and generate a package list.",
+            Self::CacheReadError => "Failed loading cache with a read error.",
+            Self::FailedLicenseFetch => "Failed fetching licenses from cargo src folders.",
+            Self::Unexpected => "Unexpected error. (ꞋꞋŏ_ŏ)",
+        };
+        f.write_str(res)
+    }
+}
+
+impl Error for BuildError {}
 
 /// Generates a package list with package name, authors and license text.
 ///
@@ -236,15 +247,25 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
     Ok(package_list)
 }
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum WriteError {
-    #[error("Failed to encode package list.")]
     Encode,
-    #[error("Failed to write encoded package list.")]
     Write,
-    #[error("Executed not inside a build script.")]
     NotBuildScript,
 }
+
+impl fmt::Display for WriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::Encode => "Failed to encode package list.",
+            Self::Write => "Failed to write encoded package list.",
+            Self::NotBuildScript => "Executed not inside a build script.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for WriteError {}
 
 impl PackageList {
     /// Encodes and compresses a [PackageList].

@@ -4,22 +4,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{fs::read_dir, path::PathBuf};
+use std::{error::Error, fmt, fs::read_dir, path::PathBuf};
 
 use error_stack::{ensure, Report, Result, ResultExt};
-use thiserror::Error;
 
 use crate::build::error::CPath;
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum SrcRegistryInferenceError {
-    #[error("Source registry folder does not exist at the inferred path.")]
     DoesNotExist,
-    #[error("The inferred path of the source registry is not a folder.")]
     IsNotAFolder,
-    #[error("Failed to read the inferred source registry path.")]
     FailedReadDir,
 }
+
+impl fmt::Display for SrcRegistryInferenceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::DoesNotExist => "Source registry folder does not exist at the inferred path.",
+            Self::IsNotAFolder => "The inferred path of the source registry is not a folder.",
+            Self::FailedReadDir => "Failed to read the inferred source registry path.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for SrcRegistryInferenceError {}
 
 pub fn src_registry_folders(
     path: PathBuf,

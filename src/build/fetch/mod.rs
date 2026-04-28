@@ -4,9 +4,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::fs::{read_dir, read_to_string};
-use std::path::PathBuf;
 use std::sync::LazyLock;
+use std::{
+    error::Error,
+    fmt,
+    fs::{read_dir, read_to_string},
+    path::PathBuf,
+};
 
 use error_stack::{Result, ResultExt};
 use fnv::FnvHashMap;
@@ -15,23 +19,33 @@ use regex_lite::Regex;
 
 mod src_registry_folders;
 
-use thiserror::Error;
-
 use crate::build::error::CPath;
 use crate::PackageList;
 use src_registry_folders::src_registry_folders;
 
 use super::error::ReportJoin;
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum LicenseFetchError {
-    #[error("Failed to infer the registry src folder location.")]
     RegistrySrc,
-    #[error("Failure during the fetching of licenses for a package.")]
     LicenseFetchForPackage,
-    #[error("Failed reading a src folder of a registry.")]
     SrcFolderRecursion,
 }
+
+impl fmt::Display for LicenseFetchError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::RegistrySrc => "Failed to infer the registry src folder location.",
+            Self::LicenseFetchForPackage => {
+                "Failure during the fetching of licenses for a package."
+            }
+            Self::SrcFolderRecursion => "Failed reading a src folder of a registry.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for LicenseFetchError {}
 
 pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>, std::io::Error> {
     trace!("Fetching license in folder: {:?}", &path);

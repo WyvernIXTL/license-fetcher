@@ -51,11 +51,10 @@
 //! [`ConfigBuilder::from_build_env()`]: crate::build::config::ConfigBuilder::from_build_env
 //! [`ConfigBuilder::from_path()`]:  crate::build::config::ConfigBuilder::from_path
 
-use std::{env::var_os, ffi::OsString, fmt, ops::Deref, path::PathBuf};
+use std::{env::var_os, error::Error, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
-use thiserror::Error;
 
 use super::error::ReportJoin;
 
@@ -329,18 +328,26 @@ impl ConfigBuilder {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum ConfigBuildError {
-    #[error("Required field in builder is not initialized.")]
     UninitializedField,
-    #[error("Validation of input failed.")]
     ValidationError,
-    #[error("Failed fetching required fields from build environment variables.")]
     FailedFromEnvVars,
-    #[error("Failed fetching  required fields from manifest in path.")]
     FailedFromPath,
-    #[error(
-        "Failed inferring cargo home dir from environment variables or standard home dir location."
-    )]
     CargoHomeDir,
 }
+
+impl fmt::Display for ConfigBuildError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::UninitializedField => "Required field in builder is not initialized.",
+            Self::ValidationError => "Validation of input failed.",
+            Self::FailedFromEnvVars => "Failed fetching required fields from build environment variables.",
+            Self::FailedFromPath => "Failed fetching  required fields from manifest in path.",
+            Self::CargoHomeDir => "Failed inferring cargo home dir from environment variables or standard home dir location.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for ConfigBuildError {}

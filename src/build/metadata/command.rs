@@ -5,23 +5,34 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::{
+    error::Error,
     ffi::{OsStr, OsString},
+    fmt,
     path::Path,
     process::{Command, Output},
 };
 
 use error_stack::{Report, Result, ResultExt};
-use thiserror::Error;
 
 use crate::build::config::{CargoDirective, MetadataConfig};
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum ExecCargoError {
-    #[error("`cargo` did not execute successfully.")]
     FailedExecution,
-    #[error("Failed to execute `cargo`.")]
     FailedToExecute,
 }
+
+impl fmt::Display for ExecCargoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::FailedExecution => "`cargo` did not execute successfully.",
+            Self::FailedToExecute => "Failed to execute `cargo`.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for ExecCargoError {}
 
 fn exec_cargo_single<P, S, I>(
     cargo: P,

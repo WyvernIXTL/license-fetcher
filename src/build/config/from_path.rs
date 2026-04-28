@@ -4,26 +4,35 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::fs::read_dir;
+use std::{error::Error, fmt, fs::read_dir};
 
 use error_stack::{ensure, Report};
 use error_stack::{Result, ResultExt};
-use thiserror::Error;
 
 use crate::build::error::CPath;
 
 use super::*;
 
 /// Error that appears during failed build of config via [ConfigBuilder::from_path()].
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum FromPathError {
-    #[error("The requested path does not exist or this program does not have the permission to access it.")]
     PathDoesNotExist,
-    #[error("Manifest not found.")]
     ManifestNotFound,
-    #[error("Io error.")]
     Io,
 }
+
+impl fmt::Display for FromPathError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::PathDoesNotExist => "The requested path does not exist or this program does not have the permission to access it.",
+            Self::ManifestNotFound => "Manifest not found.",
+            Self::Io => "Io error.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for FromPathError {}
 
 fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromPathError> {
     debug_assert!(uncertain_file_path.is_file());

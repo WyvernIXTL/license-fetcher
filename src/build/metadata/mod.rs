@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{sync::LazyLock, thread::scope};
+use std::{error::Error, fmt, sync::LazyLock, thread::scope};
 
 use command::exec_cargo;
 use error_stack::{ensure, report, Result, ResultExt};
@@ -12,7 +12,6 @@ use fnv::{FnvHashMap, FnvHashSet};
 use metadata::{Metadata, MetadataResolveNode};
 use regex_lite::Regex;
 use serde_json::from_slice;
-use thiserror::Error;
 
 use crate::{Package, PackageList};
 
@@ -21,21 +20,31 @@ use super::config::MetadataConfig;
 mod command;
 mod metadata;
 
-#[derive(Debug, Clone, Copy, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum PkgListFromCargoMetadataError {
-    #[error("Failed to execute `cargo metadata`.")]
     ExecCargo,
-    #[error("Failed to parse output of `cargo metadata`.")]
     ParseJson,
-    #[error("Failed to parse `cargo` output to utf-8 string.")]
     ParseString,
-    #[error("Error occurred with thread.")]
     Thread,
-    #[error("Failed to parse package id to package name.")]
     PackageNameParseError,
-    #[error("The root/main package is missing.")]
     RootPackageMissing,
 }
+
+impl fmt::Display for PkgListFromCargoMetadataError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::ExecCargo => "Failed to execute `cargo metadata`.",
+            Self::ParseJson => "Failed to parse output of `cargo metadata`.",
+            Self::ParseString => "Failed to parse `cargo` output to utf-8 string.",
+            Self::Thread => "Error occurred with thread.",
+            Self::PackageNameParseError => "Failed to parse package id to package name.",
+            Self::RootPackageMissing => "The root/main package is missing.",
+        };
+        f.write_str(message)
+    }
+}
+
+impl Error for PkgListFromCargoMetadataError {}
 
 fn walk_dependencies<'a>(
     used_dependencies: &mut FnvHashSet<&'a String>,
