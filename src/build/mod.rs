@@ -173,15 +173,14 @@ pub mod fetch;
 /// Logic for reading metadata of a package.
 pub mod metadata;
 
-use bincode::error::EncodeError;
 use cache::{populate_with_cache, CacheError};
 use config::Config;
 use error_stack::Result;
 use error_stack::ResultExt;
 use fetch::license_text_from_folder;
 use log::{error, info, warn};
+use lz4_flex::compress_prepend_size;
 use metadata::package_list;
-use miniz_oxide::deflate::compress_to_vec;
 
 use crate::*;
 use fetch::populate_package_list_licenses;
@@ -249,7 +248,6 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
 
 #[derive(Debug, Clone, Copy)]
 pub enum WriteError {
-    Encode,
     Write,
     NotBuildScript,
 }
@@ -257,7 +255,6 @@ pub enum WriteError {
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
-            Self::Encode => "Failed to encode package list.",
             Self::Write => "Failed to write encoded package list.",
             Self::NotBuildScript => "Executed not inside a build script.",
         };
@@ -269,13 +266,13 @@ impl Error for WriteError {}
 
 impl PackageList {
     /// Encodes and compresses a [PackageList].
-    pub fn encode(&self) -> Result<Vec<u8>, EncodeError> {
-        let data = bincode::encode_to_vec(self, bincode::config::standard())?;
+    pub fn encode(&self) -> Vec<u8> {
+        let data = bitcode::encode(self);
 
         info!("License data size: {} Bytes", data.len());
         let instant_before_compression = Instant::now();
 
-        let compressed_data = compress_to_vec(&data, 10);
+        let compressed_data = compress_prepend_size(&data);
 
         info!(
             "Compressed data size: {} Bytes in {}ms",
@@ -283,7 +280,7 @@ impl PackageList {
             instant_before_compression.elapsed().as_millis()
         );
 
-        Ok(compressed_data)
+        compressed_data
     }
 
     /// Writes the [PackageList] into [`$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`](`env!("OUT_DIR")`)
@@ -293,7 +290,7 @@ impl PackageList {
     ///
     /// [`env!("OUT_DIR")`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
     pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
-        let compressed_data = self.encode().change_context(WriteError::Encode)?;
+        let compressed_data = self.encode();
 
         let mut path = var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?;
         path.push("/LICENSE-3RD-PARTY.bincode.deflate");

@@ -29,11 +29,11 @@ debug = true
 
 
 [dependencies]
-bincode = "2.0.1"
+bitcode = "0.6.9"
 directories = {version = "6.0.0", optional = true}
 error-stack = { version = "0.5.0", optional = true}
 log = { version = "0.4.22", optional = true, features = ["kv", "kv_std"]}
-miniz_oxide = { version = "0.8.0", features = ["std"]}
+lz4_flex = { version = "0.13.0", default-features = false, features = ["checked-decode"]}
 regex-lite = { version = "0.1.6", optional = true }
 serde = { version = "1.0.210", features = ["derive"], optional = true }
 serde_json = { version = "1.0.128", optional = true }

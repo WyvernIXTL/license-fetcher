@@ -113,13 +113,12 @@ use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-use bincode::{Decode, Encode};
-
-use miniz_oxide::inflate::decompress_to_vec;
+use bitcode::{decode, Decode, Encode};
 
 /// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList].
 pub mod error;
 use error::UnpackError;
+use lz4_flex::decompress_size_prepended;
 
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
@@ -317,10 +316,9 @@ impl PackageList {
             return Err(UnpackError::Empty);
         }
 
-        let uncompressed_bytes = decompress_to_vec(bytes)?;
+        let uncompressed_bytes = decompress_size_prepended(bytes)?;
 
-        let (package_list, _) =
-            bincode::decode_from_slice(&uncompressed_bytes, bincode::config::standard())?;
+        let package_list = decode(&uncompressed_bytes)?;
 
         Ok(package_list)
     }

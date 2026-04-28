@@ -10,20 +10,20 @@ use std::fmt;
 /// Error union representing errors that might occur during unpacking of license data.
 #[derive(Debug)]
 pub enum UnpackError {
-    DecompressError(miniz_oxide::inflate::DecompressError),
-    DecodeError(bincode::error::DecodeError),
+    DecompressError(lz4_flex::block::DecompressError),
+    DecodeError(bitcode::Error),
     /// The supplied byte array is empty.
     Empty,
 }
 
-impl From<miniz_oxide::inflate::DecompressError> for UnpackError {
-    fn from(value: miniz_oxide::inflate::DecompressError) -> Self {
+impl From<lz4_flex::block::DecompressError> for UnpackError {
+    fn from(value: lz4_flex::block::DecompressError) -> Self {
         Self::DecompressError(value)
     }
 }
 
-impl From<bincode::error::DecodeError> for UnpackError {
-    fn from(value: bincode::error::DecodeError) -> Self {
+impl From<bitcode::Error> for UnpackError {
+    fn from(value: bitcode::Error) -> Self {
         Self::DecodeError(value)
     }
 }
