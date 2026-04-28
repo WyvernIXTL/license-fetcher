@@ -64,7 +64,7 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
                     read_dir(e.path())
                         .map_err(|err| {
                             let path = e.path();
-                            error!(err:err, path:debug; "Failed reading sub license directory.")
+                            error!("Failed reading sub license directory. Path: '{}'. Error: \n {err}", path.display())
                         })
                         .ok()?
                         .into_iter()
@@ -85,7 +85,7 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
             read_to_string(e.path())
                 .map_err(|err| {
                     let path = e.path();
-                    error!(path:debug, err:err ; "Error during reading of license file. Skipping.")
+                    error!("Error during reading of license file. Skipping. Path: '{}'. Error: \n {err}", path.display())
                 })
                 .ok()
         })

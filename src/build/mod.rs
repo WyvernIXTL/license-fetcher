@@ -219,10 +219,10 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
         if let Err(err) = populate_with_cache(&mut package_list) {
             match err.current_context() {
                 CacheError::Invalid => {
-                    error!(err:%; "Cache is invalid. Skipping cache.");
+                    error!("Cache is invalid. Skipping cache. Error: \n{err}");
                 }
                 CacheError::NotBuildScript => {
-                    warn!(err:%; "Loading licenses from cache is not available for non build script environments.")
+                    warn!("Loading licenses from cache is not available for non build script environments. Error: \n{err}")
                 }
                 CacheError::ReadError => return Err(err.change_context(BuildError::CacheReadError)),
             }
