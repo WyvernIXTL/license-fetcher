@@ -17,10 +17,7 @@ exclude = [
     "/.zed",
     "/.github",
     "/build.rs",
-    "/cSpell.json",
     "/taskfile.yml",
-    "/.aider*",
-    "/codebook.toml"
 ]
 
 [profile.flame]
