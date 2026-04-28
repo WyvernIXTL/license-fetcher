@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::{
     error::Error,
@@ -13,7 +14,6 @@ use std::{
 };
 
 use error_stack::{Result, ResultExt};
-use fnv::FnvHashMap;
 use log::{error, info, trace, warn};
 use regex_lite::Regex;
 
@@ -112,7 +112,7 @@ pub fn populate_package_list_licenses(
     package_list: &mut PackageList,
     cargo_home_dir: PathBuf,
 ) -> Result<(), LicenseFetchError> {
-    let mut package_hash_map = FnvHashMap::from_iter(
+    let mut package_hash_map: HashMap<String, &mut crate::Package> = HashMap::from_iter(
         package_list
             .iter_mut()
             .filter(|p| p.license_text.is_none() && !p.restored_from_cache)

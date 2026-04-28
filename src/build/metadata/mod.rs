@@ -4,11 +4,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, fmt, sync::LazyLock, thread::scope};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fmt,
+    sync::LazyLock,
+    thread::scope,
+};
 
 use command::exec_cargo;
 use error_stack::{ensure, report, Result, ResultExt};
-use fnv::{FnvHashMap, FnvHashSet};
 use metadata::{Metadata, MetadataResolveNode};
 use regex_lite::Regex;
 use serde_json::from_slice;
@@ -47,8 +52,8 @@ impl fmt::Display for PkgListFromCargoMetadataError {
 impl Error for PkgListFromCargoMetadataError {}
 
 fn walk_dependencies<'a>(
-    used_dependencies: &mut FnvHashSet<&'a String>,
-    dependencies: &'a FnvHashMap<&String, &MetadataResolveNode>,
+    used_dependencies: &mut HashSet<&'a String>,
+    dependencies: &'a HashMap<&String, &MetadataResolveNode>,
     root: &String,
 ) {
     let package = match dependencies.get(root) {
@@ -99,8 +104,8 @@ fn package_list_from_cargo_metadata(
         .attach_printable("Failed to resolve package id from output.")?;
     let dependencies = metadata_parsed.resolve.nodes;
 
-    let mut used_packages = FnvHashSet::default();
-    let dependencies_hash_map = FnvHashMap::from_iter(dependencies.iter().map(|d| (&d.id, d)));
+    let mut used_packages = HashSet::default();
+    let dependencies_hash_map = HashMap::from_iter(dependencies.iter().map(|d| (&d.id, d)));
 
     walk_dependencies(&mut used_packages, &dependencies_hash_map, &package_id);
 
@@ -131,7 +136,7 @@ fn package_list_from_cargo_metadata(
 
 fn used_pkg_names_from_cargo_tree(
     config: &MetadataConfig,
-) -> Result<FnvHashSet<String>, PkgListFromCargoMetadataError> {
+) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
     const ARGUMENTS: &'static [&'static str] = &[
         "tree",
         "-e",
@@ -155,7 +160,7 @@ fn used_pkg_names_from_cargo_tree(
         .filter(|s| !s.is_empty())
         .map(|e| e.split(" ").next().unwrap_or_else(|| e))
         .map(|s| s.to_owned())
-        .collect::<FnvHashSet<String>>())
+        .collect::<HashSet<String>>())
 }
 
 /// Get a list of dependencies.

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Removed `thiserror` crate for small speed up for build script.
+- Removed `thiserror` and `fnv` crate for small speed up for build script.
 
 
 ## v0.8.4

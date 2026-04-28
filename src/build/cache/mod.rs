@@ -4,10 +4,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{env::var_os, error::Error, fmt, fs::read, path::PathBuf};
+use std::{collections::HashMap, env::var_os, error::Error, fmt, fs::read, path::PathBuf};
 
 use error_stack::{ensure, report, Result, ResultExt};
-use fnv::FnvHashMap;
 
 use crate::{build::error::CPath, PackageList};
 
@@ -56,7 +55,8 @@ pub fn populate_with_cache(pkg_list: &mut PackageList) -> Result<(), CacheError>
     let cache = load_package_list_from_out_dir_during_build_script()?;
 
     // TODO: Check if a vec linear search is faster.
-    let cache_map = FnvHashMap::from_iter(cache.iter().map(|e| (&e.name_version, e)));
+    let cache_map: HashMap<&String, &crate::Package> =
+        HashMap::from_iter(cache.iter().map(|e| (&e.name_version, e)));
     for pkg in pkg_list.iter_mut() {
         if let Some(c) = cache_map.get(&pkg.name_version) {
             pkg.restored_from_cache = true;
