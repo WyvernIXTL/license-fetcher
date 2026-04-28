@@ -19,7 +19,7 @@
 3. Do it in the build step!
 
 > [!NOTE]
-> If you are in search for a cli checkout [flicense](https://github.com/WyvernIXTL/flicense-rs).
+> If you are in search for a CLI checkout [flicense](https://github.com/WyvernIXTL/flicense-rs).
 
 ## Workings
 
@@ -30,7 +30,7 @@ The data is then serialized and compressed.
 ## Usage
 
 Here is a small rundown how to use this library for fetching licenses during build time.
-Though fetching licenses at runtime is also supported. See the docs.
+Though fetching licenses at runtime is also supported. See the [docs](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html).
 
 ### Include Dependency
 
@@ -84,9 +84,15 @@ fn main() {
 }
 ```
 
+
+### Much Better Setup With Leniency
+
+I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html). Take a look!
+
+
 ## Caveats
 
-license-fetcher fetches licenses that are at the root of a package. This results in some caveats, mainly:
+`license-fetcher` fetches licenses that are at the root of a package. This results in some caveats, mainly:
 
 - Some projects do not upload licenses with their packages. This might happen if a project is split up into many packages.
 - Some wrappers do not attribute the library they are wrapping.
@@ -95,7 +101,7 @@ license-fetcher fetches licenses that are at the root of a package. This results
 To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your package,
 to see what packages license-fetcher fetches.
 
-For the later point there is no workaround, as there is no automated way to detect the use of such dependencies.
+For the latter point there is no workaround, as there is no automated way to detect the use of such dependencies.
 
 ## Alternatives
 
@@ -109,8 +115,8 @@ A big shout-out!
 #### Pros
 
 - Also retrieves licenses in the build step and loads them into the program.
-- Can also use repo url to fetch licenses.
-- Can also use spdx to fetch licenses.
+- Can also use repo URL to fetch licenses.
+- Can also use SPDX to fetch licenses.
 
 #### Cons
 
@@ -121,7 +127,7 @@ A big shout-out!
 
 #### Pros
 
-- Generates very nice html.
+- Generates very nice HTML.
 
 #### Cons
 
