@@ -181,6 +181,7 @@ use fetch::license_text_from_folder;
 use log::{error, info, warn};
 use lz4_flex::compress_prepend_size;
 use metadata::package_list;
+use nanoserde::SerBin;
 
 use crate::*;
 use fetch::populate_package_list_licenses;
@@ -267,7 +268,7 @@ impl Error for WriteError {}
 impl PackageList {
     /// Encodes and compresses a [PackageList].
     pub fn encode(&self) -> Vec<u8> {
-        let data = bitcode::encode(self);
+        let data = self.serialize_bin();
 
         info!("License data size: {} Bytes", data.len());
         let instant_before_compression = Instant::now();

@@ -15,8 +15,8 @@ use std::{
 use command::exec_cargo;
 use error_stack::{ensure, report, Result, ResultExt};
 use metadata::{Metadata, MetadataResolveNode};
+use nanoserde::DeJson;
 use regex_lite::Regex;
-use serde_json::from_slice;
 
 use crate::{Package, PackageList};
 
@@ -93,8 +93,10 @@ fn package_list_from_cargo_metadata(
     let output =
         exec_cargo(config, ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
 
-    let metadata_parsed: Metadata =
-        from_slice(&output.stdout).change_context(PkgListFromCargoMetadataError::ParseJson)?;
+    let output_str = String::from_utf8_lossy(&output.stdout);
+
+    let metadata_parsed = Metadata::deserialize_json(&output_str)
+        .change_context(PkgListFromCargoMetadataError::ParseJson)?;
 
     let packages = metadata_parsed.packages;
     let package_id = metadata_parsed

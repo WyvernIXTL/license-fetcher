@@ -113,12 +113,11 @@ use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-use bitcode::{decode, Decode, Encode};
-
 /// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList].
 pub mod error;
 use error::UnpackError;
 use lz4_flex::decompress_size_prepended;
+use nanoserde::DeBin;
 
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
@@ -127,8 +126,8 @@ pub mod build;
 /// Information regarding a crate / package.
 ///
 /// This struct holds information like package name, authors and of course license text.
-#[derive(Encode, Decode, Debug, PartialEq, Eq, Clone)]
-#[cfg_attr(feature = "build", derive(serde::Serialize))]
+#[derive(DeBin, Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 pub struct Package {
     pub name: String,
     pub version: String,
@@ -252,8 +251,8 @@ impl fmt::Display for Package {
 }
 
 /// Holds information of all crates and licenses used for a release build.
-#[derive(Encode, Decode, Debug, PartialEq, Eq, Clone)]
-#[cfg_attr(feature = "build", derive(serde::Serialize))]
+#[derive(DeBin, Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 pub struct PackageList(pub Vec<Package>);
 
 impl From<Vec<Package>> for PackageList {
@@ -318,7 +317,7 @@ impl PackageList {
 
         let uncompressed_bytes = decompress_size_prepended(bytes)?;
 
-        let package_list = decode(&uncompressed_bytes)?;
+        let package_list = PackageList::deserialize_bin(&uncompressed_bytes)?;
 
         Ok(package_list)
     }

@@ -29,14 +29,12 @@ debug = true
 
 
 [dependencies]
-bitcode = "0.6.9"
 directories = {version = "6.0.0", optional = true}
 error-stack = { version = "0.5.0", optional = true}
 log = { version = "0.4.22", optional = true, features = ["kv", "kv_std"]}
 lz4_flex = { version = "0.13.0", default-features = false, features = ["checked-decode"]}
+nanoserde = { version = "0.2.1", default-features = false, features = ["std", "json", "binary"] }
 regex-lite = { version = "0.1.6", optional = true }
-serde = { version = "1.0.210", features = ["derive"], optional = true }
-serde_json = { version = "1.0.128", optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -46,7 +44,7 @@ supports-color = "3.0.2"
 
 [features]
 default = []
-build = ["dep:serde_json", "dep:serde", "dep:log", "dep:directories", "dep:regex-lite", "dep:error-stack"]
+build = [ "dep:log", "dep:directories", "dep:regex-lite", "dep:error-stack"]
 
 
 [[bench]]

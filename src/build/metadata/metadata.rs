@@ -6,13 +6,13 @@
 
 use std::cmp;
 
-use serde::Deserialize;
+use nanoserde::DeJson;
 
 // Compatible json decode of `cargo metadata --format-version 1`
 // https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 
-#[derive(Deserialize, Debug)]
-pub(super) struct MetadataPackage {
+#[derive(DeJson, Debug)]
+pub struct MetadataPackage {
     pub name: String,
     pub version: String,
     pub id: String,
@@ -24,31 +24,31 @@ pub(super) struct MetadataPackage {
     pub homepage: Option<String>,
 }
 
-#[derive(Deserialize, Debug, cmp::PartialEq, cmp::Eq, cmp::PartialOrd, cmp::Ord)]
-pub(super) struct MetadataResolveNodeDepsKind {
+#[derive(DeJson, Debug, cmp::PartialEq, cmp::Eq, cmp::PartialOrd, cmp::Ord)]
+pub struct MetadataResolveNodeDepsKind {
     pub kind: Option<String>,
 }
 
-#[derive(Deserialize, Debug, cmp::PartialEq, cmp::PartialOrd, cmp::Eq, cmp::Ord)]
-pub(super) struct MetadataResolveNodeDeps {
+#[derive(DeJson, Debug, cmp::PartialEq, cmp::PartialOrd, cmp::Eq, cmp::Ord)]
+pub struct MetadataResolveNodeDeps {
     pub pkg: String,
     pub dep_kinds: Vec<MetadataResolveNodeDepsKind>,
 }
 
-#[derive(Deserialize, Debug, cmp::PartialEq, cmp::PartialOrd, cmp::Eq, cmp::Ord)]
-pub(super) struct MetadataResolveNode {
+#[derive(DeJson, Debug, cmp::PartialEq, cmp::PartialOrd, cmp::Eq, cmp::Ord)]
+pub struct MetadataResolveNode {
     pub id: String,
     pub deps: Vec<MetadataResolveNodeDeps>,
 }
 
-#[derive(Deserialize, Debug)]
-pub(super) struct MetadataResolve {
+#[derive(DeJson, Debug)]
+pub struct MetadataResolve {
     pub nodes: Vec<MetadataResolveNode>,
     pub root: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
-pub(super) struct Metadata {
+#[derive(DeJson, Debug)]
+pub struct Metadata {
     pub packages: Vec<MetadataPackage>,
     pub resolve: MetadataResolve,
 }
@@ -57,10 +57,9 @@ pub(super) struct Metadata {
 mod tests {
     use super::*;
 
-    use serde_json::from_slice;
     use std::env;
     use std::ffi::OsString;
-    use std::fs::read;
+    use std::fs::read_to_string;
 
     fn get_path() -> OsString {
         env::var_os("CARGO_MANIFEST_DIR").unwrap()
@@ -70,7 +69,7 @@ mod tests {
     fn test_parse_metadata_json() {
         let mut root = get_path();
         root.push("/tests/metadata_test.json");
-        let json_bytes = read(root).unwrap();
-        let _parsed_metadata: Metadata = from_slice(&json_bytes).unwrap();
+        let json_string = read_to_string(root).unwrap();
+        let _parsed_metadata: Metadata = Metadata::deserialize_json(&json_string).unwrap();
     }
 }

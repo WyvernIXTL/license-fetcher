@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Removed `thiserror` and `fnv` crate for small speed up for build script.
-- Switched from `bincode` to `bitcode` crate, as the former was abandoned. Moreover, `bitcode` is faster and has a smaller compilation footprint.
+- Switched from `bincode` to `nanoserde` crate, as the former was abandoned.
 - Switched back to `lz4_flex` from `miniz_oxide`. On my machine `miniz_oxide` compiles in 3s and executes the compression for the licenses of my tool `ubilerntui` in 1,5s. `lz4_flex` produces a bigger output, but is faster to compile and compresses faster as well.
+- Moved from `serde` and `serde_json` to the much smaller `nanoserde` for reduced compilation time and a large speed up of the build script.
 
 
 ## v0.8.4

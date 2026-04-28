@@ -11,7 +11,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum UnpackError {
     DecompressError(lz4_flex::block::DecompressError),
-    DecodeError(bitcode::Error),
+    DecodeError(nanoserde::DeBinErr),
     /// The supplied byte array is empty.
     Empty,
 }
@@ -22,8 +22,8 @@ impl From<lz4_flex::block::DecompressError> for UnpackError {
     }
 }
 
-impl From<bitcode::Error> for UnpackError {
-    fn from(value: bitcode::Error) -> Self {
+impl From<nanoserde::DeBinErr> for UnpackError {
+    fn from(value: nanoserde::DeBinErr) -> Self {
         Self::DecodeError(value)
     }
 }
