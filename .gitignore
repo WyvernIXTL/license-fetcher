@@ -26,9 +26,6 @@ Cargo.lock
 
 ./stupid.json
 
-/.aider*
-!/.aider.conf.yml
-!/.aiderignore
 
 /flamegraph.svg
 /flamechart.svg
