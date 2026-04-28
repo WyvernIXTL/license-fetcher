@@ -1,4 +1,4 @@
-// Copyright Adam McKellar 2024, 2025
+// Copyright Adam McKellar 2024, 2025, 2026
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
