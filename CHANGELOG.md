@@ -20,11 +20,6 @@ The release of v0.9.0 brings a speed-up of compilation compared to v0.8.4. The A
 - Moved from `serde` and `serde_json` to the much smaller `nanoserde` for a major speed-up of compilation.
 - Turned off `kv` feature of `log` crate. Maybe there is a compilation speed-up?
 
-### Fixed
-
-- Dummy build script creating dummy file. (Known issue: dummy build script is still compiled and run even if empty.)
-
-
 
 ## v0.8.4
 

@@ -1,19 +1,12 @@
-// Known issue, this build script gets executed on every build of the library, even if it does do nothging.
+// (This build script only has one use: stfu rust-analyzer.)
+// This dummy is used not only by the IDE, but also by the doctests in CI.
 
-#[cfg(any(test, docsrs))]
 use std::env;
-#[cfg(any(test, docsrs))]
 use std::fs::File;
 
-// This build script only has one use: stfu rust-analyzer.
-
-#[cfg(any(test, docsrs))]
 fn main() {
     let mut path = env::var_os("OUT_DIR").unwrap();
     path.push("/LICENSE-3RD-PARTY.bincode.deflate");
     let _ = File::create(path);
     println!("cargo::rerun-if-changed=Cargo.lock");
 }
-
-#[cfg(not(test))]
-fn main() {}
