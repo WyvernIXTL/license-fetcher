@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.9.1
+
+### Added
+
+- Added `serde` feature, that enables the derivation of `Serialize` and `Deserialize` traits.
+
+
 ## v0.9.0
 
 The release of v0.9.0 brings a speed-up of compilation compared to v0.8.4. The API remains mostly unchanged to v0.8.4, while the compression and serialization formats change.

@@ -32,6 +32,7 @@ log = { version = "0.4.22", optional = true}
 lz4_flex = { version = "0.13.0", default-features = false, features = ["checked-decode"]}
 nanoserde = { version = "0.2.1", default-features = false, features = ["std", "json", "binary"] }
 regex-lite = { version = "0.1.6", optional = true }
+serde = { version = "1.0.228", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -42,6 +43,7 @@ supports-color = "3.0.2"
 [features]
 default = []
 build = [ "dep:log", "dep:directories", "dep:regex-lite", "dep:error-stack"]
+serde = ["dep:serde"]
 
 
 [[bench]]

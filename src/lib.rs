@@ -105,6 +105,10 @@
 //! }
 //! ```
 //!
+//! ## Features
+//!
+//! - `serde` enables the derivation of `Serialize` and `Deserialize` for `Package` and `PackageList`.
+//!
 
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
@@ -128,6 +132,7 @@ pub mod build;
 /// This struct holds information like package name, authors and of course license text.
 #[derive(DeBin, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Package {
     pub name: String,
     pub version: String,
@@ -253,6 +258,7 @@ impl fmt::Display for Package {
 /// Holds information of all crates and licenses used for a release build.
 #[derive(DeBin, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PackageList(pub Vec<Package>);
 
 impl From<Vec<Package>> for PackageList {

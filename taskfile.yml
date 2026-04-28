@@ -39,8 +39,9 @@ tasks:
       - check
       - c
     cmds:
-      - cargo check -F build
       - cargo check
+      - cargo check -F build
+      - cargo check -F build,serde
 
   bench:
     desc: bench with criterion
