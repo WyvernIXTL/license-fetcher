@@ -51,5 +51,5 @@ name = "bench"
 harness = false
 
 [package.metadata.docs.rs]
-features = ["build"]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

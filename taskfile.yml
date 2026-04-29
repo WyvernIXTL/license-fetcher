@@ -53,7 +53,7 @@ tasks:
     env:
       RUSTDOCFLAGS: "--cfg docsrs"
     cmds:
-      - cargo +nightly doc --all-features
+      - cargo +nightly doc --all-features --no-deps
 
   flamegraph:
     desc: generate flame graph

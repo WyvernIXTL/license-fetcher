@@ -110,7 +110,7 @@
 //! - `serde` enables the derivation of `Serialize` and `Deserialize` for `Package` and `PackageList`.
 //!
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use std::cmp::Ordering;
 use std::default::Default;
