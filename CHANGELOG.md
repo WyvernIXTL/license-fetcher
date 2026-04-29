@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.9.2
+
+- Fix unexpected [deprecation of `doc_auto_cfg`](https://github.com/rust-lang/rust/pull/138907).
+
+
 ## v0.9.1
 
 ### Added
