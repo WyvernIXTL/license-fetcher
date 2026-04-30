@@ -72,14 +72,14 @@ fn extract_package_name_from_id(
     package_id: &String,
 ) -> Result<String, PkgListFromCargoMetadataError> {
     static PARSE_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r".*?[#|\/](?<name>[a-z\-\_]+)[@|#][\d\.]+").unwrap());
+        LazyLock::new(|| Regex::new(r".*?[#|\/](?<name>[a-z\-\_\d]+)[@|#][\d\.]+").unwrap());
 
     if let Some(caps) = PARSE_REGEX.captures(&package_id) {
         Ok(caps["name"].to_owned())
     } else {
         Err(
             report!(PkgListFromCargoMetadataError::PackageNameParseError)
-                .attach_printable(format!("package id: {}", package_id)),
+                .attach_printable(format!("package id: '{}'", package_id)),
         )
     }
 }

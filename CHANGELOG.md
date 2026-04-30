@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.9.3
+
+### Fixed
+
+- Fixed packages with numbers in their name not being parsed.
+
+
 ## v0.9.2
 
 ### Fixed
