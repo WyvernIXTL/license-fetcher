@@ -1,18 +1,25 @@
-name: Test Main
+name: Tests
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
       - uses: Swatinem/rust-cache@v2
-      - uses: arduino/setup-task@v2
-      - run: task setup
-      - name: Run Tests
-        run: task t
+
+      - uses: go-task/setup-task@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Tests, Checks and Try Build Docs
+        run: task --parallel test:check test:integration doc

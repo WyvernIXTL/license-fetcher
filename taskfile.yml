@@ -6,32 +6,40 @@ output:
     end: "::endgroup::"
 
 tasks:
-  test:setup:
-    desc: "Setup for tests and benchmarks."
-    aliases:
-      - setup
-    dir: "./tests/test_crate"
-    cmds:
-      - cargo fetch --locked
+  # ---------------------------------- Test ---------------------------------- #
 
   test:integration:
-    desc: "Run integration test."
+    desc: "Run integration tests."
     env:
       RUST_BACKTRACE: full
     aliases:
       - test
       - t
+    deps:
+      - task: test:integration:test-crate
+      - task: test:integration:build-script
+
+  test:integration:test-crate:
+    desc: "Run integration test with test crate."
+    deps:
+      - task: setup:test-crate
+    env:
+      RUST_BACKTRACE: full
     cmds:
       - cargo test -F build
-      - task: test:integration:build-script
 
   test:integration:build-script:
     desc: "Run integration test with build script."
+    env:
+      RUST_BACKTRACE: full
     dir: "./tests/test_buildscript"
     cmds:
       - cargo fetch
       - cargo update
       - cargo run
+
+
+  # ---------------------------------- Check --------------------------------- #
 
   test:check:
     desc: call cargo check on all applicable features
@@ -56,10 +64,25 @@ tasks:
       - cargo check -F build,serde
 
 
+  # ---------------------------------- Bench --------------------------------- #
+
+  setup:test-crate:
+    desc: "Setup for tests and benchmarks."
+    aliases:
+      - setup
+    dir: "./tests/test_crate"
+    cmds:
+      - cargo fetch --locked
+
   bench:
     desc: bench with criterion
+    deps:
+      - task: setup:test-crate
     cmds:
       - cargo bench -F build
+
+
+  # ---------------------------------- MISC ---------------------------------- #
 
   doc:
     desc: build docs
