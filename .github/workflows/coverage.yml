@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths: 
+      - 'src/**'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'tests/**'
 
 jobs:
   coverage:

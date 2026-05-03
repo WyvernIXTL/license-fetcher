@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths: 
+    - 'src/**'
+    - 'Cargo.lock'
+    - 'Cargo.toml'
+    - 'tests/**'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
