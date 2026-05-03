@@ -457,6 +457,8 @@ mod test {
                 && create_test_package("test1", "0.1.0") < create_test_package("test1", "1.1.0")
                 && create_test_package("test1", "0.1.0") < create_test_package("test1", "10.0.0")
                 && create_test_package("test1", "0.1.0") < create_test_package("test2", "0.0.0")
+                && create_test_package("test2", "0.1.0") > create_test_package("test1", "0.1.0")
+                && create_test_package("test1", "0.2.0") > create_test_package("test1", "0.1.0")
         );
     }
 }
