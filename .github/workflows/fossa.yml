@@ -1,0 +1,19 @@
+name: Fossa
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  fossa:
+    name: Fossa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Fossa
+        run: "curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash"
+        shell: bash
+      - name: Run Fossa
+        run: fossa analyze
