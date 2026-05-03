@@ -35,8 +35,10 @@ regex-lite = { version = "0.1.6", optional = true }
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 
 [dev-dependencies]
+arbitrary = { version = "1.4.2", features = ["derive"] }
+arbtest = "0.3.2"
+assert2 = "0.4.0"
 criterion = "0.5.1"
-pretty_assertions = "1.4.0"
 simplelog = "0.12.2"
 supports-color = "3.0.2"
 

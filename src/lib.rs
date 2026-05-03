@@ -133,6 +133,7 @@ pub mod build;
 #[derive(DeBin, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Package {
     pub name: String,
     pub version: String,
@@ -220,6 +221,10 @@ impl Package {
     }
 }
 
+/// Very naiv [Ord] implementation for [Package].
+///
+/// This implementation is very basic and just for returning the package list in a somewhat ordered state.
+/// This order implementation does not take into consideration like alpha or beta release.
 impl Ord for Package {
     fn cmp(&self, other: &Self) -> Ordering {
         if self.name < other.name {
@@ -259,6 +264,7 @@ impl fmt::Display for Package {
 #[derive(DeBin, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct PackageList(pub Vec<Package>);
 
 impl From<Vec<Package>> for PackageList {
@@ -354,12 +360,13 @@ macro_rules! read_package_list_from_out_dir {
 
 #[cfg(test)]
 mod test {
-    use std::fs::read_to_string;
+    use arbtest::arbtest;
+    use assert2::{assert, check};
 
     use super::*;
 
     #[test]
-    fn test_package_macro() {
+    fn package_macro_works() {
         let _pkg: Package = package! {
             name: "dependency".to_owned(),
             version: "0.1.0".to_owned(),
@@ -369,9 +376,87 @@ mod test {
             repository: None,
             license_identifier: None,
             license_text: Some(
-                read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
-                    .expect("Failed reading license of other dependency")
+                "Some random ass license".to_owned()
             )
         };
+    }
+
+    #[test]
+    fn display_package_contains_inputs() {
+        let test_package = package!(
+            name: "test_package".to_owned(),
+            version: "0.1.0".to_owned(),
+            authors: vec!["Max Mustermann".to_owned(), "Erika Mustermann".to_owned()],
+            description: Some("Some weird ass test package.".to_owned()),
+            homepage: Some("https://example.com".to_owned()),
+            repository: Some("https://github.com/example/test_package".to_owned()),
+            license_identifier: Some("MPL-2.0".to_owned()),
+            license_text: Some("NaN".to_owned()),
+        );
+
+        let display = format!("{}", test_package);
+
+        check!(
+            display.contains("test_package")
+                && display.contains("0.1.0")
+                && display.contains("Max Mustermann")
+                && display.contains("Erika Mustermann")
+                && display.contains("Some weird ass test package.")
+                && display.contains("https://example.com")
+                && display.contains("https://github.com/example/test_package")
+                && display.contains("MPL-2.0")
+        );
+    }
+
+    #[test]
+    fn display_package_does_not_panic() {
+        arbtest(|u| {
+            let test_package: Package = u.arbitrary()?;
+
+            let _ = format!("{}", test_package);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn display_package_list_does_not_panic() {
+        arbtest(|u| {
+            let test_package_list: PackageList = u.arbitrary()?;
+
+            let _ = format!("{}", test_package_list);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn package_list_default() {
+        assert!(PackageList::default() == PackageList(vec![]));
+    }
+
+    #[test]
+    fn ord_trait_for_package() {
+        let create_test_package = |name: &str, id: &str| {
+            package!(
+                name: name.to_owned(),
+                version: id.to_owned(),
+                authors: vec!["Max Mustermann".to_owned(), "Erika Mustermann".to_owned()],
+                description: Some("Some weird ass test package.".to_owned()),
+                homepage: Some("https://example.com".to_owned()),
+                repository: Some("https://github.com/example/test_package".to_owned()),
+                license_identifier: Some("MPL-2.0".to_owned()),
+                license_text: Some("NaN".to_owned()),
+            )
+        };
+
+        check!(
+            create_test_package("test1", "0.1.0") <= create_test_package("test1", "0.1.0")
+                && create_test_package("test1", "0.1.0") < create_test_package("test2", "0.1.0")
+                && create_test_package("test1", "0.1.0") < create_test_package("test1", "0.1.1")
+                && create_test_package("test1", "0.1.0") < create_test_package("test1", "1.1.0")
+                && create_test_package("test1", "0.1.0") < create_test_package("test1", "10.0.0")
+                && create_test_package("test1", "0.1.0") < create_test_package("test2", "0.0.0")
+        );
     }
 }
