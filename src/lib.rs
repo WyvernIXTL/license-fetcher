@@ -221,7 +221,7 @@ impl Package {
     }
 }
 
-/// Very naiv [Ord] implementation for [Package].
+/// Very naive [Ord] implementation for [Package].
 ///
 /// This implementation is very basic and just for returning the package list in a somewhat ordered state.
 /// This order implementation does not take into consideration like alpha or beta release.
