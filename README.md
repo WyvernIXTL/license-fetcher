@@ -4,11 +4,14 @@
 
 **Fetch licenses of dependencies at build time and embed them into your program.**
 
+[![lib.rs link](https://badgen.net/badge/lib.rs/lib.rs/purple?label)](https://lib.rs/crates/license-fetcher)
 [![Crates.io Version](https://img.shields.io/crates/v/license-fetcher)](https://crates.io/crates/license-fetcher)
 [![GitHub License](https://img.shields.io/github/license/WyvernIXTL/license-fetcher)](https://github.com/WyvernIXTL/license-fetcher/blob/main/LICENSE)
 [![docs.rs](https://img.shields.io/docsrs/license-fetcher)](https://docs.rs/license-fetcher)
-[![lib.rs link](https://badgen.net/badge/lib.rs/lib.rs/purple?label)](https://lib.rs/crates/license-fetcher)
 [![dependency status](https://deps.rs/repo/github/WyvernIXTL/license-fetcher/status.svg)](https://deps.rs/repo/github/WyvernIXTL/license-fetcher)
+[![codecov](https://codecov.io/gh/WyvernIXTL/license-fetcher/graph/badge.svg?token=FUBAIYFXSP)](https://codecov.io/gh/WyvernIXTL/license-fetcher)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher?ref=badge_shield&issueType=license)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher.svg?type=shield&issueType=security)](https://app.fossa.com/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher?ref=badge_shield&issueType=security)
 
 </div>
 
@@ -139,3 +142,19 @@ A big shout-out!
 _Display trait included_ 😉
 
 ![Screenshot](./img/example_print.png)
+
+
+## License
+
+This project is licensed under the [MPL 2.0 license](./LICENSE).
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher.svg?type=large&issueType=license)](https://app.fossa.com/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher?ref=badge_large&issueType=license)
+
+_(* I have no clue, where Fossa is getting those dependencies from 😂)_
+
+
+## Code Coverage
+
+[![Codecov Graph Icicle](https://codecov.io/gh/WyvernIXTL/license-fetcher/graphs/icicle.svg?token=FUBAIYFXSP)](https://codecov.io/gh/WyvernIXTL/license-fetcher)
+
