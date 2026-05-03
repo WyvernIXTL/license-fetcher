@@ -20,7 +20,7 @@ tasks:
       - task: test:integration:build-script
 
   test:integration:test-crate:
-    desc: "Run integration test with test crate."
+    desc: "Run integration test with test crate and other unit tests."
     deps:
       - task: setup:test-crate
     env:
