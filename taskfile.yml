@@ -38,10 +38,23 @@ tasks:
     aliases:
       - check
       - c
+    deps:
+      - task: test:check:1
+      - task: test:check:2
+      - task: test:check:3
+
+  test:check:1:
     cmds:
       - cargo check
+
+  test:check:2:
+    cmds:
       - cargo check -F build
+
+  test:check:3:
+    cmds:
       - cargo check -F build,serde
+
 
   bench:
     desc: bench with criterion
