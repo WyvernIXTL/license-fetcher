@@ -9,6 +9,7 @@ on:
       - 'Cargo.lock'
       - 'Cargo.toml'
       - 'tests/**'
+  workflow_dispatch:
 
 jobs:
   coverage:
@@ -28,4 +29,4 @@ jobs:
         with:
           files: lcov.info
           fail_ci_if_error: true
-          use_oidc: true
+          token: ${{ secrets.CODECOV_TOKEN }}
