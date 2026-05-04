@@ -1,7 +1,10 @@
+// TODO: WTF is this!?
+
 use std::sync::LazyLock;
 
 use assert2::assert;
 use license_fetcher::{package, Package};
+use serial_test::serial;
 
 #[cfg(feature = "build")]
 #[test]
@@ -99,6 +102,7 @@ static LICENSE_FETCHER_DIRECT_DEPENDENCIES: LazyLock<Vec<String>> = LazyLock::ne
 
 #[cfg(feature = "build")]
 #[test]
+#[serial]
 fn test_fetching_and_serialization_from_env_var_license_fetcher() {
     use std::fs::read;
 
@@ -144,8 +148,12 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
 
 #[cfg(feature = "build")]
 #[test]
+#[serial]
 fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
-    use license_fetcher::build::{config::ConfigBuilder, package_list_with_licenses};
+    use license_fetcher::{
+        build::{config::ConfigBuilder, package_list_with_licenses},
+        PackageList,
+    };
 
     let temp_dir = tempfile::tempdir().unwrap();
     unsafe {
@@ -158,6 +166,8 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
     // Fetch metadata and licenses.
     assert!(let Ok(packages) =  package_list_with_licenses(&config), "Failed fetching licenses for packages.");
 
+    assert!(packages[1..].iter().all(|p| !p.restored_from_cache));
+
     // Write packages to out dir to be embedded.
     assert!(
         packages.write_package_list_to_out_dir().is_ok(),
@@ -167,7 +177,20 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
     // Fetch metadata and licenses again, hopefully with cache.
     assert!(let Ok(packages2) =  package_list_with_licenses(&config), "Failed fetching licenses for packages.");
 
-    assert!(packages == packages2);
+    assert!(packages2[1..].iter().all(|p| p.restored_from_cache));
+
+    let packages2_set_not_cached = PackageList(
+        packages2
+            .iter()
+            .cloned()
+            .map(|mut p| {
+                p.restored_from_cache = false;
+                p
+            })
+            .collect(),
+    );
+
+    assert!(packages == packages2_set_not_cached);
 
     std::env::remove_var("OUT_DIR");
 }

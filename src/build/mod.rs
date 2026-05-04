@@ -311,8 +311,8 @@ impl PackageList {
     pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
         let compressed_data = self.encode();
 
-        let mut path = PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?);
-        path.push("LICENSE-3RD-PARTY.bincode.deflate");
+        let path = PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?)
+            .join("LICENSE-3RD-PARTY.bincode.deflate");
 
         info!("Writing to file: {}", &path.display());
         write(path, compressed_data).change_context(WriteError::Write)?;
