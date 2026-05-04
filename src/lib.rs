@@ -366,7 +366,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn package_macro_works() {
+    fn test_package_macro_compiles() {
         let _pkg: Package = package! {
             name: "dependency".to_owned(),
             version: "0.1.0".to_owned(),
@@ -382,7 +382,7 @@ mod test {
     }
 
     #[test]
-    fn display_package_contains_inputs() {
+    fn test_display_package_contains_inputs() {
         let test_package = package!(
             name: "test_package".to_owned(),
             version: "0.1.0".to_owned(),
@@ -409,7 +409,7 @@ mod test {
     }
 
     #[test]
-    fn display_package_does_not_panic() {
+    fn test_display_package_does_not_panic() {
         arbtest(|u| {
             let test_package: Package = u.arbitrary()?;
 
@@ -420,7 +420,7 @@ mod test {
     }
 
     #[test]
-    fn display_package_list_does_not_panic() {
+    fn test_display_package_list_does_not_panic() {
         arbtest(|u| {
             let test_package_list: PackageList = u.arbitrary()?;
 
@@ -431,12 +431,12 @@ mod test {
     }
 
     #[test]
-    fn package_list_default() {
+    fn test_package_list_default() {
         assert!(PackageList::default() == PackageList(vec![]));
     }
 
     #[test]
-    fn ord_trait_for_package() {
+    fn test_ord_trait_for_package() {
         let create_test_package = |name: &str, id: &str| {
             package!(
                 name: name.to_owned(),
@@ -460,5 +460,20 @@ mod test {
                 && create_test_package("test2", "0.1.0") > create_test_package("test1", "0.1.0")
                 && create_test_package("test1", "0.2.0") > create_test_package("test1", "0.1.0")
         );
+    }
+
+    #[test]
+    fn test_ord_trait_for_package_does_not_panic() {
+        arbtest(|u| {
+            let p1: Package = u.arbitrary()?;
+            let p2: Package = u.arbitrary()?;
+
+            let _ = p1 <= p2;
+            let _ = p1 < p2;
+            let _ = p1 >= p2;
+            let _ = p1 > p2;
+
+            Ok(())
+        });
     }
 }
