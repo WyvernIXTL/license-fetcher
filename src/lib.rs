@@ -112,7 +112,7 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::correctness, clippy::suspicious)]
-#![warn(clippy::complexity, clippy::perf, clippy::style)]
+#![warn(clippy::complexity, clippy::perf, clippy::style, clippy::cargo)]
 #![warn(clippy::pedantic)]
 
 use std::cmp::Ordering;
