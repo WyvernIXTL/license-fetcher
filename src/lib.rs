@@ -113,13 +113,14 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::correctness, clippy::suspicious)]
 #![warn(clippy::complexity, clippy::perf, clippy::style)]
+#![warn(clippy::pedantic)]
 
 use std::cmp::Ordering;
 use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-/// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [PackageList].
+/// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [`PackageList`].
 pub mod error;
 use error::UnpackError;
 use lz4_flex::decompress_size_prepended;
@@ -191,33 +192,33 @@ impl Package {
 
         writeln!(f, "Package:     {} {}", self.name, self.version)?;
         if let Some(description) = &self.description {
-            writeln!(f, "Description: {}", description)?;
+            writeln!(f, "Description: {description}")?;
         }
         if !self.authors.is_empty() {
             writeln!(
                 f,
                 "Authors:     - {}",
-                self.authors.first().unwrap_or(&"".to_owned())
+                self.authors.first().unwrap_or(&String::new())
             )?;
             for author in self.authors.iter().skip(1) {
-                writeln!(f, "             - {}", author)?;
+                writeln!(f, "             - {author}")?;
             }
         }
         if let Some(homepage) = &self.homepage {
-            writeln!(f, "Homepage:    {}", homepage)?;
+            writeln!(f, "Homepage:    {homepage}")?;
         }
         if let Some(repository) = &self.repository {
-            writeln!(f, "Repository:  {}", repository)?;
+            writeln!(f, "Repository:  {repository}")?;
         }
         if let Some(license_identifier) = &self.license_identifier {
-            writeln!(f, "SPDX Ident:  {}", license_identifier)?;
+            writeln!(f, "SPDX Ident:  {license_identifier}")?;
         }
 
         if let Some(license_text) = &self.license_text {
-            writeln!(f, "\n{}\n{}", separator_light, license_text)?;
+            writeln!(f, "\n{separator_light}\n{license_text}")?;
         }
 
-        writeln!(f, "\n{}\n", separator)?;
+        writeln!(f, "\n{separator}\n")?;
 
         Ok(())
     }
@@ -233,14 +234,12 @@ impl Ord for Package {
             Ordering::Less
         } else if self.name > other.name {
             Ordering::Greater
+        } else if self.version < other.version {
+            Ordering::Less
+        } else if self.version > other.version {
+            Ordering::Greater
         } else {
-            if self.version < other.version {
-                Ordering::Less
-            } else if self.version > other.version {
-                Ordering::Greater
-            } else {
-                Ordering::Equal
-            }
+            Ordering::Equal
         }
     }
 }
@@ -256,7 +255,7 @@ impl fmt::Display for Package {
         const SEPARATOR_WIDTH: usize = 80;
         let separator: String = "=".repeat(SEPARATOR_WIDTH);
 
-        writeln!(f, "{}\n", separator)?;
+        writeln!(f, "{separator}\n")?;
 
         self.fmt_package(f)
     }
@@ -294,7 +293,7 @@ impl fmt::Display for PackageList {
         const SEPARATOR_WIDTH: usize = 80;
         let separator: String = "=".repeat(SEPARATOR_WIDTH);
 
-        writeln!(f, "{}\n", separator)?;
+        writeln!(f, "{separator}\n")?;
 
         for package in self.iter() {
             package.fmt_package(f)?;
@@ -318,6 +317,13 @@ impl PackageList {
     ///     ))).unwrap();
     /// }
     /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`UnpackError`] on failed decompression or on failed deserialisation.
+    /// This error wraps [`lz4_flex::block::DecompressError`] and [`nanoserde::DeBinErr`].
+    ///
+    ///
     pub fn from_encoded(bytes: &[u8]) -> Result<PackageList, UnpackError> {
         if bytes.is_empty() {
             return Err(UnpackError::Empty);
@@ -331,9 +337,9 @@ impl PackageList {
     }
 }
 
-/// Embed and decode a [PackageList], which you expect to be in `$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`, via [PackageList::from_encoded].
+/// Embed and decode a [`PackageList`], which you expect to be in `$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`, via [`PackageList::from_encoded`].
 ///
-/// This macro is only meant to be used in conjunction with [PackageList::write_package_list_to_out_dir].
+/// This macro is only meant to be used in conjunction with [`PackageList::write_package_list_to_out_dir`].
 ///
 /// If you get an error that `OUT_DIR` is not set, then please compile your project once and restart rust analyzer.
 ///
@@ -394,7 +400,7 @@ mod test {
             license_text: Some("NaN".to_owned()),
         );
 
-        let display = format!("{}", test_package);
+        let display = format!("{test_package}");
 
         check!(
             display.contains("test_package")
@@ -413,7 +419,7 @@ mod test {
         arbtest(|u| {
             let test_package: Package = u.arbitrary()?;
 
-            let _ = format!("{}", test_package);
+            let _ = format!("{test_package}");
 
             Ok(())
         });
@@ -424,7 +430,7 @@ mod test {
         arbtest(|u| {
             let test_package_list: PackageList = u.arbitrary()?;
 
-            let _ = format!("{}", test_package_list);
+            let _ = format!("{test_package_list}");
 
             Ok(())
         });

@@ -36,9 +36,9 @@ impl Error for ExecCargoError {}
 
 fn exec_cargo_single<P, S, I>(
     cargo: P,
-    cargo_directive: &CargoDirective,
+    cargo_directive: CargoDirective,
     manifest_dir: P,
-    features_opt: &Option<OsString>,
+    features_opt: Option<&OsString>,
     arguments: I,
 ) -> Result<Output, ExecCargoError>
 where
@@ -54,26 +54,26 @@ where
         command.arg("-F").arg(features);
     }
 
-    if *cargo_directive != CargoDirective::Default {
-        let cargo_directive: &'static str = (*cargo_directive).into();
+    if cargo_directive != CargoDirective::Default {
+        let cargo_directive: &'static str = (cargo_directive).into();
         command.arg(cargo_directive);
     }
 
     let output = command
         .output()
         .change_context(ExecCargoError::FailedToExecute)
-        .attach_printable_lazy(|| format!("cargo directive: {}", cargo_directive))?;
+        .attach_printable_lazy(|| format!("cargo directive: {cargo_directive}"))?;
 
     if output.status.success() {
         Ok(output)
     } else {
         Err(Report::new(ExecCargoError::FailedExecution)
-            .attach_printable(format!("cargo directive: {}", cargo_directive))
+            .attach_printable(format!("cargo directive: {cargo_directive}"))
             .attach_printable(String::from_utf8_lossy(&output.stderr).into_owned()))
     }
 }
 
-pub fn exec_cargo<I, S>(config: &MetadataConfig, arguments: I) -> Result<Output, ExecCargoError>
+pub fn exec_cargo<I, S>(config: &MetadataConfig, arguments: &I) -> Result<Output, ExecCargoError>
 where
     I: IntoIterator<Item = S> + Clone,
     S: AsRef<OsStr> + Clone,
@@ -85,9 +85,9 @@ where
     for directive in config.cargo_directives.iter() {
         let result_single = exec_cargo_single(
             &config.cargo_path,
-            directive,
+            *directive,
             &config.manifest_dir,
-            &config.enabled_features,
+            config.enabled_features.as_ref(),
             arguments.clone(),
         );
         match result_single {

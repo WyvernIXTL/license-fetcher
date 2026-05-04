@@ -53,7 +53,7 @@ where
 
     pub fn join(&mut self, e: Report<E>) {
         match self.error.as_mut() {
-            Ok(_) => self.error = Err(e),
+            Ok(()) => self.error = Err(e),
             Err(error) => error.extend_one(e),
         }
     }

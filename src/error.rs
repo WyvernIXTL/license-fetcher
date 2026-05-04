@@ -31,8 +31,8 @@ impl From<nanoserde::DeBinErr> for UnpackError {
 impl fmt::Display for UnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DecompressError(e) => writeln!(f, "{}", e),
-            Self::DecodeError(e) => writeln!(f, "{}", e),
+            Self::DecompressError(e) => writeln!(f, "{e}"),
+            Self::DecodeError(e) => writeln!(f, "{e}"),
             Self::Empty => writeln!(f, "Supplied buffer is empty."),
         }
     }

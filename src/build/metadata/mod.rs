@@ -56,13 +56,18 @@ fn walk_dependencies<'a>(
     dependencies: &'a HashMap<&String, &MetadataResolveNode>,
     root: &String,
 ) {
-    let package = match dependencies.get(root) {
-        Some(pack) => pack,
-        None => return,
+    let Some(package) = dependencies.get(root) else {
+        return;
     };
+
     used_dependencies.insert(&package.id);
-    for dep in package.deps.iter() {
-        if dep.dep_kinds.iter().map(|d| &d.kind).any(|o| o.is_none()) {
+    for dep in &package.deps {
+        if dep
+            .dep_kinds
+            .iter()
+            .map(|d| &d.kind)
+            .any(std::option::Option::is_none)
+        {
             walk_dependencies(used_dependencies, dependencies, &dep.pkg);
         }
     }
@@ -79,7 +84,7 @@ fn extract_package_name_from_id(
     } else {
         Err(
             report!(PkgListFromCargoMetadataError::PackageNameParseError)
-                .attach_printable(format!("package id: '{}'", package_id)),
+                .attach_printable(format!("package id: '{package_id}'")),
         )
     }
 }
@@ -90,7 +95,7 @@ fn package_list_from_cargo_metadata(
     const ARGUMENTS: &[&str] = &["metadata", "--format-version", "1", "--color", "never"];
 
     let output =
-        exec_cargo(config, ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
+        exec_cargo(config, &ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
 
     let output_str = String::from_utf8_lossy(&output.stdout);
 
@@ -106,7 +111,10 @@ fn package_list_from_cargo_metadata(
     let dependencies = metadata_parsed.resolve.nodes;
 
     let mut used_packages = HashSet::default();
-    let dependencies_hash_map = HashMap::from_iter(dependencies.iter().map(|d| (&d.id, d)));
+    let dependencies_hash_map = dependencies
+        .iter()
+        .map(|d| (&d.id, d))
+        .collect::<HashMap<_, _>>();
 
     walk_dependencies(&mut used_packages, &dependencies_hash_map, &package_id);
 
@@ -152,15 +160,15 @@ fn used_pkg_names_from_cargo_tree(
     ];
 
     let output =
-        exec_cargo(config, ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
+        exec_cargo(config, &ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
 
     Ok(String::from_utf8(output.stdout)
         .change_context(PkgListFromCargoMetadataError::ParseString)?
         .lines()
-        .map(|l| l.trim())
+        .map(str::trim)
         .filter(|s| !s.is_empty())
-        .map(|e| e.split(" ").next().unwrap_or(e))
-        .map(|s| s.to_owned())
+        .map(|e| e.split(' ').next().unwrap_or(e))
+        .map(std::borrow::ToOwned::to_owned)
         .collect::<HashSet<String>>())
 }
 
@@ -173,6 +181,12 @@ fn used_pkg_names_from_cargo_tree(
 ///
 /// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
+///
+/// ## Errors
+///
+/// Returns [`PkgListFromCargoMetadataError`] on failure. This error contains information, what part of the
+/// metadata parsing failed.
+///
 pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {
         let packages_handle = scope.spawn(|| package_list_from_cargo_metadata(config));
@@ -180,10 +194,10 @@ pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromC
         let used_package_names_handle = scope.spawn(|| used_pkg_names_from_cargo_tree(config));
 
         let packages = packages_handle.join().map_err(|e| {
-            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
+            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
         let used_packages = used_package_names_handle.join().map_err(|e| {
-            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
+            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
 
         match (packages, used_packages) {
