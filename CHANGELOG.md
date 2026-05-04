@@ -67,7 +67,7 @@ The release of v0.9.0 brings a speed-up of compilation compared to v0.8.4. The A
 
 ## Fixed
 
-- Some root id of cargo metadata output not being parsed correctly.
+- Some root ID of cargo metadata output not being parsed correctly.
 
 ## v0.8.1
 
