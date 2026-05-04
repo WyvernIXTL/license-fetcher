@@ -9,7 +9,4 @@ fn main() {
     path.push("/LICENSE-3RD-PARTY.bincode.deflate");
     let _ = File::create(path);
     println!("cargo::rerun-if-changed=Cargo.lock");
-
-    // Coverage?
-    println!("cargo::rustc-check-cfg=cfg(coverage)");
 }

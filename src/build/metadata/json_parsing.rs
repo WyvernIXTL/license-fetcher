@@ -60,7 +60,6 @@ pub struct Metadata {
 /* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
-#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use super::*;
 

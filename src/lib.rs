@@ -111,7 +111,6 @@
 //!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(coverage, feature(coverage_attribute))]
 #![deny(clippy::correctness, clippy::suspicious)]
 #![warn(clippy::complexity, clippy::perf, clippy::style)]
 
@@ -360,7 +359,6 @@ macro_rules! read_package_list_from_out_dir {
 /* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
-#[cfg_attr(coverage, coverage(off))]
 mod test {
     use arbtest::arbtest;
     use assert2::check;
