@@ -158,6 +158,7 @@ use std::env::var_os;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::fs::write;
+use std::path::PathBuf;
 use std::time::Instant;
 
 mod cache;
@@ -310,8 +311,8 @@ impl PackageList {
     pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
         let compressed_data = self.encode();
 
-        let mut path = var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?;
-        path.push("/LICENSE-3RD-PARTY.bincode.deflate");
+        let mut path = PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?);
+        path.push("LICENSE-3RD-PARTY.bincode.deflate");
 
         info!("Writing to file: {}", &path.display());
         write(path, compressed_data).change_context(WriteError::Write)?;

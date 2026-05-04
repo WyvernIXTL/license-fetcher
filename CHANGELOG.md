@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Potentially writing compressed license data to root under Unix.
+
+
 ### Changed
 
 - Slightly changed the API to fulfill Clippy pedantic.
