@@ -11,8 +11,6 @@
 [![dependency status](https://deps.rs/repo/github/WyvernIXTL/license-fetcher/status.svg)](https://deps.rs/repo/github/WyvernIXTL/license-fetcher)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/WyvernIXTL/license-fetcher/test.yml?branch=main)](https://github.com/WyvernIXTL/license-fetcher/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/WyvernIXTL/license-fetcher/graph/badge.svg?token=FUBAIYFXSP)](https://codecov.io/gh/WyvernIXTL/license-fetcher)
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher?ref=badge_shield&issueType=license)
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher.svg?type=shield&issueType=security)](https://app.fossa.com/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher?ref=badge_shield&issueType=security)
 
 </div>
 
@@ -148,11 +146,6 @@ _Display trait included_ 😉
 ## License
 
 This project is licensed under the [MPL 2.0 license](./LICENSE).
-
-
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher.svg?type=large&issueType=license)](https://app.fossa.com/projects/custom%2B44887%2Fgithub.com%2FWyvernIXTL%2Flicense-fetcher?ref=badge_large&issueType=license)
-
-_(* I have no clue, where Fossa is getting those dependencies from 😂)_
 
 
 ## Code Coverage
