@@ -63,7 +63,7 @@ fn main() {
         .expect("Failed to build configuration.");
 
     // Fetch metadata and licenses.
-    let packages: PackageList = package_list_with_licenses(config)
+    let packages: PackageList = package_list_with_licenses(&config)
                                     .expect("Failed to fetch metadata or licenses.");
 
     // Write packages to out dir to be embedded.
