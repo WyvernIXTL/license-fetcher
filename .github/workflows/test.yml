@@ -28,3 +28,12 @@ jobs:
 
       - name: Run Tests, Checks and Try Build Docs
         run: task --parallel test:check test:integration doc
+
+  clippy_check:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-Dwarnings"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features
