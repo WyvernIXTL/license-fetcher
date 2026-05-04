@@ -110,7 +110,12 @@ impl ConfigBuilder {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 Unit Tests                                 */
+/* -------------------------------------------------------------------------- */
+
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod test {
     use crate::build::debug::setup_test;
 

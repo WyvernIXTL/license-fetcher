@@ -53,7 +53,12 @@ pub struct Metadata {
     pub resolve: MetadataResolve,
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 Unit Tests                                 */
+/* -------------------------------------------------------------------------- */
+
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use super::*;
 

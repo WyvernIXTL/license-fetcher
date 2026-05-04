@@ -111,6 +111,7 @@
 //!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(coverage, feature(coverage_attribute))]
 
 use std::cmp::Ordering;
 use std::default::Default;
@@ -358,7 +359,12 @@ macro_rules! read_package_list_from_out_dir {
     };
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 Unit Tests                                 */
+/* -------------------------------------------------------------------------- */
+
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod test {
     use arbtest::arbtest;
     use assert2::{assert, check};
