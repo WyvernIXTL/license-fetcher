@@ -112,6 +112,8 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(coverage, feature(coverage_attribute))]
+#![deny(clippy::correctness, clippy::suspicious)]
+#![warn(clippy::complexity, clippy::perf, clippy::style)]
 
 use std::cmp::Ordering;
 use std::default::Default;
@@ -196,7 +198,7 @@ impl Package {
             writeln!(
                 f,
                 "Authors:     - {}",
-                self.authors.get(0).unwrap_or(&"".to_owned())
+                self.authors.first().unwrap_or(&"".to_owned())
             )?;
             for author in self.authors.iter().skip(1) {
                 writeln!(f, "             - {}", author)?;
@@ -262,7 +264,7 @@ impl fmt::Display for Package {
 }
 
 /// Holds information of all crates and licenses used for a release build.
-#[derive(DeBin, Debug, PartialEq, Eq, Clone)]
+#[derive(DeBin, Debug, PartialEq, Eq, Clone, Default)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
@@ -271,12 +273,6 @@ pub struct PackageList(pub Vec<Package>);
 impl From<Vec<Package>> for PackageList {
     fn from(value: Vec<Package>) -> Self {
         Self(value)
-    }
-}
-
-impl Default for PackageList {
-    fn default() -> Self {
-        PackageList(vec![])
     }
 }
 
@@ -367,7 +363,7 @@ macro_rules! read_package_list_from_out_dir {
 #[cfg_attr(coverage, coverage(off))]
 mod test {
     use arbtest::arbtest;
-    use assert2::{assert, check};
+    use assert2::check;
 
     use super::*;
 
@@ -434,11 +430,6 @@ mod test {
 
             Ok(())
         });
-    }
-
-    #[test]
-    fn test_package_list_default() {
-        assert!(PackageList::default() == PackageList(vec![]));
     }
 
     #[test]

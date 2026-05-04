@@ -47,10 +47,6 @@ default = []
 build = [ "dep:log", "dep:directories", "dep:regex-lite", "dep:error-stack"]
 serde = ["dep:serde"]
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)'] }
-
-
 [[bench]]
 name = "bench"
 harness = false

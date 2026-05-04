@@ -29,7 +29,7 @@ impl MetadataEnv {
 
 fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, VarError> {
     let env_value = var_os(&env)
-        .ok_or_else(|| VarError::NotPresent)
+        .ok_or(VarError::NotPresent)
         .attach_printable_lazy(|| CEnvVar::from(env))?;
 
     Ok(PathBuf::from(env_value))

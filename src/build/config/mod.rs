@@ -90,12 +90,12 @@ pub enum CargoDirective {
     Frozen,
 }
 
-impl Into<&'static str> for CargoDirective {
-    fn into(self) -> &'static str {
-        match self {
-            Self::Default => "",
-            Self::Locked => "--locked",
-            Self::Frozen => "--frozen",
+impl From<CargoDirective> for &'static str {
+    fn from(val: CargoDirective) -> Self {
+        match val {
+            CargoDirective::Default => "",
+            CargoDirective::Locked => "--locked",
+            CargoDirective::Frozen => "--frozen",
         }
     }
 }

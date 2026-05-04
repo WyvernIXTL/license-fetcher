@@ -54,12 +54,12 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
     // TODO: Split this up.
-    let license_text = read_dir(&path)
+    let license_text = read_dir(path)
         .attach_printable_lazy(|| CPath::from(path))?
         .filter_map(|e| e.ok())
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .filter_map(|e| {
-            if e.file_type().map_or(false, |e| e.is_dir()) {
+            if e.file_type().is_ok_and(|e| e.is_dir()) {
                 Some(
                     read_dir(e.path())
                         .map_err(|err| {
@@ -67,7 +67,6 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
                             error!("Failed reading sub license directory. Path: '{}'. Error: \n {err}", path.display())
                         })
                         .ok()?
-                        .into_iter()
                         .filter_map(|e| e.ok())
                         .filter(|e| {
                             LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy())
@@ -78,9 +77,8 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
                 Some(vec![e])
             }
         })
-        .map(|e| e.into_iter())
-        .flatten()
-        .filter(|e| e.file_type().map_or(false, |e| e.is_file()))
+        .flat_map(|e| e.into_iter())
+        .filter(|e| e.file_type().is_ok_and(|e| e.is_file()))
         .filter_map(|e| {
             read_to_string(e.path())
                 .map_err(|err| {
@@ -119,30 +117,30 @@ pub fn populate_package_list_licenses(
             .map(|p| (p.name_version.clone(), p)),
     );
 
-    let mut src_folder_iterator =
+    let src_folder_iterator =
         src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;
 
     let mut result = ReportJoin::default();
 
-    while let Some(src_folder) = src_folder_iterator.next() {
+    for src_folder in src_folder_iterator {
         info!("src folder: {:?}", &src_folder);
 
         read_dir(&src_folder)
             .attach_printable_lazy(|| CPath::from(src_folder))
             .change_context(LicenseFetchError::SrcFolderRecursion)?
             .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().map_or(false, |e| e.is_dir()))
+            .filter(|e| e.file_type().is_ok_and(|e| e.is_dir()))
             .for_each(|e| {
                 let folder_name_os = e.file_name();
                 let folder_name = folder_name_os.to_string_lossy();
                 if let Some((e, p)) = package_hash_map
                     .get_mut(folder_name.as_ref())
-                    .and_then(|p| Some((e, p)))
+                    .map(|p| (e, p))
                 {
                     info!("Fetching license for: {}", &p.name);
 
                     match license_text_from_folder(&e.path()) {
-                        Ok(res) => (**p).license_text = res,
+                        Ok(res) => p.license_text = res,
                         Err(err) => {
                             error!("Failure");
                             let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);

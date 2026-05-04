@@ -59,7 +59,7 @@ fn manifest_path_from_dir_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, F
         .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
         .change_context(FromPathError::Io)?
         .filter_map(|e| e.ok())
-        .find(|e| e.file_type().map_or(false, |e| e.is_file()) && e.file_name() == "Cargo.toml")
+        .find(|e| e.file_type().is_ok_and(|e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
         .ok_or_else(|| Report::new(FromPathError::ManifestNotFound))
         .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
@@ -83,7 +83,7 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
 
     Ok(manifest_path
         .parent()
-        .ok_or_else(|| FromPathError::Io)
+        .ok_or(FromPathError::Io)
         .attach_printable_lazy(|| CPath::from(&manifest_path))?
         .to_path_buf())
 }

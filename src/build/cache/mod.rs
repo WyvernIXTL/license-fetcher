@@ -33,8 +33,7 @@ impl fmt::Display for CacheError {
 impl Error for CacheError {}
 
 fn load_package_list_from_out_dir_during_build_script() -> Result<PackageList, CacheError> {
-    let mut old_pkg_list_path =
-        PathBuf::from(var_os("OUT_DIR").ok_or_else(|| CacheError::NotBuildScript)?);
+    let mut old_pkg_list_path = PathBuf::from(var_os("OUT_DIR").ok_or(CacheError::NotBuildScript)?);
     old_pkg_list_path.push("LICENSE-3RD-PARTY.bincode.deflate");
     ensure!(
         old_pkg_list_path

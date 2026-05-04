@@ -14,7 +14,7 @@ use std::{
 
 use command::exec_cargo;
 use error_stack::{ensure, report, Result, ResultExt};
-use metadata::{Metadata, MetadataResolveNode};
+use json_parsing::{Metadata, MetadataResolveNode};
 use nanoserde::DeJson;
 use regex_lite::Regex;
 
@@ -23,7 +23,7 @@ use crate::{Package, PackageList};
 use super::config::MetadataConfig;
 
 mod command;
-mod metadata;
+mod json_parsing;
 
 #[derive(Debug, Clone, Copy)]
 pub enum PkgListFromCargoMetadataError {
@@ -74,7 +74,7 @@ fn extract_package_name_from_id(
     static PARSE_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r".*?[#|\/](?<name>[a-z\-\_\d]+)[@|#][\d\.]+").unwrap());
 
-    if let Some(caps) = PARSE_REGEX.captures(&package_id) {
+    if let Some(caps) = PARSE_REGEX.captures(package_id) {
         Ok(caps["name"].to_owned())
     } else {
         Err(
@@ -87,8 +87,7 @@ fn extract_package_name_from_id(
 fn package_list_from_cargo_metadata(
     config: &MetadataConfig,
 ) -> Result<Vec<Package>, PkgListFromCargoMetadataError> {
-    const ARGUMENTS: &'static [&'static str] =
-        &["metadata", "--format-version", "1", "--color", "never"];
+    const ARGUMENTS: &[&str] = &["metadata", "--format-version", "1", "--color", "never"];
 
     let output =
         exec_cargo(config, ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
@@ -139,7 +138,7 @@ fn package_list_from_cargo_metadata(
 fn used_pkg_names_from_cargo_tree(
     config: &MetadataConfig,
 ) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
-    const ARGUMENTS: &'static [&'static str] = &[
+    const ARGUMENTS: &[&str] = &[
         "tree",
         "-e",
         "normal",
@@ -160,7 +159,7 @@ fn used_pkg_names_from_cargo_tree(
         .lines()
         .map(|l| l.trim())
         .filter(|s| !s.is_empty())
-        .map(|e| e.split(" ").next().unwrap_or_else(|| e))
+        .map(|e| e.split(" ").next().unwrap_or(e))
         .map(|s| s.to_owned())
         .collect::<HashSet<String>>())
 }
@@ -186,28 +185,29 @@ pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromC
         let used_packages = used_package_names_handle.join().map_err(|e| {
             report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{:?}", e))
         })?;
-        if packages.is_err() && used_packages.is_err() {
-            let mut pkgs_err = packages.unwrap_err();
-            let used_pkgs_err = used_packages.unwrap_err();
-            pkgs_err.extend_one(used_pkgs_err);
-            return Err(pkgs_err);
+
+        match (packages, used_packages) {
+            (Err(mut pkgs_err), Err(used_pkgs_err)) => {
+                pkgs_err.extend_one(used_pkgs_err);
+                Err(pkgs_err)
+            }
+            (Err(pkgs_err), _) => Err(pkgs_err),
+            (_, Err(used_pkgs_err)) => Err(used_pkgs_err),
+            (Ok(packages), Ok(used_package_names)) => {
+                let mut filtered_packages = Vec::with_capacity(packages.capacity());
+                let filtered_packages_iter = packages
+                    .into_iter()
+                    .filter(|e| used_package_names.contains(&e.name));
+                filtered_packages.extend(filtered_packages_iter);
+
+                ensure!(
+                    filtered_packages.iter().any(|e| e.is_root_pkg),
+                    PkgListFromCargoMetadataError::RootPackageMissing
+                );
+
+                Ok(filtered_packages.into())
+            }
         }
-
-        let packages = packages?;
-        let used_package_names = used_packages?;
-
-        let mut filtered_packages = Vec::with_capacity(packages.capacity());
-        let filtered_packages_iter = packages
-            .into_iter()
-            .filter(|e| used_package_names.contains(&e.name));
-        filtered_packages.extend(filtered_packages_iter);
-
-        ensure!(
-            filtered_packages.iter().any(|e| e.is_root_pkg),
-            PkgListFromCargoMetadataError::RootPackageMissing
-        );
-
-        Ok(filtered_packages.into())
     })
 }
 

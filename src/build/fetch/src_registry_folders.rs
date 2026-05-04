@@ -47,6 +47,6 @@ pub fn src_registry_folders(
         .attach_printable_lazy(|| CPath::from(&src_dir))
         .change_context(SrcRegistryInferenceError::FailedReadDir)?
         .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().map_or(false, |ft| ft.is_dir()))
+        .filter(|e| e.file_type().is_ok_and(|ft| ft.is_dir()))
         .map(|e| e.path()))
 }
