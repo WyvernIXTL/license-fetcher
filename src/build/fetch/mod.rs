@@ -32,6 +32,7 @@ pub enum LicenseFetchError {
     SrcFolderRecursion,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for LicenseFetchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {

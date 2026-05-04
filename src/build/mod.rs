@@ -195,6 +195,7 @@ pub enum BuildError {
     Unexpected,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl Display for BuildError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let res = match self {
@@ -263,6 +264,7 @@ pub enum WriteError {
     NotBuildScript,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {

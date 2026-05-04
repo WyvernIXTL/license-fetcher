@@ -21,6 +21,7 @@ pub enum FromPathError {
     Io,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for FromPathError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
@@ -116,6 +117,7 @@ impl ConfigBuilder {
 /* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
     use crate::build::debug::setup_test;
 

@@ -100,6 +100,7 @@ impl From<CargoDirective> for &'static str {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CargoDirective {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let printable = match self {
@@ -348,6 +349,7 @@ pub enum ConfigBuildError {
     CargoHomeDir,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ConfigBuildError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {

@@ -28,6 +28,8 @@ impl From<nanoserde::DeBinErr> for UnpackError {
     }
 }
 
+// TODO: should display trait be included in the coverage?
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for UnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

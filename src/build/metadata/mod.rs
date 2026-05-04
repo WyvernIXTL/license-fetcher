@@ -35,6 +35,7 @@ pub enum PkgListFromCargoMetadataError {
     RootPackageMissing,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for PkgListFromCargoMetadataError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
@@ -236,6 +237,7 @@ pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromC
 /* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
     use super::*;
 

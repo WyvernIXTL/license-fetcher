@@ -17,9 +17,10 @@ impl<T: AsRef<OsStr>> From<T> for CPath {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Path: {}", self.0.to_string_lossy())
+        write!(f, "Path: {}", self.0.display())
     }
 }
 
@@ -32,6 +33,7 @@ impl<T: AsRef<OsStr>> From<T> for CEnvVar {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CEnvVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Environment Variable: {}", self.0)
