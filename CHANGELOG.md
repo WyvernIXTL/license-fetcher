@@ -57,7 +57,7 @@ The release of v0.9.0 brings a speed-up of compilation compared to v0.8.4. The A
 
 ### Added
 
-- Added caveat section in readme.
+- Added caveat section in README.
 
 ### Changed
 
@@ -79,8 +79,7 @@ The release of v0.9.0 brings a speed-up of compilation compared to v0.8.4. The A
 
 ### Added
 
-- Configuration
-  - Configuration builder
+- Configuration builder
   - From build environment
   - From manifest file
 - Caching
