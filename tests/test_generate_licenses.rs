@@ -10,7 +10,7 @@ fn test_generate_licenses() {
         .build()
         .unwrap();
 
-    let licenses = license_fetcher::build::package_list_with_licenses(config).unwrap();
+    let licenses = license_fetcher::build::package_list_with_licenses(&config).unwrap();
 
     check!(
         licenses.len() > 0

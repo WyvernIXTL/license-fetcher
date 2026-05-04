@@ -186,6 +186,12 @@ fn used_pkg_names_from_cargo_tree(
 ///
 /// Returns [`PkgListFromCargoMetadataError`] on failure. This error contains information, what part of the
 /// metadata parsing failed.
+/// - [`PkgListFromCargoMetadataError::ExecCargo`]: Failed to execute `cargo metadata`.
+/// - [`PkgListFromCargoMetadataError::ParseJson`]: Failed to parse output of `cargo metadata`.
+/// - [`PkgListFromCargoMetadataError::ParseString`]: Failed to parse `cargo` output to utf-8 string.
+/// - [`PkgListFromCargoMetadataError::Thread`]: Error occurred with thread.
+/// - [`PkgListFromCargoMetadataError::PackageNameParseError`]: Failed to parse package id to package name.
+/// - [`PkgListFromCargoMetadataError::RootPackageMissing`]: The root/main package is missing.
 ///
 pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {

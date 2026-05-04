@@ -4,7 +4,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, fmt, fs::read_dir, path::PathBuf};
+use std::{
+    error::Error,
+    fmt,
+    fs::read_dir,
+    path::{Path, PathBuf},
+};
 
 use error_stack::{ensure, Report, Result, ResultExt};
 
@@ -31,7 +36,7 @@ impl fmt::Display for SrcRegistryInferenceError {
 impl Error for SrcRegistryInferenceError {}
 
 pub fn src_registry_folders(
-    path: PathBuf,
+    path: &Path,
 ) -> Result<impl Iterator<Item = PathBuf>, SrcRegistryInferenceError> {
     let src_subfolder = PathBuf::from("registry/src");
     let src_dir = path.join(src_subfolder);
@@ -46,7 +51,7 @@ pub fn src_registry_folders(
     Ok(read_dir(&src_dir)
         .attach_printable_lazy(|| CPath::from(&src_dir))
         .change_context(SrcRegistryInferenceError::FailedReadDir)?
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .filter(|e| e.file_type().is_ok_and(|ft| ft.is_dir()))
         .map(|e| e.path()))
 }

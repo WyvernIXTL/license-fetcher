@@ -77,7 +77,7 @@ pub enum FetchBackend {
 
 /// Configures how Cargo [fetches metadata].
 ///
-/// This configuration enum is meant to be used with [CargoDirectiveList].
+/// This configuration enum is meant to be used with [`CargoDirectiveList`].
 ///
 /// [fetches metadata]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#manifest-options
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -107,13 +107,13 @@ impl fmt::Display for CargoDirective {
             Self::Locked => "locked",
             Self::Frozen => "frozen",
         };
-        write!(f, "{}", printable)
+        write!(f, "{printable}")
     }
 }
 
 /// Configure how Cargo fetches metadata.
 ///
-/// Each [CargoDirective] corresponds to one `cargo` command being called if the one prior failed.
+/// Each [`CargoDirective`] corresponds to one `cargo` command being called if the one prior failed.
 /// This can be useful if you supply installation instructions that either set `--locked` or `--frozen`.
 ///
 /// ### Examples
@@ -143,7 +143,7 @@ impl fmt::Display for CargoDirective {
 /// ```sh
 /// cargo install --locked my-program
 /// ```
-/// then be sure to set [CargoDirective::Locked] before [Default](CargoDirective::Default):
+/// then be sure to set [`CargoDirective::Locked`] before [`CargoDirective::Default`]:
 /// ```
 /// # use license_fetcher::build::config::{CargoDirectiveList, CargoDirective};
 /// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default]);
@@ -178,6 +178,7 @@ impl Default for CargoDirectiveList {
 
 impl CargoDirectiveList {
     /// Shorthand for `CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default])`
+    #[must_use]
     pub fn prefer_locked() -> Self {
         CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default])
     }
@@ -246,24 +247,28 @@ pub struct ConfigBuilder {
 
 impl ConfigBuilder {
     /// Sets the manifest directory path.
+    #[must_use]
     pub fn manifest_dir(mut self, dir: PathBuf) -> Self {
         self.manifest_dir = Some(dir);
         self
     }
 
     /// Sets the cargo executable path.
+    #[must_use]
     pub fn cargo_path(mut self, path: PathBuf) -> Self {
         self.cargo_path = Some(path);
         self
     }
 
     /// Sets the cargo home directory path
+    #[must_use]
     pub fn cargo_home_dir(mut self, dir: PathBuf) -> Self {
         self.cargo_home_dir = Some(dir);
         self
     }
 
     /// Sets the cargo directives.
+    #[must_use]
     pub fn cargo_directives(mut self, directives: impl Into<CargoDirectiveList>) -> Self {
         self.cargo_directives = Some(directives.into());
         self
@@ -279,6 +284,7 @@ impl ConfigBuilder {
     /// [`CARGO_CFG_FEATURE`] is used.
     ///
     /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+    #[must_use]
     pub fn cache(mut self, cache: bool) -> Self {
         self.cache = Some(cache);
         self
@@ -292,12 +298,17 @@ impl ConfigBuilder {
     ///
     /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
     /// [here]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#feature-selection
+    #[must_use]
     pub fn enabled_features(mut self, features: OsString) -> Self {
         self.enabled_features = Some(features);
         self
     }
 
     /// Builds the Config with all required fields.
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ConfigBuildError`] on failure to build the configuration.
     pub fn build(self) -> Result<Config, ConfigBuildError> {
         self.error.result()?;
 

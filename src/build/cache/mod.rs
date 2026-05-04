@@ -47,15 +47,17 @@ fn load_package_list_from_out_dir_during_build_script() -> Result<PackageList, C
     PackageList::from_encoded(&old_pkg_list_bin).change_context(CacheError::Invalid)
 }
 
-/// Use previously fetched licenses to fill in a [PackageList].
+/// Use previously fetched licenses to fill in a [`PackageList`].
 ///
 /// Beware to call this function only in build scripts (`build.rs`)!
 pub fn populate_with_cache(pkg_list: &mut PackageList) -> Result<(), CacheError> {
     let cache = load_package_list_from_out_dir_during_build_script()?;
 
     // TODO: Check if a vec linear search is faster.
-    let cache_map: HashMap<&String, &crate::Package> =
-        HashMap::from_iter(cache.iter().map(|e| (&e.name_version, e)));
+    let cache_map: HashMap<&String, &crate::Package> = cache
+        .iter()
+        .map(|e| (&e.name_version, e))
+        .collect::<HashMap<_, _>>();
     for pkg in pkg_list.iter_mut() {
         if let Some(c) = cache_map.get(&pkg.name_version) {
             pkg.restored_from_cache = true;

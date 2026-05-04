@@ -11,9 +11,9 @@ use error_stack::{Result, ResultExt};
 
 use crate::build::error::CPath;
 
-use super::*;
+use super::{ConfigBuildError, ConfigBuilder, PathBuf};
 
-/// Error that appears during failed build of config via [ConfigBuilder::from_path()].
+/// Error that appears during failed build of config via [`ConfigBuilder::from_path()`].
 #[derive(Debug)]
 pub enum FromPathError {
     PathDoesNotExist,
@@ -52,13 +52,13 @@ fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf,
     Ok(uncertain_file_path)
 }
 
-fn manifest_path_from_dir_path(uncertain_dir_path: PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_path_from_dir_path(uncertain_dir_path: &PathBuf) -> Result<PathBuf, FromPathError> {
     debug_assert!(uncertain_dir_path.is_dir());
 
-    read_dir(&uncertain_dir_path)
+    read_dir(uncertain_dir_path)
         .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
         .change_context(FromPathError::Io)?
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .find(|e| e.file_type().is_ok_and(|e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
         .ok_or_else(|| Report::new(FromPathError::ManifestNotFound))
@@ -78,7 +78,7 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
     let manifest_path = if uncertain_path.is_file() {
         manifest_path_from_file_path(uncertain_path)
     } else {
-        manifest_path_from_dir_path(uncertain_path)
+        manifest_path_from_dir_path(&uncertain_path)
     }?;
 
     Ok(manifest_path
@@ -89,10 +89,11 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
 }
 
 impl ConfigBuilder {
-    /// Sets [manifest_dir](Self::manifest_dir) from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
+    /// Sets [`manifest_dir`](Self::manifest_dir) from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
     /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
     /// Essentially a sanity check.
+    #[must_use]
     pub fn with_path(mut self, manifest_path: impl Into<PathBuf>) -> Self {
         match manifest_dir(manifest_path.into()).change_context(ConfigBuildError::FailedFromPath) {
             Ok(manifest_dir) => self = self.manifest_dir(manifest_dir),
@@ -101,7 +102,7 @@ impl ConfigBuilder {
         self
     }
 
-    /// New builder with [manifest_dir](Self::manifest_dir) being set from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
+    /// New builder with [`manifest_dir`](Self::manifest_dir) being set from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
     /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
     /// Essentially a sanity check.

@@ -5,12 +5,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::LazyLock;
 use std::{
     error::Error,
     fmt,
     fs::{read_dir, read_to_string},
-    path::PathBuf,
 };
 
 use error_stack::{Result, ResultExt};
@@ -47,16 +47,16 @@ impl fmt::Display for LicenseFetchError {
 
 impl Error for LicenseFetchError {}
 
-pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>, std::io::Error> {
-    trace!("Fetching license in folder: {:?}", &path);
-
+pub(crate) fn license_text_from_folder(path: &Path) -> Result<Option<String>, std::io::Error> {
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
+
+    trace!("Fetching license in folder: {}", path.display());
 
     // TODO: Split this up.
     let license_text = read_dir(path)
         .attach_printable_lazy(|| CPath::from(path))?
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .filter_map(|e| {
             if e.file_type().is_ok_and(|e| e.is_dir()) {
@@ -64,10 +64,10 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
                     read_dir(e.path())
                         .map_err(|err| {
                             let path = e.path();
-                            error!("Failed reading sub license directory. Path: '{}'. Error: \n {err}", path.display())
+                            error!("Failed reading sub license directory. Path: '{}'. Error: \n {err}", path.display());
                         })
                         .ok()?
-                        .filter_map(|e| e.ok())
+                        .filter_map(std::result::Result::ok)
                         .filter(|e| {
                             LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy())
                         })
@@ -77,13 +77,13 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
                 Some(vec![e])
             }
         })
-        .flat_map(|e| e.into_iter())
+        .flat_map(std::iter::IntoIterator::into_iter)
         .filter(|e| e.file_type().is_ok_and(|e| e.is_file()))
         .filter_map(|e| {
             read_to_string(e.path())
                 .map_err(|err| {
                     let path = e.path();
-                    error!("Error during reading of license file. Skipping. Path: '{}'. Error: \n {err}", path.display())
+                    error!("Error during reading of license file. Skipping. Path: '{}'. Error: \n {err}", path.display());
                 })
                 .ok()
         })
@@ -94,7 +94,7 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
         });
 
     if license_text.is_empty() {
-        warn!("Found no licenses in folder: {:?}", &path);
+        warn!("Found no licenses in folder: {}", path.display());
         return Ok(None);
     }
 
@@ -108,14 +108,13 @@ pub(crate) fn license_text_from_folder(path: &PathBuf) -> Result<Option<String>,
 #[doc(hidden)]
 pub fn populate_package_list_licenses(
     package_list: &mut PackageList,
-    cargo_home_dir: PathBuf,
+    cargo_home_dir: &Path,
 ) -> Result<(), LicenseFetchError> {
-    let mut package_hash_map: HashMap<String, &mut crate::Package> = HashMap::from_iter(
-        package_list
-            .iter_mut()
-            .filter(|p| p.license_text.is_none() && !p.restored_from_cache)
-            .map(|p| (p.name_version.clone(), p)),
-    );
+    let mut package_hash_map: HashMap<String, &mut crate::Package> = package_list
+        .iter_mut()
+        .filter(|p| p.license_text.is_none() && !p.restored_from_cache)
+        .map(|p| (p.name_version.clone(), p))
+        .collect::<HashMap<_, _>>();
 
     let src_folder_iterator =
         src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;
@@ -123,12 +122,12 @@ pub fn populate_package_list_licenses(
     let mut result = ReportJoin::default();
 
     for src_folder in src_folder_iterator {
-        info!("src folder: {:?}", &src_folder);
+        info!("src folder: {}", &src_folder.display());
 
         read_dir(&src_folder)
             .attach_printable_lazy(|| CPath::from(src_folder))
             .change_context(LicenseFetchError::SrcFolderRecursion)?
-            .filter_map(|e| e.ok())
+            .filter_map(std::result::Result::ok)
             .filter(|e| e.file_type().is_ok_and(|e| e.is_dir()))
             .for_each(|e| {
                 let folder_name_os = e.file_name();

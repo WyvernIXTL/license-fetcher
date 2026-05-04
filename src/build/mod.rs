@@ -62,7 +62,7 @@
 //!         .build()
 //!         .expect("Failed to build configuration.");
 //!
-//!     let packages: PackageList = package_list_with_licenses(config)
+//!     let packages: PackageList = package_list_with_licenses(&config)
 //!                                     .expect("Failed to fetch metadata or licenses.");
 //!
 //!     // Write packages to out dir to be embedded.
@@ -94,7 +94,7 @@
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
 //!     let config: Config = ConfigBuilder::from_build_env().build()?;
 //!
-//!     let packages: PackageList = package_list_with_licenses(config)?;
+//!     let packages: PackageList = package_list_with_licenses(&config)?;
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir()?;
@@ -220,7 +220,7 @@ impl Error for BuildError {}
 /// - [`BuildError::FailedLicenseFetch`]: Failed to read license files from the cargo crate cache.
 /// - [`BuildError::Unexpected`]: The root package (your package) is not in the package list :||
 ///
-pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildError> {
+pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildError> {
     let mut package_list =
         package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
 
@@ -238,7 +238,7 @@ pub fn package_list_with_licenses(config: Config) -> Result<PackageList, BuildEr
         }
     }
 
-    populate_package_list_licenses(&mut package_list, config.cargo_home_dir)
+    populate_package_list_licenses(&mut package_list, &config.cargo_home_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
     let root_pos = package_list

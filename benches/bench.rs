@@ -21,7 +21,7 @@ static CONFIG: LazyLock<Config> = LazyLock::new(|| {
 fn bench_fetch_licenses(c: &mut Criterion) {
     c.bench_function("package_list_with_licenses", |b| {
         b.iter(|| {
-            let _a = license_fetcher::build::package_list_with_licenses(CONFIG.clone());
+            let _a = license_fetcher::build::package_list_with_licenses(&CONFIG);
         })
     });
 }
@@ -41,7 +41,7 @@ fn bench_licenses_only(c: &mut Criterion) {
     c.bench_function("licenses_text_from_cargo_src_folder", |b| {
         b.iter(|| {
             let mut pkgs = PKGS.clone();
-            let _a = populate_package_list_licenses(&mut pkgs, CONFIG.cargo_home_dir.clone());
+            let _a = populate_package_list_licenses(&mut pkgs, &CONFIG.cargo_home_dir);
         })
     });
 }

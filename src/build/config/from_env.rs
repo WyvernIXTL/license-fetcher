@@ -40,6 +40,7 @@ impl ConfigBuilder {
     ///
     /// This method is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
+    #[must_use]
     pub fn with_build_env(mut self) -> Self {
         match MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars) {
             Ok(meta) => {
@@ -59,6 +60,7 @@ impl ConfigBuilder {
     ///
     /// This constructor is meant to be used from a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
+    #[must_use]
     pub fn from_build_env() -> Self {
         ConfigBuilder::default().with_build_env()
     }
