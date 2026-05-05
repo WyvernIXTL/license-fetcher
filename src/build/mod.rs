@@ -156,7 +156,6 @@
 
 use std::env::var_os;
 use std::error::Error;
-use std::fmt::{self, Display};
 use std::fs::write;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -187,25 +186,17 @@ use nanoserde::SerBin;
 use crate::PackageList;
 use fetch::populate_package_list_licenses;
 
-#[derive(Debug, Clone, Copy)]
+/// Error that might occur during fetching of license data.
+#[derive(Debug, Clone, Copy, displaydoc::Display)]
 pub enum BuildError {
+    /// failed to fetch package metadata with `cargo metadata` and `cargo tree`
     FailedMetadataFetching,
+    /// failed to read cache with an io error
     CacheReadError,
+    /// failed to read licenses from cargo sources folder
     FailedLicenseFetch,
-    Unexpected,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl Display for BuildError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let res = match self {
-            Self::FailedMetadataFetching => "Failed to fetch metadata and generate a package list.",
-            Self::CacheReadError => "Failed loading cache with a read error.",
-            Self::FailedLicenseFetch => "Failed fetching licenses from cargo src folders.",
-            Self::Unexpected => "Unexpected error. (ꞋꞋŏ_ŏ)",
-        };
-        f.write_str(res)
-    }
+    /// root package is not in output license data
+    RootPackageNotInOutput,
 }
 
 impl Error for BuildError {}
@@ -213,15 +204,6 @@ impl Error for BuildError {}
 /// Generates a package list with package name, authors and license text.
 ///
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
-///
-/// ## Errors
-///
-/// Returns [`BuildError`] on failure.
-/// - [`BuildError::FailedMetadataFetching`]: Metadata could not be read or parsed.
-/// - [`BuildError::CacheReadError`]: The old licensenses file in the `OUT_DIR` could not be read.
-/// - [`BuildError::FailedLicenseFetch`]: Failed to read license files from the cargo crate cache.
-/// - [`BuildError::Unexpected`]: The root package (your package) is not in the package list :||
-///
 pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildError> {
     let mut package_list =
         package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
@@ -246,7 +228,7 @@ pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildE
     let root_pos = package_list
         .iter()
         .position(|e| e.is_root_pkg)
-        .ok_or(BuildError::Unexpected)
+        .ok_or(BuildError::RootPackageNotInOutput)
         .attach_printable_lazy(|| "Root package is not in package list.")?;
 
     package_list.swap(0, root_pos);
@@ -258,21 +240,13 @@ pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildE
     Ok(package_list)
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Errors that might occur during the writing process of the license data to the output directory.
+#[derive(Debug, Clone, Copy, displaydoc::Display)]
 pub enum WriteError {
+    /// failed writing license data to output directory
     Write,
+    /// function was called not in build script which is disallowed
     NotBuildScript,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for WriteError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            Self::Write => "Failed to write encoded package list.",
-            Self::NotBuildScript => "Executed not inside a build script.",
-        };
-        f.write_str(message)
-    }
 }
 
 impl Error for WriteError {}

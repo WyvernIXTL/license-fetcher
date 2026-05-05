@@ -5,14 +5,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::error::Error;
-use std::fmt;
 
-/// Error union representing errors that might occur during unpacking of license data.
-#[derive(Debug)]
+/// Error union representing errors that might occur during unpacking of embedded license data.
+#[derive(Debug, displaydoc::Display)]
 pub enum UnpackError {
+    /// failed decompressing embedded license data
     DecompressError(lz4_flex::block::DecompressError),
+    /// failed deserialization of embedded decompressed license data
     DecodeError(nanoserde::DeBinErr),
-    /// The supplied byte array is empty.
+    /// embedded license data is empty
     Empty,
 }
 
@@ -25,18 +26,6 @@ impl From<lz4_flex::block::DecompressError> for UnpackError {
 impl From<nanoserde::DeBinErr> for UnpackError {
     fn from(value: nanoserde::DeBinErr) -> Self {
         Self::DecodeError(value)
-    }
-}
-
-// TODO: should display trait be included in the coverage?
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for UnpackError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::DecompressError(e) => writeln!(f, "{e}"),
-            Self::DecodeError(e) => writeln!(f, "{e}"),
-            Self::Empty => writeln!(f, "Supplied buffer is empty."),
-        }
     }
 }
 

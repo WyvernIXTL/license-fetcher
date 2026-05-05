@@ -7,7 +7,6 @@
 use std::{
     collections::{HashMap, HashSet},
     error::Error,
-    fmt,
     sync::LazyLock,
     thread::scope,
 };
@@ -25,29 +24,21 @@ use super::config::MetadataConfig;
 mod command;
 mod json_parsing;
 
-#[derive(Debug, Clone, Copy)]
+/// Error handling the execution and parsing of package metadata.
+#[derive(Debug, Clone, Copy, displaydoc::Display)]
 pub enum PkgListFromCargoMetadataError {
+    /// failed to execute `cargo metadata` or `cargo tree`
     ExecCargo,
+    /// failed to parse the output of `cargo metadata`
     ParseJson,
+    /// failed to parse the output of `cargo tree` as it is not valid UTF-8
     ParseString,
+    /// a thread executing `cargo metadata` or `cargo tree` panicked
     Thread,
+    /// failed to parse a package name from a package id
     PackageNameParseError,
+    /// the root package is not part of the filtered package metadata
     RootPackageMissing,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for PkgListFromCargoMetadataError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            Self::ExecCargo => "Failed to execute `cargo metadata`.",
-            Self::ParseJson => "Failed to parse output of `cargo metadata`.",
-            Self::ParseString => "Failed to parse `cargo` output to utf-8 string.",
-            Self::Thread => "Error occurred with thread.",
-            Self::PackageNameParseError => "Failed to parse package id to package name.",
-            Self::RootPackageMissing => "The root/main package is missing.",
-        };
-        f.write_str(message)
-    }
 }
 
 impl Error for PkgListFromCargoMetadataError {}
@@ -182,17 +173,6 @@ fn used_pkg_names_from_cargo_tree(
 ///
 /// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
-///
-/// ## Errors
-///
-/// Returns [`PkgListFromCargoMetadataError`] on failure. This error contains information, what part of the
-/// metadata parsing failed.
-/// - [`PkgListFromCargoMetadataError::ExecCargo`]: Failed to execute `cargo metadata`.
-/// - [`PkgListFromCargoMetadataError::ParseJson`]: Failed to parse output of `cargo metadata`.
-/// - [`PkgListFromCargoMetadataError::ParseString`]: Failed to parse `cargo` output to utf-8 string.
-/// - [`PkgListFromCargoMetadataError::Thread`]: Error occurred with thread.
-/// - [`PkgListFromCargoMetadataError::PackageNameParseError`]: Failed to parse package id to package name.
-/// - [`PkgListFromCargoMetadataError::RootPackageMissing`]: The root/main package is missing.
 ///
 pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
     scope(|scope| {

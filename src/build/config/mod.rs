@@ -65,16 +65,6 @@ pub mod from_path;
 
 mod cargo_folder;
 
-/// Configures what backend is used for walking the registry source folder.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum FetchBackend {
-    /// Use functions provided by the rusts standard library.
-    ///
-    /// This is fairly performant and does not need an external dependency.
-    #[default]
-    Std,
-}
-
 /// Configures how Cargo [fetches metadata].
 ///
 /// This configuration enum is meant to be used with [`CargoDirectiveList`].
@@ -103,12 +93,12 @@ impl From<CargoDirective> for &'static str {
 #[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CargoDirective {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let printable = match self {
+        let directive_str = match self {
             Self::Default => "default",
             Self::Locked => "locked",
             Self::Frozen => "frozen",
         };
-        write!(f, "{printable}")
+        f.write_str(directive_str)
     }
 }
 
@@ -315,7 +305,7 @@ impl ConfigBuilder {
 
         let metadata_config = MetadataConfig {
             manifest_dir: self.manifest_dir.ok_or_else(|| {
-                Report::new(ConfigBuildError::UninitializedField)
+                Report::new(ConfigBuildError::RequiredFieldNotSet)
                     .attach_printable("Field 'manifest_dir' is required but not set.")
             })?,
             cargo_path: self.cargo_path.unwrap_or_else(|| {
@@ -340,27 +330,16 @@ impl ConfigBuilder {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, displaydoc::Display, Clone, Copy)]
 pub enum ConfigBuildError {
-    UninitializedField,
-    ValidationError,
+    /// required field in builder is not set
+    RequiredFieldNotSet,
+    /// failed reading required fields from build environment variables
     FailedFromEnvVars,
+    /// failed finding manifest path
     FailedFromPath,
+    /// failed determining cargo home directory
     CargoHomeDir,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for ConfigBuildError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            Self::UninitializedField => "Required field in builder is not initialized.",
-            Self::ValidationError => "Validation of input failed.",
-            Self::FailedFromEnvVars => "Failed fetching required fields from build environment variables.",
-            Self::FailedFromPath => "Failed fetching  required fields from manifest in path.",
-            Self::CargoHomeDir => "Failed inferring cargo home dir from environment variables or standard home dir location.",
-        };
-        f.write_str(message)
-    }
 }
 
 impl Error for ConfigBuildError {}

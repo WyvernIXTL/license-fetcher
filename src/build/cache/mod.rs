@@ -4,31 +4,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{collections::HashMap, env::var_os, error::Error, fmt, fs::read, path::PathBuf};
+use std::{collections::HashMap, env::var_os, error::Error, fs::read, path::PathBuf};
 
 use error_stack::{ensure, report, Result, ResultExt};
 
 use crate::{build::error::CPath, PackageList};
 
-#[derive(Debug, Clone, Copy)]
+/// Error occuring when reading cache file (old license data)
+#[derive(Debug, Clone, Copy, displaydoc::Display)]
 pub enum CacheError {
+    /// running a build script (`build.rs`) only function should not be run outside a build script
     NotBuildScript,
+    /// cache not found or cache is invalid
     Invalid,
+    /// failed to read cache file
     ReadError,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for CacheError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            Self::NotBuildScript => {
-                "You are running a build script (`build.rs`) only function during runtime."
-            }
-            Self::Invalid => "Cache was not able to be found or is invalid.",
-            Self::ReadError => "Failed to read valid cache path.",
-        };
-        f.write_str(message)
-    }
 }
 
 impl Error for CacheError {}
@@ -54,7 +44,6 @@ fn load_package_list_from_out_dir_during_build_script() -> Result<PackageList, C
 pub fn populate_with_cache(pkg_list: &mut PackageList) -> Result<(), CacheError> {
     let cache = load_package_list_from_out_dir_during_build_script()?;
 
-    // TODO: Check if a vec linear search is faster.
     let cache_map: HashMap<&String, &crate::Package> = cache
         .iter()
         .map(|e| (&e.name_version, e))

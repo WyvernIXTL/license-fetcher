@@ -8,6 +8,7 @@ use std::{ffi::OsStr, fmt, path::PathBuf};
 
 use error_stack::{Context, Report};
 
+/// Encoded path for error handling.
 #[derive(Debug, Clone)]
 pub struct CPath(pub PathBuf);
 
@@ -24,6 +25,7 @@ impl fmt::Display for CPath {
     }
 }
 
+/// Encoded environment variable for error handling.
 #[derive(Debug, Clone)]
 pub struct CEnvVar(pub String);
 

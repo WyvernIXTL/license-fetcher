@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// The `DeJson` derive gives a clippy warning when the pedantic group is enabled.
 #![allow(clippy::question_mark)]
 
 use std::cmp;

@@ -7,7 +7,6 @@
 use std::{
     error::Error,
     ffi::{OsStr, OsString},
-    fmt,
     path::Path,
     process::{Command, Output},
 };
@@ -16,21 +15,13 @@ use error_stack::{Report, Result, ResultExt};
 
 use crate::build::config::{CargoDirective, MetadataConfig};
 
-#[derive(Debug, Clone, Copy)]
+/// Error that occurs when `cargo` does not execute or returns itself an error.
+#[derive(Debug, Clone, Copy, displaydoc::Display)]
 pub enum ExecCargoError {
-    FailedExecution,
+    /// `cargo` executed, but returned an error
+    ExecutionWithError,
+    /// failed to execute `cargo`
     FailedToExecute,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for ExecCargoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            Self::FailedExecution => "`cargo` did not execute successfully.",
-            Self::FailedToExecute => "Failed to execute `cargo`.",
-        };
-        f.write_str(message)
-    }
 }
 
 impl Error for ExecCargoError {}
@@ -68,7 +59,7 @@ where
     if output.status.success() {
         Ok(output)
     } else {
-        Err(Report::new(ExecCargoError::FailedExecution)
+        Err(Report::new(ExecCargoError::ExecutionWithError)
             .attach_printable(format!("cargo directive: {cargo_directive}"))
             .attach_printable(String::from_utf8_lossy(&output.stderr).into_owned()))
     }
@@ -79,7 +70,10 @@ where
     I: IntoIterator<Item = S> + Clone,
     S: AsRef<OsStr> + Clone,
 {
-    debug_assert!(!config.cargo_directives.is_empty());
+    debug_assert!(
+        !config.cargo_directives.is_empty(),
+        "cargo directives in config passed to `exec_cargo` should not have been empty"
+    );
 
     let mut err: Option<Report<ExecCargoError>> = None;
 
@@ -100,5 +94,10 @@ where
         }
     }
 
-    Err(err.unwrap_or_else(|| Report::new(ExecCargoError::FailedExecution)))
+    debug_assert!(
+        err.is_some(),
+        "cargo execution failed, but the combined error is None"
+    );
+
+    Err(err.unwrap_or_else(|| Report::new(ExecCargoError::ExecutionWithError)))
 }

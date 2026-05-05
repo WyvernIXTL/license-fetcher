@@ -115,6 +115,7 @@
 #![warn(clippy::complexity, clippy::perf, clippy::style, clippy::cargo)]
 #![warn(clippy::pedantic)]
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+#![allow(clippy::missing_errors_doc)]
 
 use std::cmp::Ordering;
 use std::default::Default;
@@ -318,13 +319,6 @@ impl PackageList {
     ///     ))).unwrap();
     /// }
     /// ```
-    ///
-    /// ## Errors
-    ///
-    /// Returns [`UnpackError`] on failed decompression or on failed deserialisation.
-    /// This error wraps [`lz4_flex::block::DecompressError`] and [`nanoserde::DeBinErr`].
-    ///
-    ///
     pub fn from_encoded(bytes: &[u8]) -> Result<PackageList, UnpackError> {
         if bytes.is_empty() {
             return Err(UnpackError::Empty);

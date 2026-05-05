@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, fmt, fs::read_dir};
+use std::{error::Error, fs::read_dir};
 
 use error_stack::{ensure, Report};
 use error_stack::{Result, ResultExt};
@@ -14,23 +14,14 @@ use crate::build::error::CPath;
 use super::{ConfigBuildError, ConfigBuilder, PathBuf};
 
 /// Error that appears during failed build of config via [`ConfigBuilder::from_path()`].
-#[derive(Debug)]
+#[derive(Debug, displaydoc::Display, Clone, Copy)]
 pub enum FromPathError {
+    /// path supplied either does not exist or this program does not have the permissions to read it
     PathDoesNotExist,
+    /// `Cargo.toml` manifest not found
     ManifestNotFound,
+    /// io error
     Io,
-}
-
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for FromPathError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            Self::PathDoesNotExist => "The requested path does not exist or this program does not have the permission to access it.",
-            Self::ManifestNotFound => "Manifest not found.",
-            Self::Io => "Io error.",
-        };
-        f.write_str(message)
-    }
 }
 
 impl Error for FromPathError {}
