@@ -95,7 +95,6 @@ pub(crate) fn license_text_from_folder(path: &Path) -> Result<Option<String>, st
 ///
 /// If a package was loaded from a cache, it is ignored.
 /// Failure of reading directories of packages are ignored.
-#[doc(hidden)]
 pub fn populate_package_list_licenses(
     package_list: &mut PackageList,
     cargo_home_dir: &Path,

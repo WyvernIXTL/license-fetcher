@@ -167,8 +167,10 @@ pub mod config;
 mod debug;
 /// Errors that might appear during build.
 pub mod error;
-#[doc(hidden)]
-pub mod fetch;
+
+mod fetch;
+
+mod wrapper;
 
 /// Logic for reading metadata of a package.
 pub mod metadata;

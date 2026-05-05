@@ -69,7 +69,7 @@
 //!
 //! use license_fetcher::build::config::{ConfigBuilder, Config};
 //! use license_fetcher::build::metadata::package_list;
-//! use license_fetcher::{PackageList, Package, package};
+//! use license_fetcher::{PackageList, Package};
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
@@ -81,19 +81,16 @@
 //!     let mut packages: PackageList = package_list(&config.metadata_config)
 //!                                                 .expect("Failed to fetch metadata.");
 //!
-//!     packages.push(package! {
-//!         name: "other dependency".to_owned(),
-//!         version: "0.1.0".to_owned(),
-//!         authors: vec!["Me".to_owned()],
-//!         description: Some("A dependency that is not a rust crate.".to_owned()),
-//!         homepage: None,
-//!         repository: None,
-//!         license_identifier: None,
-//!         license_text: Some(
+//!     let other_dependency = Package::builder("other dependency", "0.1.0")
+//!         .authors(vec!["Me".to_owned()])
+//!         .description("A dependency that is not a rust crate.")
+//!         .license_text(
 //!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
 //!             .expect("Failed reading license of other dependency")
 //!         )
-//!     });
+//!         .build();
+//!
+//!     packages.push(other_dependency);
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
@@ -148,45 +145,27 @@ pub struct Package {
     pub repository: Option<String>,
     pub license_identifier: Option<String>,
     pub license_text: Option<String>,
-    #[doc(hidden)]
-    pub restored_from_cache: bool,
-    #[doc(hidden)]
-    pub is_root_pkg: bool,
-    #[doc(hidden)]
-    pub name_version: String,
-}
-
-// TODO: Is there an alternative?
-/// Construct a [Package].
-#[macro_export]
-macro_rules! package {
-    (
-        name: $name:expr,
-        version: $version:expr,
-        authors: $authors:expr,
-        description: $description:expr,
-        homepage: $homepage:expr,
-        repository: $repository:expr,
-        license_identifier: $license_identifier:expr,
-        license_text: $license_text:expr $(,)?
-    ) => {
-        $crate::Package {
-            name: $name.clone(),
-            version: $version.clone(),
-            authors: $authors,
-            description: $description,
-            homepage: $homepage,
-            repository: $repository,
-            license_identifier: $license_identifier,
-            license_text: $license_text,
-            restored_from_cache: false,
-            is_root_pkg: false,
-            name_version: format!("{}-{}", $name, $version),
-        }
-    };
 }
 
 impl Package {
+    /// Returns a [`PackageBuilder`] for easy initialization of a package.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let my_package: Package = Package::builder("test_package", "0.1.0")
+    ///     .authors(vec!["Max Mustermann"])
+    ///     .description("A test package.")
+    ///     .homepage("https://codeberg.org/")
+    ///     .repository("https://codeberg.org/")
+    ///     .license_identifier("MPL-2.0")
+    ///     .license_text("Mozilla Public License Version 2.0...")
+    ///     .build();
+    /// ```
+    pub fn builder(name: impl Into<String>, version: impl Into<String>) -> PackageBuilder {
+        PackageBuilder::new(name, version)
+    }
+
     fn fmt_package(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         const SEPARATOR_WIDTH: usize = 80;
         let separator: String = "=".repeat(SEPARATOR_WIDTH);
@@ -260,6 +239,79 @@ impl fmt::Display for Package {
         writeln!(f, "{separator}\n")?;
 
         self.fmt_package(f)
+    }
+}
+
+/// A builder for [`Package`].
+///
+/// ## Examples
+///
+/// Minimal example:
+/// ```
+/// let my_package: Package = Package::builder("test_package", "0.1.0")
+///     .build();
+/// ```
+///
+/// Declare everything:
+/// ```
+/// let my_package: Package = Package::builder("test_package", "0.1.0")
+///     .authors(vec!["Max Mustermann"])
+///     .description("A test package.")
+///     .homepage("https://codeberg.org/")
+///     .repository("https://codeberg.org/")
+///     .license_identifier("MPL-2.0")
+///     .license_text("Mozilla Public License Version 2.0...")
+///     .build();
+/// ```
+pub struct PackageBuilder(Package);
+
+impl PackageBuilder {
+    /// Creates a new [`PackageBuilder`].
+    pub fn new(name: impl Into<String>, version: impl Into<String>) -> Self {
+        PackageBuilder(Package {
+            name: name.into(),
+            version: version.into(),
+            authors: vec![],
+            description: None,
+            homepage: None,
+            repository: None,
+            license_identifier: None,
+            license_text: None,
+        })
+    }
+
+    pub fn authors(mut self, authors: impl Into<Vec<String>>) -> Self {
+        self.0.authors = authors.into();
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.0.description = Some(description.into());
+        self
+    }
+
+    pub fn homepage(mut self, homepage: impl Into<String>) -> Self {
+        self.0.homepage = Some(homepage.into());
+        self
+    }
+
+    pub fn repository(mut self, repository: impl Into<String>) -> Self {
+        self.0.repository = Some(repository.into());
+        self
+    }
+
+    pub fn license_identifier(mut self, license_identifier: impl Into<String>) -> Self {
+        self.0.license_identifier = Some(license_identifier.into());
+        self
+    }
+
+    pub fn license_text(mut self, license_text: impl Into<String>) -> Self {
+        self.0.license_text = Some(license_text.into());
+        self
+    }
+
+    pub fn build(self) -> Package {
+        self.0
     }
 }
 
@@ -368,33 +420,27 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_package_macro_compiles() {
-        let _pkg: Package = package! {
-            name: "dependency".to_owned(),
-            version: "0.1.0".to_owned(),
-            authors: vec!["Me".to_owned()],
-            description: Some("A dependency that is not a rust crate.".to_owned()),
-            homepage: None,
-            repository: None,
-            license_identifier: None,
-            license_text: Some(
-                "Some random ass license".to_owned()
-            )
-        };
+    fn test_package_builder_compiles() {
+        let _pkg = Package::builder("dependency", "0.1.0")
+            .authors(vec!["Me".to_owned()])
+            .description("A dependency that is not a rust crate.")
+            .license_text("Some random ass license")
+            .build();
     }
 
     #[test]
     fn test_display_package_contains_inputs() {
-        let test_package = package!(
-            name: "test_package".to_owned(),
-            version: "0.1.0".to_owned(),
-            authors: vec!["Max Mustermann".to_owned(), "Erika Mustermann".to_owned()],
-            description: Some("Some weird ass test package.".to_owned()),
-            homepage: Some("https://example.com".to_owned()),
-            repository: Some("https://github.com/example/test_package".to_owned()),
-            license_identifier: Some("MPL-2.0".to_owned()),
-            license_text: Some("NaN".to_owned()),
-        );
+        let test_package = Package::builder("test_package", "0.1.0")
+            .authors(vec![
+                "Max Mustermann".to_owned(),
+                "Erika Mustermann".to_owned(),
+            ])
+            .description("Some weird ass test package.")
+            .homepage("https://example.com")
+            .repository("https://github.com/example/test_package")
+            .license_identifier("MPL-2.0")
+            .license_text("NaN")
+            .build();
 
         let display = format!("{test_package}");
 
@@ -435,16 +481,17 @@ mod test {
     #[test]
     fn test_ord_trait_for_package() {
         let create_test_package = |name: &str, id: &str| {
-            package!(
-                name: name.to_owned(),
-                version: id.to_owned(),
-                authors: vec!["Max Mustermann".to_owned(), "Erika Mustermann".to_owned()],
-                description: Some("Some weird ass test package.".to_owned()),
-                homepage: Some("https://example.com".to_owned()),
-                repository: Some("https://github.com/example/test_package".to_owned()),
-                license_identifier: Some("MPL-2.0".to_owned()),
-                license_text: Some("NaN".to_owned()),
-            )
+            Package::builder(name, id)
+                .authors(vec![
+                    "Max Mustermann".to_owned(),
+                    "Erika Mustermann".to_owned(),
+                ])
+                .description("Some weird ass test package.")
+                .homepage("https://example.com")
+                .repository("https://github.com/example/test_package")
+                .license_identifier("MPL-2.0")
+                .license_text("NaN")
+                .build()
         };
 
         check!(

@@ -1,13 +1,9 @@
 use std::sync::LazyLock;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use license_fetcher::{
-    build::{
-        config::{CargoDirective, Config, ConfigBuilder},
-        fetch::populate_package_list_licenses,
-        metadata::package_list,
-    },
-    PackageList,
+use license_fetcher::build::{
+    config::{CargoDirective, Config, ConfigBuilder},
+    metadata::package_list,
 };
 
 static CONFIG: LazyLock<Config> = LazyLock::new(|| {
@@ -34,22 +30,5 @@ fn bench_fetching_metadata(c: &mut Criterion) {
     });
 }
 
-fn bench_licenses_only(c: &mut Criterion) {
-    static PKGS: LazyLock<PackageList> =
-        LazyLock::new(|| package_list(&CONFIG.metadata_config).unwrap());
-
-    c.bench_function("licenses_text_from_cargo_src_folder", |b| {
-        b.iter(|| {
-            let mut pkgs = PKGS.clone();
-            let _a = populate_package_list_licenses(&mut pkgs, &CONFIG.cargo_home_dir);
-        })
-    });
-}
-
-criterion_group!(
-    benches,
-    bench_fetch_licenses,
-    bench_fetching_metadata,
-    bench_licenses_only
-);
+criterion_group!(benches, bench_fetch_licenses, bench_fetching_metadata);
 criterion_main!(benches);

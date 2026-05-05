@@ -3,7 +3,7 @@
 use std::sync::LazyLock;
 
 use assert2::assert;
-use license_fetcher::{package, Package};
+use license_fetcher::Package;
 use serial_test::serial;
 
 #[cfg(feature = "build")]
@@ -49,33 +49,37 @@ static LICENSE_FETCHER_ROOT_PACKAGE: LazyLock<Package> = LazyLock::new(|| {
     let license_text = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"));
     let license_text = format!("{license_text}\n\n"); // This will likely break :(
 
-    let mut pkg = package!(
-        name: package_meta.get_string("name").unwrap().to_owned(),
-        version: package_meta.get_string("version").unwrap().to_owned(),
-        authors: package_meta
+    let mut pkg_builder = Package::builder(
+        package_meta.get_string("name").unwrap().to_owned(),
+        package_meta.get_string("version").unwrap().to_owned(),
+    )
+    .authors(
+        package_meta
             .get_array("authors")
             .unwrap()
             .iter()
             .filter_map(|val| val.as_string().map(|s| s.to_owned()))
             .collect(),
-        description: package_meta
-            .get_string("description")
-            .ok()
-            .map(|value| value.to_owned()),
-        homepage: package_meta
-            .get_string("homepage")
-            .ok()
-            .map(|value| value.to_owned()),
-        repository: package_meta
-            .get_string("repository")
-            .ok()
-            .map(|value| value.to_owned()),
-        license_identifier: package_meta
-            .get_string("license")
-            .ok()
-            .map(|value| value.to_owned()),
-        license_text: Some(license_text.to_owned()),
-    );
+    )
+    .license_text(license_text.to_owned());
+
+    if let Ok(value) = package_meta.get_string("description") {
+        pkg_builder = pkg_builder.description(value.to_owned());
+    }
+
+    if let Ok(value) = package_meta.get_string("homepage") {
+        pkg_builder = pkg_builder.homepage(value.to_owned());
+    }
+
+    if let Ok(value) = package_meta.get_string("repository") {
+        pkg_builder = pkg_builder.repository(value.to_owned());
+    }
+
+    if let Ok(value) = package_meta.get_string("license") {
+        pkg_builder = pkg_builder.license_identifier(value);
+    }
+
+    let mut pkg = pkg_builder.build();
 
     pkg.is_root_pkg = true;
 
