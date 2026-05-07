@@ -282,36 +282,43 @@ impl PackageBuilder {
         })
     }
 
+    #[must_use]
     pub fn authors(mut self, authors: impl Into<Vec<String>>) -> Self {
         self.0.authors = authors.into();
         self
     }
 
+    #[must_use]
     pub fn description(mut self, description: impl Into<String>) -> Self {
         self.0.description = Some(description.into());
         self
     }
 
+    #[must_use]
     pub fn homepage(mut self, homepage: impl Into<String>) -> Self {
         self.0.homepage = Some(homepage.into());
         self
     }
 
+    #[must_use]
     pub fn repository(mut self, repository: impl Into<String>) -> Self {
         self.0.repository = Some(repository.into());
         self
     }
 
+    #[must_use]
     pub fn license_identifier(mut self, license_identifier: impl Into<String>) -> Self {
         self.0.license_identifier = Some(license_identifier.into());
         self
     }
 
+    #[must_use]
     pub fn license_text(mut self, license_text: impl Into<String>) -> Self {
         self.0.license_text = Some(license_text.into());
         self
     }
 
+    #[must_use]
     pub fn build(self) -> Package {
         self.0
     }

@@ -24,7 +24,7 @@ pub enum CacheError {
 
 impl Error for CacheError {}
 
-fn read_package_list_with_tests(cache_file_path: &Path) -> Result<PackageList, CacheError> {
+pub fn read_package_list_with_tests(cache_file_path: &Path) -> Result<PackageList, CacheError> {
     ensure!(
         cache_file_path
             .try_exists()
@@ -33,11 +33,11 @@ fn read_package_list_with_tests(cache_file_path: &Path) -> Result<PackageList, C
             && cache_file_path.is_file(),
         report!(CacheError::Invalid).attach_printable(CPath::from(&cache_file_path))
     );
-    let cache_bin = read(&cache_file_path).change_context(CacheError::ReadError)?;
+    let cache_bin = read(cache_file_path).change_context(CacheError::ReadError)?;
     PackageList::from_encoded(&cache_bin).change_context(CacheError::Invalid)
 }
 
-fn populate_with_cache_from_package_list(
+pub fn populate_with_cache_from_package_list(
     package_iter: impl Iterator<Item = Package>,
     cache: PackageList,
 ) -> impl Iterator<Item = PackageWrapper> {
@@ -45,21 +45,12 @@ fn populate_with_cache_from_package_list(
         let cached_package = cache
             .iter()
             .find(|c| c.name == p.name && c.version == p.version);
-        p.license_text = cached_package.map(|c| c.license_text.clone()).flatten();
+        p.license_text = cached_package.and_then(|c| c.license_text.clone());
         PackageWrapper {
             package: p,
             restored_from_cache: cached_package.is_some(),
         }
     })
-}
-
-/// Use previously fetched licenses to fill in a [`PackageList`].
-pub fn populate_with_cache(
-    package_iter: impl Iterator<Item = Package>,
-    cache_file_path: &Path,
-) -> Result<impl Iterator<Item = PackageWrapper>, CacheError> {
-    read_package_list_with_tests(cache_file_path)
-        .map(|cache| populate_with_cache_from_package_list(package_iter, cache))
 }
 
 /* -------------------------------------------------------------------------- */

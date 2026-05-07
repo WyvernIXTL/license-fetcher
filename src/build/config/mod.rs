@@ -341,7 +341,7 @@ impl ConfigBuilder {
                 Some(dir) => dir,
                 None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
             },
-            cache_path: self.cache_path.or_else(|| maybe_cache_path_from_env()),
+            cache_path: self.cache_path.or_else(maybe_cache_path_from_env),
         })
     }
 }

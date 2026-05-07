@@ -36,9 +36,9 @@ fn exec_cargo_metadata(config: &MetadataConfig) -> Result<Metadata, PkgListFromC
     Metadata::deserialize_json(&output_str).change_context(PkgListFromCargoMetadataError::ParseJson)
 }
 
-fn walk_metadata_resolve_nodes<'a>(
+fn walk_metadata_resolve_nodes(
     used_dependencies: &mut HashSet<String>,
-    dependencies: &'a HashMap<&String, &MetadataResolveNode>,
+    dependencies: &HashMap<&String, &MetadataResolveNode>,
     root: &String,
 ) {
     let Some(package) = dependencies.get(root) else {
@@ -59,13 +59,13 @@ fn walk_metadata_resolve_nodes<'a>(
 }
 
 fn used_package_names_from_metadata_resolve_nodes(
-    deps: Vec<MetadataResolveNode>,
-    root_package_id: String,
+    deps: &[MetadataResolveNode],
+    root_package_id: &String,
 ) -> HashSet<String> {
     let mut used_packages = HashSet::default();
     let dependencies_hash_map = deps.iter().map(|d| (&d.id, d)).collect::<HashMap<_, _>>();
 
-    walk_metadata_resolve_nodes(&mut used_packages, &dependencies_hash_map, &root_package_id);
+    walk_metadata_resolve_nodes(&mut used_packages, &dependencies_hash_map, root_package_id);
 
     used_packages
 }
@@ -99,7 +99,7 @@ fn parse_metadata(
     let dependencies = metadata_parsed.resolve.nodes;
 
     let used_packages =
-        used_package_names_from_metadata_resolve_nodes(dependencies, root_package_id);
+        used_package_names_from_metadata_resolve_nodes(&dependencies, &root_package_id);
 
     let res_iter = packages
         .into_iter()

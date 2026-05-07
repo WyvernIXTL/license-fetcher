@@ -19,7 +19,7 @@ use regex_lite::Regex;
 mod src_registry_folders;
 
 use crate::build::error::CPath;
-use crate::PackageList;
+use crate::build::wrapper::PackageWrapper;
 use src_registry_folders::src_registry_folders;
 
 use super::error::ReportJoin;
@@ -96,13 +96,13 @@ pub(crate) fn license_text_from_folder(path: &Path) -> Result<Option<String>, st
 /// If a package was loaded from a cache, it is ignored.
 /// Failure of reading directories of packages are ignored.
 pub fn populate_package_list_licenses(
-    package_list: &mut PackageList,
+    package_list: &mut [PackageWrapper],
     cargo_home_dir: &Path,
 ) -> Result<(), LicenseFetchError> {
-    let mut package_hash_map: HashMap<String, &mut crate::Package> = package_list
+    let mut package_hash_map: HashMap<String, &mut PackageWrapper> = package_list
         .iter_mut()
-        .filter(|p| p.license_text.is_none() && !p.restored_from_cache)
-        .map(|p| (p.name_version.clone(), p))
+        .filter(|p| p.package.license_text.is_none() && !p.restored_from_cache)
+        .map(|p| (format!("{}-{}", p.package.name, p.package.version), p))
         .collect::<HashMap<_, _>>();
 
     let src_folder_iterator =
@@ -125,10 +125,10 @@ pub fn populate_package_list_licenses(
                     .get_mut(folder_name.as_ref())
                     .map(|p| (e, p))
                 {
-                    info!("Fetching license for: {}", &p.name);
+                    info!("Fetching license for: {}", &p.package.name);
 
                     match license_text_from_folder(&e.path()) {
-                        Ok(res) => p.license_text = res,
+                        Ok(res) => p.package.license_text = res,
                         Err(err) => {
                             error!("Failure");
                             let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);

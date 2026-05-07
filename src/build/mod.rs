@@ -175,16 +175,18 @@ mod wrapper;
 /// Logic for reading metadata of a package.
 pub mod metadata;
 
-use cache::{populate_with_cache, CacheError};
+use cache::CacheError;
 use config::Config;
 use error_stack::Result;
 use error_stack::ResultExt;
 use fetch::license_text_from_folder;
-use log::{error, info, warn};
+use log::{error, info};
 use lz4_flex::compress_prepend_size;
 use metadata::package_list;
 use nanoserde::SerBin;
 
+use crate::build::cache::populate_with_cache_from_package_list;
+use crate::build::cache::read_package_list_with_tests;
 use crate::build::wrapper::PackageWrapper;
 use crate::Package;
 use crate::PackageList;
@@ -222,38 +224,41 @@ pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildE
     let (root_package_name, package_iter) =
         package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
 
-    let package_iter_c: Box<dyn Iterator<Item = PackageWrapper>> =
-        if let Some(cache_path) = config.cache_path {
-            populate_with_cache(package_iter, &cache_path)
-                .map(|p| Box::new(p) as Box<dyn Iterator<Item = PackageWrapper>>)
-                .or_else(|err| match err.current_context() {
-                    CacheError::Invalid => {
-                        error!("Cache is invalid. Skipping cache. Error: \n{err}");
-                        Ok(Box::new(wrap_package_iter(package_iter))
-                            as Box<dyn Iterator<Item = PackageWrapper>>)
-                    }
-                    CacheError::ReadError => Err(err.change_context(BuildError::CacheReadError)),
-                })?
-        } else {
-            Box::new(wrap_package_iter(package_iter))
-        };
+    let mut wrapped_package_vec: Vec<PackageWrapper> = if let Some(cache_path) = &config.cache_path
+    {
+        match read_package_list_with_tests(cache_path) {
+            Ok(cache) => populate_with_cache_from_package_list(package_iter, cache).collect(),
+            Err(err) => match err.current_context() {
+                CacheError::Invalid => {
+                    error!("Cache is invalid. Skipping cache. Error: \n{err}");
+                    wrap_package_iter(package_iter).collect()
+                }
+                CacheError::ReadError => return Err(err.change_context(BuildError::CacheReadError)),
+            },
+        }
+    } else {
+        wrap_package_iter(package_iter).collect()
+    };
 
-    populate_package_list_licenses(&mut package_iter, &config.cargo_home_dir)
+    populate_package_list_licenses(&mut wrapped_package_vec, &config.cargo_home_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
-    let root_pos = package_iter
+    let mut package_vec = Vec::with_capacity(wrapped_package_vec.capacity());
+    package_vec.extend(wrapped_package_vec.into_iter().map(|p| p.package));
+
+    let root_pos = package_vec
         .iter()
-        .position(|e| e.is_root_pkg)
+        .position(|e| e.name == root_package_name)
         .ok_or(BuildError::RootPackageNotInOutput)
         .attach_printable_lazy(|| "Root package is not in package list.")?;
 
-    package_iter.swap(0, root_pos);
-    package_iter[1..].sort();
+    package_vec.swap(0, root_pos);
+    package_vec[1..].sort();
 
-    package_iter[0].license_text = license_text_from_folder(&config.metadata_config.manifest_dir)
+    package_vec[0].license_text = license_text_from_folder(&config.metadata_config.manifest_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
-    Ok(package_iter)
+    Ok(package_vec.into())
 }
 
 /// Errors that might occur during the writing process of the license data to the output directory.
