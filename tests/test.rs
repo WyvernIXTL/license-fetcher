@@ -165,7 +165,7 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
     }
 
     // Build config from env
-    assert!(let Ok(config) = ConfigBuilder::from_build_env().cache(true).build(), "Failed fetchting license metadata.");
+    assert!(let Ok(config) = ConfigBuilder::from_build_env().cache_path(true).build(), "Failed fetchting license metadata.");
 
     // Fetch metadata and licenses.
     assert!(let Ok(packages) =  package_list_with_licenses(&config), "Failed fetching licenses for packages.");

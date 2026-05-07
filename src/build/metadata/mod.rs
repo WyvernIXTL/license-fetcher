@@ -82,13 +82,3 @@ pub fn package_list(
         }
     })
 }
-
-/* -------------------------------------------------------------------------- */
-/*                                 Unit Tests                                 */
-/* -------------------------------------------------------------------------- */
-
-#[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
-mod test {
-    // TODO: add tests for parsing here
-}

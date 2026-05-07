@@ -185,7 +185,10 @@ use lz4_flex::compress_prepend_size;
 use metadata::package_list;
 use nanoserde::SerBin;
 
+use crate::build::wrapper::PackageWrapper;
+use crate::Package;
 use crate::PackageList;
+use crate::OUT_FILE_NAME;
 use fetch::populate_package_list_licenses;
 
 /// Error that might occur during fetching of license data.
@@ -203,6 +206,15 @@ pub enum BuildError {
 
 impl Error for BuildError {}
 
+fn wrap_package_iter(
+    package_iter: impl Iterator<Item = Package>,
+) -> impl Iterator<Item = PackageWrapper> {
+    package_iter.map(|package| PackageWrapper {
+        package,
+        restored_from_cache: false,
+    })
+}
+
 /// Generates a package list with package name, authors and license text.
 ///
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
@@ -210,19 +222,21 @@ pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildE
     let (root_package_name, package_iter) =
         package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
 
-    if config.cache {
-        if let Err(err) = populate_with_cache(&mut package_iter) {
-            match err.current_context() {
-                CacheError::Invalid => {
-                    error!("Cache is invalid. Skipping cache. Error: \n{err}");
-                }
-                CacheError::NotBuildScript => {
-                    warn!("Loading licenses from cache is not available for non build script environments. Error: \n{err}");
-                }
-                CacheError::ReadError => return Err(err.change_context(BuildError::CacheReadError)),
-            }
-        }
-    }
+    let package_iter_c: Box<dyn Iterator<Item = PackageWrapper>> =
+        if let Some(cache_path) = config.cache_path {
+            populate_with_cache(package_iter, &cache_path)
+                .map(|p| Box::new(p) as Box<dyn Iterator<Item = PackageWrapper>>)
+                .or_else(|err| match err.current_context() {
+                    CacheError::Invalid => {
+                        error!("Cache is invalid. Skipping cache. Error: \n{err}");
+                        Ok(Box::new(wrap_package_iter(package_iter))
+                            as Box<dyn Iterator<Item = PackageWrapper>>)
+                    }
+                    CacheError::ReadError => Err(err.change_context(BuildError::CacheReadError)),
+                })?
+        } else {
+            Box::new(wrap_package_iter(package_iter))
+        };
 
     populate_package_list_licenses(&mut package_iter, &config.cargo_home_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
@@ -289,8 +303,8 @@ impl PackageList {
     pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
         let compressed_data = self.encode();
 
-        let path = PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?)
-            .join("LICENSE-3RD-PARTY.bincode.deflate");
+        let path =
+            PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?).join(OUT_FILE_NAME);
 
         info!("Writing to file: {}", &path.display());
         write(path, compressed_data).change_context(WriteError::Write)?;

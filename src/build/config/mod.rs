@@ -56,6 +56,8 @@ use std::{env::var_os, error::Error, ffi::OsString, fmt, ops::Deref, path::PathB
 use cargo_folder::cargo_folder;
 use error_stack::{Report, Result, ResultExt};
 
+use crate::OUT_FILE_NAME;
+
 use super::error::ReportJoin;
 
 #[doc(hidden)]
@@ -210,8 +212,28 @@ pub struct Config {
     pub cargo_home_dir: PathBuf,
     /// Enables cache during license fetching.
     ///
-    /// Setting this will use the already fetched licenses from prior runs.
-    pub cache: bool,
+    /// Setting this to the already fetched license data from prior runs will try to reuse the license data
+    /// instead of recursing through the cargo source folder again.
+    pub cache_path: Option<PathBuf>,
+}
+
+/// Errors which might occur during the building of the config.
+#[derive(Debug, displaydoc::Display, Clone, Copy)]
+pub enum ConfigBuildError {
+    /// required field in builder is not set
+    RequiredFieldNotSet,
+    /// failed reading required fields from build environment variables
+    FailedFromEnvVars,
+    /// failed finding manifest path
+    FailedFromPath,
+    /// failed determining cargo home directory
+    CargoHomeDir,
+}
+
+impl Error for ConfigBuildError {}
+
+fn maybe_cache_path_from_env() -> Option<PathBuf> {
+    var_os("OUT_DIR").map(|out_dir| PathBuf::from(out_dir).join(OUT_FILE_NAME))
 }
 
 /// Builder for Config struct.
@@ -231,7 +253,7 @@ pub struct ConfigBuilder {
     cargo_path: Option<PathBuf>,
     cargo_home_dir: Option<PathBuf>,
     cargo_directives: Option<CargoDirectiveList>,
-    cache: Option<bool>,
+    cache_path: Option<PathBuf>,
     enabled_features: Option<OsString>,
     error: ReportJoin<ConfigBuildError>,
 }
@@ -239,22 +261,22 @@ pub struct ConfigBuilder {
 impl ConfigBuilder {
     /// Sets the manifest directory path.
     #[must_use]
-    pub fn manifest_dir(mut self, dir: PathBuf) -> Self {
-        self.manifest_dir = Some(dir);
+    pub fn manifest_dir(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.manifest_dir = Some(dir.into());
         self
     }
 
     /// Sets the cargo executable path.
     #[must_use]
-    pub fn cargo_path(mut self, path: PathBuf) -> Self {
-        self.cargo_path = Some(path);
+    pub fn cargo_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.cargo_path = Some(path.into());
         self
     }
 
     /// Sets the cargo home directory path
     #[must_use]
-    pub fn cargo_home_dir(mut self, dir: PathBuf) -> Self {
-        self.cargo_home_dir = Some(dir);
+    pub fn cargo_home_dir(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.cargo_home_dir = Some(dir.into());
         self
     }
 
@@ -265,19 +287,15 @@ impl ConfigBuilder {
         self
     }
 
-    /// Enables cache during license fetching.
+    /// Explicitly set the path to the cache file (license data serialized and compressed in prior runs).
     ///
-    /// Setting this will use the already fetched licenses from prior runs.
+    /// If not set, the builder defaults to a detection step with environment variables, that sets the
+    /// cache path if this code is run inside a build script. For this purpose [`OUT_DIR`] is queried.
     ///
-    ///  If not set, the builder defaults to a detection step with environment variables, that sets
-    /// cache to `true` if this code is run inside a build script and `false` otherwise.
-    ///
-    /// [`CARGO_CFG_FEATURE`] is used.
-    ///
-    /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+    /// [`OUT_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
     #[must_use]
-    pub fn cache(mut self, cache: bool) -> Self {
-        self.cache = Some(cache);
+    pub fn cache_path(mut self, cache: impl Into<PathBuf>) -> Self {
+        self.cache_path = Some(cache.into());
         self
     }
 
@@ -290,8 +308,8 @@ impl ConfigBuilder {
     /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
     /// [here]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#feature-selection
     #[must_use]
-    pub fn enabled_features(mut self, features: OsString) -> Self {
-        self.enabled_features = Some(features);
+    pub fn enabled_features(mut self, features: impl Into<OsString>) -> Self {
+        self.enabled_features = Some(features.into());
         self
     }
 
@@ -323,23 +341,7 @@ impl ConfigBuilder {
                 Some(dir) => dir,
                 None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
             },
-            cache: self
-                .cache
-                .unwrap_or_else(|| var_os("CARGO_CFG_FEATURE").is_some()),
+            cache_path: self.cache_path.or_else(|| maybe_cache_path_from_env()),
         })
     }
 }
-
-#[derive(Debug, displaydoc::Display, Clone, Copy)]
-pub enum ConfigBuildError {
-    /// required field in builder is not set
-    RequiredFieldNotSet,
-    /// failed reading required fields from build environment variables
-    FailedFromEnvVars,
-    /// failed finding manifest path
-    FailedFromPath,
-    /// failed determining cargo home directory
-    CargoHomeDir,
-}
-
-impl Error for ConfigBuildError {}

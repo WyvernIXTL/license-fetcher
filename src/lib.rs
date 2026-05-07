@@ -129,6 +129,8 @@ use nanoserde::DeBin;
 #[cfg(feature = "build")]
 pub mod build;
 
+pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
+
 /// Information regarding a crate / package.
 ///
 /// This struct holds information like package name, authors and of course license text.
@@ -363,11 +365,10 @@ impl PackageList {
     /// ## Example
     /// If you intend to embed license information:
     /// ```no_run
-    /// use license_fetcher::PackageList;
+    /// use license_fetcher::{PackageList, OUT_FILE_NAME};
     /// fn main() {
     ///     let package_list = PackageList::from_encoded(std::include_bytes!(std::concat!(
-    ///        env!("OUT_DIR"),
-    ///        "/LICENSE-3RD-PARTY.bincode.deflate"
+    ///        env!("OUT_DIR"), "/", OUT_FILE_NAME
     ///     ))).unwrap();
     /// }
     /// ```
@@ -402,7 +403,8 @@ macro_rules! read_package_list_from_out_dir {
     () => {
         license_fetcher::PackageList::from_encoded(std::include_bytes!(std::concat!(
             env!("OUT_DIR"),
-            "/LICENSE-3RD-PARTY.bincode.deflate"
+            "/",
+            license_fetcher::OUT_FILE_NAME
         )))
     };
 }
