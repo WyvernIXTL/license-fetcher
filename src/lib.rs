@@ -78,8 +78,10 @@
 //!         .expect("Failed to build configuration.");
 //!
 //!     // `packages` does not hold any licenses!
-//!     let mut packages: PackageList = package_list(&config.metadata_config)
-//!                                                 .expect("Failed to fetch metadata.");
+//!     let (_root_package_name, package_iter) = package_list(&config.metadata_config)
+//!         .expect("Failed to fetch metadata.");
+//!
+//!     let mut packages: PackageList = package_iter.collect::<Vec<_>>().into();
 //!
 //!     let other_dependency = Package::builder("other dependency", "0.1.0")
 //!         .authors(vec!["Me".to_owned()])
@@ -155,6 +157,8 @@ impl Package {
     /// ## Example
     ///
     /// ```
+    /// use license_fetcher::Package;
+    ///
     /// let my_package: Package = Package::builder("test_package", "0.1.0")
     ///     .authors(vec!["Max Mustermann"])
     ///     .description("A test package.")
@@ -250,12 +254,16 @@ impl fmt::Display for Package {
 ///
 /// Minimal example:
 /// ```
+/// use license_fetcher::Package;
+///
 /// let my_package: Package = Package::builder("test_package", "0.1.0")
 ///     .build();
 /// ```
 ///
 /// Declare everything:
 /// ```
+/// use license_fetcher::Package;
+///
 /// let my_package: Package = Package::builder("test_package", "0.1.0")
 ///     .authors(vec!["Max Mustermann"])
 ///     .description("A test package.")
@@ -376,11 +384,14 @@ impl PackageList {
     /// ## Example
     /// If you intend to embed license information:
     /// ```no_run
-    /// use license_fetcher::{PackageList, OUT_FILE_NAME};
+    /// use license_fetcher::PackageList;
     /// fn main() {
     ///     let package_list = PackageList::from_encoded(std::include_bytes!(std::concat!(
-    ///        env!("OUT_DIR"), "/", OUT_FILE_NAME
-    ///     ))).unwrap();
+    ///         env!("OUT_DIR"),
+    ///         "/",
+    ///         "LICENSE-3RD-PARTY.nanoserde.lz4"
+    ///     )))
+    ///     .unwrap();
     /// }
     /// ```
     pub fn from_encoded(bytes: &[u8]) -> Result<PackageList, UnpackError> {

@@ -33,8 +33,10 @@
 //!         .expect("Failed to build configuration.");
 //!
 //!     // `packages` does not hold any licenses!
-//!     let packages: PackageList = package_list(&config.metadata_config)
-//!                                                 .expect("Failed to fetch metadata.");
+//!     let (_root_package_name, package_iter) = package_list(&config.metadata_config)
+//!         .expect("Failed to fetch metadata.");
+//!
+//!     let packages: PackageList = package_iter.collect::<Vec<_>>().into();
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
