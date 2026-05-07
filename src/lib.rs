@@ -283,8 +283,12 @@ impl PackageBuilder {
     }
 
     #[must_use]
-    pub fn authors(mut self, authors: impl Into<Vec<String>>) -> Self {
-        self.0.authors = authors.into();
+    pub fn authors<I, S>(mut self, authors: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        self.0.authors = authors.into_iter().map(Into::into).collect();
         self
     }
 
@@ -411,7 +415,7 @@ macro_rules! read_package_list_from_out_dir {
         license_fetcher::PackageList::from_encoded(std::include_bytes!(std::concat!(
             env!("OUT_DIR"),
             "/",
-            license_fetcher::OUT_FILE_NAME
+            "LICENSE-3RD-PARTY.nanoserde.lz4"
         )))
     };
 }

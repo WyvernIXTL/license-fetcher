@@ -1,8 +1,10 @@
 [package]
 name = "test_crate"
+authors = ["Max Mustermann"]
 version = "0.1.0"
 edition = "2024"
 license = "CC0-1.0"
+homepage = "https://example.com"
 
 [dependencies]
 bincode = "2.0.1"
