@@ -3,11 +3,14 @@
 
 use std::env;
 use std::fs::File;
+use std::path::PathBuf;
 
 fn main() {
-    let mut path = env::var_os("OUT_DIR").unwrap();
-    path.push("/LICENSE-3RD-PARTY.bincode.deflate");
+    let path =
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("LICENSE-3RD-PARTY.nanoserde.lz4");
+
     let _ = File::create(path);
+
     println!("cargo::rerun-if-changed=Cargo.lock");
 
     println!("cargo::rustc-check-cfg=cfg(coverage_nightly)");
