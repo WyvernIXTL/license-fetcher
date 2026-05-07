@@ -207,11 +207,11 @@ impl Error for BuildError {}
 ///
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
 pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildError> {
-    let mut package_list =
+    let (root_package_name, package_iter) =
         package_list(&config.metadata_config).change_context(BuildError::FailedMetadataFetching)?;
 
     if config.cache {
-        if let Err(err) = populate_with_cache(&mut package_list) {
+        if let Err(err) = populate_with_cache(&mut package_iter) {
             match err.current_context() {
                 CacheError::Invalid => {
                     error!("Cache is invalid. Skipping cache. Error: \n{err}");
@@ -224,22 +224,22 @@ pub fn package_list_with_licenses(config: &Config) -> Result<PackageList, BuildE
         }
     }
 
-    populate_package_list_licenses(&mut package_list, &config.cargo_home_dir)
+    populate_package_list_licenses(&mut package_iter, &config.cargo_home_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
-    let root_pos = package_list
+    let root_pos = package_iter
         .iter()
         .position(|e| e.is_root_pkg)
         .ok_or(BuildError::RootPackageNotInOutput)
         .attach_printable_lazy(|| "Root package is not in package list.")?;
 
-    package_list.swap(0, root_pos);
-    package_list[1..].sort();
+    package_iter.swap(0, root_pos);
+    package_iter[1..].sort();
 
-    package_list[0].license_text = license_text_from_folder(&config.metadata_config.manifest_dir)
+    package_iter[0].license_text = license_text_from_folder(&config.metadata_config.manifest_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
-    Ok(package_list)
+    Ok(package_iter)
 }
 
 /// Errors that might occur during the writing process of the license data to the output directory.

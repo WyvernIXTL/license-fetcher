@@ -4,24 +4,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{
-    collections::{HashMap, HashSet},
-    error::Error,
-    sync::LazyLock,
-    thread::scope,
+use std::{error::Error, thread::scope};
+
+use error_stack::{report, Result};
+
+use crate::{
+    build::metadata::{
+        exec_metadata::exec_cargo_metadata_and_parse_result,
+        exec_tree::exec_cargo_tree_and_parse_output,
+    },
+    Package,
 };
-
-use command::exec_cargo;
-use error_stack::{ensure, report, Result, ResultExt};
-use json_parsing::{Metadata, MetadataResolveNode};
-use nanoserde::DeJson;
-use regex_lite::Regex;
-
-use crate::{Package, PackageList};
 
 use super::config::MetadataConfig;
 
-mod command;
+mod exec;
+mod exec_metadata;
+mod exec_tree;
 mod json_parsing;
 
 /// Error handling the execution and parsing of package metadata.
@@ -43,127 +42,6 @@ pub enum PkgListFromCargoMetadataError {
 
 impl Error for PkgListFromCargoMetadataError {}
 
-fn walk_dependencies<'a>(
-    used_dependencies: &mut HashSet<&'a String>,
-    dependencies: &'a HashMap<&String, &MetadataResolveNode>,
-    root: &String,
-) {
-    let Some(package) = dependencies.get(root) else {
-        return;
-    };
-
-    used_dependencies.insert(&package.id);
-    for dep in &package.deps {
-        if dep
-            .dep_kinds
-            .iter()
-            .map(|d| &d.kind)
-            .any(std::option::Option::is_none)
-        {
-            walk_dependencies(used_dependencies, dependencies, &dep.pkg);
-        }
-    }
-}
-
-fn extract_package_name_from_id(
-    package_id: &String,
-) -> Result<String, PkgListFromCargoMetadataError> {
-    static PARSE_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r".*?[#|\/](?<name>[a-z\-\_\d]+)[@|#][\d\.]+").unwrap());
-
-    if let Some(caps) = PARSE_REGEX.captures(package_id) {
-        Ok(caps["name"].to_owned())
-    } else {
-        Err(
-            report!(PkgListFromCargoMetadataError::PackageNameParseError)
-                .attach_printable(format!("package id: '{package_id}'")),
-        )
-    }
-}
-
-fn package_list_from_cargo_metadata(
-    config: &MetadataConfig,
-) -> Result<Vec<Package>, PkgListFromCargoMetadataError> {
-    const ARGUMENTS: &[&str] = &["metadata", "--format-version", "1", "--color", "never"];
-
-    let output =
-        exec_cargo(config, &ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
-
-    let output_str = String::from_utf8_lossy(&output.stdout);
-
-    let metadata_parsed = Metadata::deserialize_json(&output_str)
-        .change_context(PkgListFromCargoMetadataError::ParseJson)?;
-
-    let packages = metadata_parsed.packages;
-    let package_id = metadata_parsed
-        .resolve
-        .root
-        .ok_or(PkgListFromCargoMetadataError::ParseJson)
-        .attach_printable("Failed to resolve package id from output.")?;
-    let dependencies = metadata_parsed.resolve.nodes;
-
-    let mut used_packages = HashSet::default();
-    let dependencies_hash_map = dependencies
-        .iter()
-        .map(|d| (&d.id, d))
-        .collect::<HashMap<_, _>>();
-
-    walk_dependencies(&mut used_packages, &dependencies_hash_map, &package_id);
-
-    let root_package_name = extract_package_name_from_id(&package_id)?;
-
-    Ok(packages
-        .into_iter()
-        .filter(|e| used_packages.contains(&e.id))
-        .map(|package| {
-            let is_root = package.name.as_ref() == root_package_name;
-            let name_version = format!("{}-{}", package.name, package.version);
-            Package {
-                license_text: None,
-                authors: package.authors,
-                license_identifier: package.license,
-                name: package.name,
-                version: package.version,
-                description: package.description,
-                homepage: package.homepage,
-                repository: package.repository,
-                restored_from_cache: false,
-                is_root_pkg: is_root,
-                name_version,
-            }
-        })
-        .collect())
-}
-
-fn used_pkg_names_from_cargo_tree(
-    config: &MetadataConfig,
-) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
-    const ARGUMENTS: &[&str] = &[
-        "tree",
-        "-e",
-        "normal",
-        "-f",
-        "{p}",
-        "--prefix",
-        "none",
-        "--color",
-        "never",
-        "--no-dedupe",
-    ];
-
-    let output =
-        exec_cargo(config, &ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
-
-    Ok(String::from_utf8(output.stdout)
-        .change_context(PkgListFromCargoMetadataError::ParseString)?
-        .lines()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|e| e.split(' ').next().unwrap_or(e))
-        .map(std::borrow::ToOwned::to_owned)
-        .collect::<HashSet<String>>())
-}
-
 /// Get a list of dependencies.
 ///
 /// [`cargo metadata`] and [`cargo tree`] are use in combination to get all used dependencies and their metadata.
@@ -174,40 +52,33 @@ fn used_pkg_names_from_cargo_tree(
 /// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 ///
-pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromCargoMetadataError> {
+pub fn package_list(
+    config: &MetadataConfig,
+) -> Result<(String, impl Iterator<Item = Package> + '_), PkgListFromCargoMetadataError> {
     scope(|scope| {
-        let packages_handle = scope.spawn(|| package_list_from_cargo_metadata(config));
+        let cargo_metadata_thread_handle =
+            scope.spawn(|| exec_cargo_metadata_and_parse_result(config));
 
-        let used_package_names_handle = scope.spawn(|| used_pkg_names_from_cargo_tree(config));
+        let cargo_tree_thread_handle = scope.spawn(|| exec_cargo_tree_and_parse_output(config));
 
-        let packages = packages_handle.join().map_err(|e| {
+        let cargo_metadata_thread_result = cargo_metadata_thread_handle.join().map_err(|e| {
             report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
-        let used_packages = used_package_names_handle.join().map_err(|e| {
+        let cargo_tree_thread_result = cargo_tree_thread_handle.join().map_err(|e| {
             report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
 
-        match (packages, used_packages) {
-            (Err(mut pkgs_err), Err(used_pkgs_err)) => {
-                pkgs_err.extend_one(used_pkgs_err);
-                Err(pkgs_err)
+        match (cargo_metadata_thread_result, cargo_tree_thread_result) {
+            (Err(mut cargo_metadata_err), Err(cargo_tree_err)) => {
+                cargo_metadata_err.extend_one(cargo_tree_err);
+                Err(cargo_metadata_err)
             }
-            (Err(pkgs_err), _) => Err(pkgs_err),
-            (_, Err(used_pkgs_err)) => Err(used_pkgs_err),
-            (Ok(packages), Ok(used_package_names)) => {
-                let mut filtered_packages = Vec::with_capacity(packages.capacity());
-                let filtered_packages_iter = packages
-                    .into_iter()
-                    .filter(|e| used_package_names.contains(&e.name));
-                filtered_packages.extend(filtered_packages_iter);
-
-                ensure!(
-                    filtered_packages.iter().any(|e| e.is_root_pkg),
-                    PkgListFromCargoMetadataError::RootPackageMissing
-                );
-
-                Ok(filtered_packages.into())
-            }
+            (Err(cargo_metadata_err), _) => Err(cargo_metadata_err),
+            (_, Err(cargo_tree_err)) => Err(cargo_tree_err),
+            (Ok((root_package_name, packages_iter)), Ok(used_package_names)) => Ok((
+                root_package_name,
+                packages_iter.filter(move |p| used_package_names.contains(&p.name)),
+            )),
         }
     })
 }
@@ -219,12 +90,5 @@ pub fn package_list(config: &MetadataConfig) -> Result<PackageList, PkgListFromC
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    use super::*;
-
-    #[test]
-    fn test_extract_package_name_from_id() {
-        let pkg_id = "path+file:///M:/DEV/Projects/Rust/projects/license-fetcher#0.7.3".to_owned();
-        let pkg_name = extract_package_name_from_id(&pkg_id).unwrap();
-        assert_eq!(pkg_name, "license-fetcher");
-    }
+    // TODO: add tests for parsing here
 }

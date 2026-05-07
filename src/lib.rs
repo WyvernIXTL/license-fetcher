@@ -460,9 +460,7 @@ mod test {
     fn test_display_package_does_not_panic() {
         arbtest(|u| {
             let test_package: Package = u.arbitrary()?;
-
             let _ = format!("{test_package}");
-
             Ok(())
         });
     }
@@ -471,9 +469,7 @@ mod test {
     fn test_display_package_list_does_not_panic() {
         arbtest(|u| {
             let test_package_list: PackageList = u.arbitrary()?;
-
             let _ = format!("{test_package_list}");
-
             Ok(())
         });
     }
