@@ -17,6 +17,7 @@ jobs:
   test:
     name: Test
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
