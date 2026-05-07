@@ -9,6 +9,7 @@ on:
     - 'Cargo.lock'
     - 'Cargo.toml'
     - 'tests/**'
+    - 'build.rs'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
