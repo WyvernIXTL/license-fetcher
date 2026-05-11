@@ -68,7 +68,7 @@
 //! use std::concat;
 //!
 //! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::metadata::package_list;
+//! use license_fetcher::build::package_list;
 //! use license_fetcher::{PackageList, Package};
 //!
 //! fn main() {
@@ -78,10 +78,8 @@
 //!         .expect("Failed to build configuration.");
 //!
 //!     // `packages` does not hold any licenses!
-//!     let (_root_package_name, package_iter) = package_list(&config.metadata_config)
+//!     let mut packages: PackageList = package_list(&config)
 //!         .expect("Failed to fetch metadata.");
-//!
-//!     let mut packages: PackageList = package_iter.collect::<Vec<_>>().into();
 //!
 //!     let other_dependency = Package::builder("other dependency", "0.1.0")
 //!         .authors(vec!["Me".to_owned()])
