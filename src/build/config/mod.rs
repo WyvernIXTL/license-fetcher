@@ -200,6 +200,13 @@ pub struct MetadataConfig {
     /// Set enabled features used when detecting package metadata.
     pub enabled_features: Option<OsString>,
 }
+
+impl AsRef<MetadataConfig> for MetadataConfig {
+    fn as_ref(&self) -> &MetadataConfig {
+        self
+    }
+}
+
 /// Struct to configure the behavior of the license fetching.
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -215,6 +222,18 @@ pub struct Config {
     /// Setting this to the already fetched license data from prior runs will try to reuse the license data
     /// instead of recursing through the cargo source folder again.
     pub cache_path: Option<PathBuf>,
+}
+
+impl AsRef<Config> for Config {
+    fn as_ref(&self) -> &Config {
+        self
+    }
+}
+
+impl AsRef<MetadataConfig> for Config {
+    fn as_ref(&self) -> &MetadataConfig {
+        &self.metadata_config
+    }
 }
 
 /// Errors which might occur during the building of the config.

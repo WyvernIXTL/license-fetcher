@@ -36,23 +36,11 @@ pub enum PkgListFromCargoMetadataError {
     Thread,
     /// failed to parse a package name from a package id
     PackageNameParseError,
-    /// the root package is not part of the filtered package metadata
-    RootPackageMissing,
 }
 
 impl Error for PkgListFromCargoMetadataError {}
 
-/// Get a list of dependencies.
-///
-/// [`cargo metadata`] and [`cargo tree`] are use in combination to get all used dependencies and their metadata.
-///
-/// (The reason for using `cargo tree` as well is, that I had some issues at some time, with `cargo metadata`
-/// including unused dependencies. I am not sure why this was the case, as I am failing to reproduce this problem currently.)
-///
-/// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
-/// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
-///
-pub fn package_list(
+pub fn package_list_impl(
     config: &MetadataConfig,
 ) -> Result<(String, impl Iterator<Item = Package> + '_), PkgListFromCargoMetadataError> {
     scope(|scope| {
