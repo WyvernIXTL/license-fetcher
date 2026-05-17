@@ -57,5 +57,30 @@ pub fn exec_cargo_tree_and_parse_output(
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    // TODO: add tests for parsing here
+    use assert2::assert;
+    use std::process::Output;
+
+    #[test]
+    fn test_parse_cargo_tree_output_parses_lines() {
+        let expected = [
+            "license-fetcher".into(),
+            "displaydoc".into(),
+            "lz4_flex".into(),
+            "nanoserde".into(),
+        ]
+        .into();
+
+        let output = Output {
+            stdout: br"license-fetcher v0.9.3 (C:\pppt\license-fetcher)
+            displaydoc v0.2.5 (proc-macro)
+            lz4_flex v0.13.0
+            nanoserde v0.2.1"
+                .to_vec(),
+            stderr: vec![],
+            status: std::process::ExitStatus::default(),
+        };
+        let result = super::parse_cargo_tree_output(output).unwrap();
+
+        assert!(result == expected);
+    }
 }
