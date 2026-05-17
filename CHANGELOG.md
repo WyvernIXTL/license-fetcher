@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+This release changes the API slightly to make the crate easier to use.
+
+
+### Added
+
+- Documentation for all errors.
+
+
 ### Changed
 
-- Slightly changed the API to fulfill Clippy pedantic.
+- The `Package` struct now does not have private fields and can be freely constructed and inspected.
+- Replaced the `package!` macro with `PackageBuilder` builder.
+- The `cache` method of the `ConfigBuilder` now requires a path to a cache file.
+- The `package_list` method is moved into the `build` module.
+- The `package_list` method now returns the packages sorted with the first package being the root package.
+- The `package_list` function now may either take `Config`, `&Config`, `MetadataConfig` or `&MetadataConfig` as argument.
+- The `package_list_with_licenses` function now may either take `Config` or `&Config` as argument.
 
 
 ## v0.9.3
