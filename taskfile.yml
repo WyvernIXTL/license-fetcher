@@ -50,6 +50,7 @@ tasks:
       - task: test:check:1
       - task: test:check:2
       - task: test:check:3
+      - task: test:fmt
 
   test:check:1:
     cmds:
@@ -80,6 +81,14 @@ tasks:
       - task: setup:test-crate
     cmds:
       - cargo bench -F build
+
+
+  test:fmt:
+    desc: Check code formatting
+    aliases:
+      - fmt
+    cmds:
+      - cargo fmt --check
 
 
   # ---------------------------------- MISC ---------------------------------- #
