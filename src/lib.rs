@@ -119,7 +119,7 @@ use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-/// Wrapper around `bincode` and `miniz_oxide` errors during unpacking of a serialized and compressed [`PackageList`].
+/// Wrapper around deserialization and decompression errors during unpacking of a serialized and compressed [`PackageList`].
 pub mod error;
 use error::UnpackError;
 use lz4_flex::decompress_size_prepended;
@@ -129,6 +129,7 @@ use nanoserde::DeBin;
 #[cfg(feature = "build")]
 pub mod build;
 
+/// The file name used for writing and reading the serialized package list.
 pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 
 /// Information regarding a crate / package.
@@ -139,13 +140,21 @@ pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Package {
+    /// The name of the package.
     pub name: String,
+    /// The version of the package.
     pub version: String,
+    /// Authors of the package.
     pub authors: Vec<String>,
+    /// A description of the package.
     pub description: Option<String>,
+    /// URL to the homepage of the package.
     pub homepage: Option<String>,
+    /// URL to the repository of the package.
     pub repository: Option<String>,
+    /// The SPDX license identifier of the package.
     pub license_identifier: Option<String>,
+    /// The full license text of the package.
     pub license_text: Option<String>,
 }
 
@@ -288,6 +297,7 @@ impl PackageBuilder {
         })
     }
 
+    /// Set the authors of the package.
     #[must_use]
     pub fn authors<I, S>(mut self, authors: I) -> Self
     where
@@ -298,36 +308,42 @@ impl PackageBuilder {
         self
     }
 
+    /// Set the description of the package.
     #[must_use]
     pub fn description(mut self, description: impl Into<String>) -> Self {
         self.0.description = Some(description.into());
         self
     }
 
+    /// Set the homepage URL of the package.
     #[must_use]
     pub fn homepage(mut self, homepage: impl Into<String>) -> Self {
         self.0.homepage = Some(homepage.into());
         self
     }
 
+    /// Set the repository URL of the package.
     #[must_use]
     pub fn repository(mut self, repository: impl Into<String>) -> Self {
         self.0.repository = Some(repository.into());
         self
     }
 
+    /// Set the SPDX license identifier of the package.
     #[must_use]
     pub fn license_identifier(mut self, license_identifier: impl Into<String>) -> Self {
         self.0.license_identifier = Some(license_identifier.into());
         self
     }
 
+    /// Set the license text of the package.
     #[must_use]
     pub fn license_text(mut self, license_text: impl Into<String>) -> Self {
         self.0.license_text = Some(license_text.into());
         self
     }
 
+    /// Build the [`Package`].
     #[must_use]
     pub fn build(self) -> Package {
         self.0
