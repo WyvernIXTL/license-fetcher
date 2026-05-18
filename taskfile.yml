@@ -38,7 +38,6 @@ tasks:
       - cargo update
       - cargo run
 
-
   # ---------------------------------- Check --------------------------------- #
 
   test:check:
@@ -50,7 +49,6 @@ tasks:
       - task: test:check:1
       - task: test:check:2
       - task: test:check:3
-      - task: test:fmt
 
   test:check:1:
     cmds:
@@ -64,11 +62,26 @@ tasks:
     cmds:
       - cargo check -F build,serde
 
+  test:fmt:
+    desc: Check cargo fmt.
+    aliases:
+      - cf
+    cmds:
+      - cargo fmt --check
+
+  test:clippy:
+    desc: Check cargo clippy
+    alias:
+      - clippy
+    env:
+      RUSTFLAGS: "-Dwarnings"
+    cmds:
+      - cargo clippy --all-targets --all-features
 
   # ---------------------------------- Bench --------------------------------- #
 
   setup:test-crate:
-    desc: "Setup for tests and benchmarks."
+    desc: Setup for tests and benchmarks.
     aliases:
       - setup
     dir: "./tests/test_crate"
@@ -81,15 +94,6 @@ tasks:
       - task: setup:test-crate
     cmds:
       - cargo bench -F build
-
-
-  test:fmt:
-    desc: Check code formatting
-    aliases:
-      - fmt
-    cmds:
-      - cargo fmt --check
-
 
   # ---------------------------------- MISC ---------------------------------- #
 

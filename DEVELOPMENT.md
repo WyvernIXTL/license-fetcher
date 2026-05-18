@@ -7,6 +7,5 @@ Testing is done using [`task`](https://taskfile.dev/) and the tasks in [`taskfil
 Before a new version is released or a PR is accepted following tasks should run successfully:
 
 ```sh
-task --parallel test:check test:integration doc
+task --parallel test:check test:integration test:clippy test:fmt doc
 ```
-

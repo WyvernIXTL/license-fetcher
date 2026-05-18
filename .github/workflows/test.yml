@@ -4,12 +4,12 @@ on:
   push:
     branches:
       - main
-    paths: 
-    - 'src/**'
-    - 'Cargo.lock'
-    - 'Cargo.toml'
-    - 'tests/**'
-    - 'build.rs'
+    paths:
+      - "src/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "tests/**"
+      - "build.rs"
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
@@ -35,13 +35,4 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Tests, Checks and Try Build Docs
-        run: task --parallel test:check test:integration doc
-
-  clippy_check:
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-Dwarnings"
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
+        run: task --parallel test:check test:integration test:clippy test:fmt doc
