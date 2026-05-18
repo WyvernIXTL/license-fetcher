@@ -492,45 +492,92 @@ macro_rules! read_package_list_from_out_dir {
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
     use arbtest::arbtest;
-    use assert2::check;
+    use assert2::{assert, check};
 
     use super::*;
 
-    #[test]
-    fn test_package_builder_compiles() {
-        let _pkg = Package::builder("dependency", "0.1.0")
-            .authors(vec!["Me".to_owned()])
-            .description("A dependency that is not a rust crate.")
-            .license_text("Some random ass license")
-            .build();
+    fn fuzz_package_builder_property(u: &mut arbitrary::Unstructured) -> arbitrary::Result<()> {
+        let pkg: Package = u.arbitrary()?;
+
+        let mut builder = Package::builder(&pkg.name, &pkg.version);
+
+        builder = builder.authors(&pkg.authors);
+        if let Some(desc) = &pkg.description {
+            builder = builder.description(desc);
+        }
+        if let Some(homepage) = &pkg.homepage {
+            builder = builder.homepage(homepage);
+        }
+        if let Some(repo) = &pkg.repository {
+            builder = builder.repository(repo);
+        }
+        if let Some(ident) = &pkg.license_identifier {
+            builder = builder.license_identifier(ident);
+        }
+        if let Some(text) = &pkg.license_text {
+            builder = builder.license_text(text);
+        }
+        let pkg_build = builder.build();
+
+        assert!(pkg == pkg_build);
+
+        Ok(())
     }
 
     #[test]
-    fn test_display_package_contains_inputs() {
-        let test_package = Package::builder("test-package", "0.1.0")
-            .authors(vec![
-                "Max Mustermann".to_owned(),
-                "Erika Mustermann".to_owned(),
-            ])
-            .description("Some weird ass test package.")
-            .homepage("https://example.com")
-            .repository("https://github.com/example/test-package")
-            .license_identifier("MPL-2.0")
-            .license_text("NaN")
-            .build();
+    fn fuzz_package_builder() {
+        arbtest(fuzz_package_builder_property).run();
+    }
 
-        let display = format!("{test_package}");
+    fn check_string_contains_package_data(display: &str, pkg: &Package) {
+        check!(display.contains(&pkg.name) && display.contains(&pkg.version));
 
-        check!(
-            display.contains("test-package")
-                && display.contains("0.1.0")
-                && display.contains("Max Mustermann")
-                && display.contains("Erika Mustermann")
-                && display.contains("Some weird ass test package.")
-                && display.contains("https://example.com")
-                && display.contains("https://github.com/example/test-package")
-                && display.contains("MPL-2.0")
-        );
+        for author in &pkg.authors {
+            assert!(display.contains(author));
+        }
+        if let Some(desc) = &pkg.description {
+            assert!(display.contains(desc));
+        }
+        if let Some(homepage) = &pkg.homepage {
+            assert!(display.contains(homepage));
+        }
+        if let Some(repo) = &pkg.repository {
+            assert!(display.contains(repo));
+        }
+        if let Some(ident) = &pkg.license_identifier {
+            assert!(display.contains(ident));
+        }
+        if let Some(text) = &pkg.license_text {
+            assert!(display.contains(text));
+        }
+    }
+
+    fn fuzz_display_package_contains_input_property(
+        u: &mut arbitrary::Unstructured,
+    ) -> arbitrary::Result<()> {
+        let pkg: Package = u.arbitrary()?;
+        check_string_contains_package_data(&format!("{pkg}"), &pkg);
+        Ok(())
+    }
+
+    #[test]
+    fn fuzz_display_package_contains_input() {
+        arbtest(fuzz_display_package_contains_input_property).run();
+    }
+
+    fn fuzz_display_package_list_contains_input_property(
+        u: &mut arbitrary::Unstructured,
+    ) -> arbitrary::Result<()> {
+        let pkg_list: PackageList = u.arbitrary()?;
+        for pkg in pkg_list.0 {
+            check_string_contains_package_data(&format!("{pkg}"), &pkg);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn fuzz_display_package_list_contains_input() {
+        arbtest(fuzz_display_package_list_contains_input_property).run();
     }
 
     #[test]
@@ -538,15 +585,6 @@ mod test {
         arbtest(|u| {
             let test_package: Package = u.arbitrary()?;
             let _ = format!("{test_package}");
-            Ok(())
-        });
-    }
-
-    #[test]
-    fn test_display_package_list_does_not_panic() {
-        arbtest(|u| {
-            let test_package_list: PackageList = u.arbitrary()?;
-            let _ = format!("{test_package_list}");
             Ok(())
         });
     }
