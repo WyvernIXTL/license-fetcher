@@ -119,11 +119,12 @@ use std::default::Default;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-/// Wrapper around deserialization and decompression errors during unpacking of a serialized and compressed [`PackageList`].
-pub mod error;
 use error::UnpackError;
 use lz4_flex::decompress_size_prepended;
 use nanoserde::DeBin;
+
+/// Wrapper around deserialization and decompression errors during unpacking of a serialized and compressed [`PackageList`].
+pub mod error;
 
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
@@ -132,29 +133,39 @@ pub mod build;
 /// The file name used for writing and reading the serialized package list.
 pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 
-/// Information regarding a crate / package.
+/// Struct holding information like package name, authors and of course license text.
 ///
-/// This struct holds information like package name, authors and of course license text.
+/// ## Example
+///
+/// It is recommended to build instances of [`Package`] with the [`PackageBuilder`] builder via [`Package::builder()`].
+///
+/// ```
+/// use license_fetcher::Package;
+///
+/// let my_package: Package = Package {
+///     name: "test-package".to_owned(),
+///     version: "0.1.0".to_owned(),
+///     authors: vec!["Max Mustermann".to_owned()],
+///     description: Some("A test package.".to_owned()),
+///     homepage: Some("https://codeberg.org/".to_owned()),
+///     repository: Some("https://codeberg.org/".to_owned()),
+///     license_identifier: Some("MPL-2.0".to_owned()),
+///     license_text: Some("Mozilla Public License Version 2.0...".to_owned()),
+/// };
+/// ```
+///
 #[derive(DeBin, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Package {
-    /// The name of the package.
     pub name: String,
-    /// The version of the package.
     pub version: String,
-    /// Authors of the package.
     pub authors: Vec<String>,
-    /// A description of the package.
     pub description: Option<String>,
-    /// URL to the homepage of the package.
     pub homepage: Option<String>,
-    /// URL to the repository of the package.
     pub repository: Option<String>,
-    /// The SPDX license identifier of the package.
     pub license_identifier: Option<String>,
-    /// The full license text of the package.
     pub license_text: Option<String>,
 }
 
@@ -166,7 +177,7 @@ impl Package {
     /// ```
     /// use license_fetcher::Package;
     ///
-    /// let my_package: Package = Package::builder("test_package", "0.1.0")
+    /// let my_package: Package = Package::builder("test-package", "0.1.0")
     ///     .authors(vec!["Max Mustermann"])
     ///     .description("A test package.")
     ///     .homepage("https://codeberg.org/")
@@ -263,15 +274,29 @@ impl fmt::Display for Package {
 /// ```
 /// use license_fetcher::Package;
 ///
-/// let my_package: Package = Package::builder("test_package", "0.1.0")
+/// let my_package: Package = Package::builder("test-package", "0.1.0")
 ///     .build();
+///
+/// assert_eq!(
+///     my_package,
+///     Package {
+///         name: "test-package".to_owned(),
+///         version: "0.1.0".to_owned(),
+///         authors: vec![],
+///         description: None,
+///         homepage: None,
+///         repository: None,
+///         license_identifier: None,
+///         license_text: None,
+///     }
+/// );
 /// ```
 ///
 /// Declare everything:
 /// ```
 /// use license_fetcher::Package;
 ///
-/// let my_package: Package = Package::builder("test_package", "0.1.0")
+/// let my_package: Package = Package::builder("test-package", "0.1.0")
 ///     .authors(vec!["Max Mustermann"])
 ///     .description("A test package.")
 ///     .homepage("https://codeberg.org/")
@@ -279,6 +304,20 @@ impl fmt::Display for Package {
 ///     .license_identifier("MPL-2.0")
 ///     .license_text("Mozilla Public License Version 2.0...")
 ///     .build();
+///
+/// assert_eq!(
+///     my_package,
+///     Package {
+///         name: "test-package".to_owned(),
+///         version: "0.1.0".to_owned(),
+///         authors: vec!["Max Mustermann".to_owned()],
+///         description: Some("A test package.".to_owned()),
+///         homepage: Some("https://codeberg.org/".to_owned()),
+///         repository: Some("https://codeberg.org/".to_owned()),
+///         license_identifier: Some("MPL-2.0".to_owned()),
+///         license_text: Some("Mozilla Public License Version 2.0...".to_owned()),
+///     }
+/// );
 /// ```
 pub struct PackageBuilder(Package);
 
@@ -468,14 +507,14 @@ mod test {
 
     #[test]
     fn test_display_package_contains_inputs() {
-        let test_package = Package::builder("test_package", "0.1.0")
+        let test_package = Package::builder("test-package", "0.1.0")
             .authors(vec![
                 "Max Mustermann".to_owned(),
                 "Erika Mustermann".to_owned(),
             ])
             .description("Some weird ass test package.")
             .homepage("https://example.com")
-            .repository("https://github.com/example/test_package")
+            .repository("https://github.com/example/test-package")
             .license_identifier("MPL-2.0")
             .license_text("NaN")
             .build();
@@ -483,13 +522,13 @@ mod test {
         let display = format!("{test_package}");
 
         check!(
-            display.contains("test_package")
+            display.contains("test-package")
                 && display.contains("0.1.0")
                 && display.contains("Max Mustermann")
                 && display.contains("Erika Mustermann")
                 && display.contains("Some weird ass test package.")
                 && display.contains("https://example.com")
-                && display.contains("https://github.com/example/test_package")
+                && display.contains("https://github.com/example/test-package")
                 && display.contains("MPL-2.0")
         );
     }
@@ -522,7 +561,7 @@ mod test {
                 ])
                 .description("Some weird ass test package.")
                 .homepage("https://example.com")
-                .repository("https://github.com/example/test_package")
+                .repository("https://github.com/example/test-package")
                 .license_identifier("MPL-2.0")
                 .license_text("NaN")
                 .build()
