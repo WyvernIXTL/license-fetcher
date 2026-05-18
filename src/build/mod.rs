@@ -335,7 +335,7 @@ impl PackageList {
     /// Writes the [`PackageList`] into [`$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`](`env!("OUT_DIR")`)
     ///
     /// `$OUT_DIR` is set by cargo during build. This function is meant to be only used inside a build script
-    /// and only in conjunction with [`read_package_list_from_out_dir`].
+    /// and only in conjunction with [`read_package_list_from_out_dir`](crate::read_package_list_from_out_dir).
     ///
     /// [`env!("OUT_DIR")`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates
     ///
