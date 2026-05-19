@@ -13,7 +13,7 @@ use crate::{
     Package, PackageList,
 };
 
-/// Error occuring when reading cache file (old license data)
+/// Error occurring when reading cache file (old license data)
 #[derive(Debug, Clone, Copy, displaydoc::Display)]
 pub enum CacheError {
     /// cache not found or cache is invalid
