@@ -146,12 +146,3 @@ _Display trait included_ 😉
 ## License
 
 This project is licensed under the [MPL 2.0 license](./LICENSE).
-
-
-## Code Coverage
-
-[![codecov](https://codecov.io/gh/WyvernIXTL/license-fetcher/graph/badge.svg?token=FUBAIYFXSP)](https://codecov.io/gh/WyvernIXTL/license-fetcher)
-
-_Codecov Icicle Graph:_
-
-[![Codecov Graph Icicle](https://codecov.io/gh/WyvernIXTL/license-fetcher/graphs/icicle.svg?token=FUBAIYFXSP)](https://codecov.io/gh/WyvernIXTL/license-fetcher)
