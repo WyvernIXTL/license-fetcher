@@ -18,6 +18,7 @@ This release changes the API slightly to make the crate easier to use.
 ### Changed
 
 - The `Package` struct now does not have private fields and can be freely constructed and inspected.
+- License texts are now stored in a vector of string instead of being joined into a single string.
 - Replaced the `package!` macro with `PackageBuilder` builder.
 - The `cache` method of the `ConfigBuilder` now requires a path to a cache file.
 - The `package_list` method is moved into the `build` module.
