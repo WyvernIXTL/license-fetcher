@@ -178,7 +178,7 @@ use cache::CacheError;
 use config::Config;
 use error_stack::Result;
 use error_stack::ResultExt;
-use fetch::license_text_from_folder;
+use fetch::license_texts_from_folder;
 use log::{error, info};
 use lz4_flex::compress_prepend_size;
 use metadata::package_list_impl;
@@ -237,7 +237,7 @@ fn attach_root_package_license(
     config: &Config,
     root_package: &mut Package,
 ) -> Result<(), BuildError> {
-    root_package.license_text = license_text_from_folder(&config.metadata_config.manifest_dir)
+    root_package.license_texts = license_texts_from_folder(&config.metadata_config.manifest_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
     Ok(())

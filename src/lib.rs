@@ -82,9 +82,10 @@
 //!         .expect("Failed to fetch metadata.");
 //!
 //!     let other_dependency = Package::builder("other dependency", "0.1.0")
-//!         .authors(vec!["Me".to_owned()])
+//!         .add_author("Me")
 //!         .description("A dependency that is not a rust crate.")
-//!         .license_text(
+//!         .add_license_text(
+//!             "other dependency license",
 //!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
 //!             .expect("Failed reading license of other dependency")
 //!         )
@@ -145,12 +146,15 @@ pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 /// let my_package: Package = Package {
 ///     name: "test-package".to_owned(),
 ///     version: "0.1.0".to_owned(),
-///     authors: vec!["Max Mustermann".to_owned()],
+///     authors: vec!["Max Mustermann <max@example.com>".to_owned(), "Erika Mustermann".to_owned()],
 ///     description: Some("A test package.".to_owned()),
 ///     homepage: Some("https://codeberg.org/".to_owned()),
 ///     repository: Some("https://codeberg.org/".to_owned()),
 ///     license_identifier: Some("MPL-2.0".to_owned()),
-///     license_text: Some("Mozilla Public License Version 2.0...".to_owned()),
+///     license_texts: vec![
+///         ("Mozilla Public License Version 2.0".to_owned(), "1. Definitions ... 2. License Grants and Conditions ...".to_owned()),
+///         ("MIT License".to_owned(), "Permission is hereby granted, ...".to_owned())
+///     ],
 /// };
 /// ```
 ///
@@ -166,7 +170,7 @@ pub struct Package {
     pub homepage: Option<String>,
     pub repository: Option<String>,
     pub license_identifier: Option<String>,
-    pub license_text: Option<String>,
+    pub license_texts: Vec<(String, String)>,
 }
 
 impl Package {
@@ -178,12 +182,14 @@ impl Package {
     /// use license_fetcher::Package;
     ///
     /// let my_package: Package = Package::builder("test-package", "0.1.0")
-    ///     .authors(vec!["Max Mustermann"])
+    ///     .add_author("Max Mustermann <max@example.com>")
+    ///     .add_author("Erika Mustermann")
     ///     .description("A test package.")
     ///     .homepage("https://codeberg.org/")
     ///     .repository("https://codeberg.org/")
     ///     .license_identifier("MPL-2.0")
-    ///     .license_text("Mozilla Public License Version 2.0...")
+    ///     .add_license_text("Mozilla Public License Version 2.0", "1. Definitions ... 2. License Grants and Conditions ...")
+    ///     .add_license_text("MIT License", "Permission is hereby granted, ...")
     ///     .build();
     /// ```
     pub fn builder(name: impl Into<String>, version: impl Into<String>) -> PackageBuilder {
@@ -219,8 +225,14 @@ impl Package {
             writeln!(f, "SPDX Ident:  {license_identifier}")?;
         }
 
-        if let Some(license_text) = &self.license_text {
-            writeln!(f, "\n{separator_light}\n{license_text}")?;
+        for (lic_location, lic_text) in &self.license_texts {
+            // TODO: Test and tune new license printing.
+
+            // ? provisional implementation
+            writeln!(
+                f,
+                "\n{separator_light}\n{lic_location}\n{separator_light}\n\n{lic_text}"
+            )?;
         }
 
         writeln!(f, "\n{separator}\n")?;
@@ -287,7 +299,7 @@ impl fmt::Display for Package {
 ///         homepage: None,
 ///         repository: None,
 ///         license_identifier: None,
-///         license_text: None,
+///         license_texts: vec![],
 ///     }
 /// );
 /// ```
@@ -297,12 +309,14 @@ impl fmt::Display for Package {
 /// use license_fetcher::Package;
 ///
 /// let my_package: Package = Package::builder("test-package", "0.1.0")
-///     .authors(vec!["Max Mustermann"])
+///     .add_author("Max Mustermann <max@example.com>")
+///     .add_author("Erika Mustermann")
 ///     .description("A test package.")
 ///     .homepage("https://codeberg.org/")
 ///     .repository("https://codeberg.org/")
 ///     .license_identifier("MPL-2.0")
-///     .license_text("Mozilla Public License Version 2.0...")
+///     .add_license_text("Mozilla Public License Version 2.0", "1. Definitions ... 2. License Grants and Conditions ...")
+///     .add_license_text("MIT License", "Permission is hereby granted, ...")
 ///     .build();
 ///
 /// assert_eq!(
@@ -310,12 +324,15 @@ impl fmt::Display for Package {
 ///     Package {
 ///         name: "test-package".to_owned(),
 ///         version: "0.1.0".to_owned(),
-///         authors: vec!["Max Mustermann".to_owned()],
+///         authors: vec!["Max Mustermann <max@example.com>".to_owned(), "Erika Mustermann".to_owned()],
 ///         description: Some("A test package.".to_owned()),
 ///         homepage: Some("https://codeberg.org/".to_owned()),
 ///         repository: Some("https://codeberg.org/".to_owned()),
 ///         license_identifier: Some("MPL-2.0".to_owned()),
-///         license_text: Some("Mozilla Public License Version 2.0...".to_owned()),
+///         license_texts: vec![
+///             ("Mozilla Public License Version 2.0".to_owned(), "1. Definitions ... 2. License Grants and Conditions ...".to_owned()),
+///             ("MIT License".to_owned(), "Permission is hereby granted, ...".to_owned())
+///         ],
 ///     }
 /// );
 /// ```
@@ -332,18 +349,16 @@ impl PackageBuilder {
             homepage: None,
             repository: None,
             license_identifier: None,
-            license_text: None,
+            license_texts: vec![],
         })
     }
 
-    /// Set the authors of the package.
+    // Add an author to the package.
+    //
+    // This method can be used repeatedly to add more authors.
     #[must_use]
-    pub fn authors<I, S>(mut self, authors: I) -> Self
-    where
-        I: IntoIterator<Item = S>,
-        S: Into<String>,
-    {
-        self.0.authors = authors.into_iter().map(Into::into).collect();
+    pub fn add_author(mut self, author: impl Into<String>) -> Self {
+        self.0.authors.push(author.into());
         self
     }
 
@@ -375,10 +390,19 @@ impl PackageBuilder {
         self
     }
 
-    /// Set the license text of the package.
+    /// Add a license text.
+    ///
+    /// The `name` parameter can be anything from file location to license name.
+    /// This method can be used repeatedly to add more license texts.
     #[must_use]
-    pub fn license_text(mut self, license_text: impl Into<String>) -> Self {
-        self.0.license_text = Some(license_text.into());
+    pub fn add_license_text(
+        mut self,
+        name: impl Into<String>,
+        license_text: impl Into<String>,
+    ) -> Self {
+        self.0
+            .license_texts
+            .push((name.into(), license_text.into()));
         self
     }
 
@@ -501,7 +525,9 @@ mod test {
 
         let mut builder = Package::builder(&pkg.name, &pkg.version);
 
-        builder = builder.authors(&pkg.authors);
+        for a in &pkg.authors {
+            builder = builder.add_author(a);
+        }
         if let Some(desc) = &pkg.description {
             builder = builder.description(desc);
         }
@@ -514,8 +540,8 @@ mod test {
         if let Some(ident) = &pkg.license_identifier {
             builder = builder.license_identifier(ident);
         }
-        if let Some(text) = &pkg.license_text {
-            builder = builder.license_text(text);
+        for (lic_name, lic_text) in &pkg.license_texts {
+            builder = builder.add_license_text(lic_name, lic_text);
         }
         let pkg_build = builder.build();
 
@@ -547,8 +573,9 @@ mod test {
         if let Some(ident) = &pkg.license_identifier {
             assert!(display.contains(ident));
         }
-        if let Some(text) = &pkg.license_text {
-            assert!(display.contains(text));
+        for (lic_name, lic_text) in &pkg.license_texts {
+            assert!(display.contains(lic_name));
+            assert!(display.contains(lic_text));
         }
     }
 
@@ -593,15 +620,13 @@ mod test {
     fn test_ord_trait_for_package() {
         let create_test_package = |name: &str, id: &str| {
             Package::builder(name, id)
-                .authors(vec![
-                    "Max Mustermann".to_owned(),
-                    "Erika Mustermann".to_owned(),
-                ])
+                .add_author("Max Mustermann")
+                .add_author("Erika Mustermann")
                 .description("Some weird ass test package.")
                 .homepage("https://example.com")
                 .repository("https://github.com/example/test-package")
                 .license_identifier("MPL-2.0")
-                .license_text("NaN")
+                .add_license_text("NaN", "NaN")
                 .build()
         };
 

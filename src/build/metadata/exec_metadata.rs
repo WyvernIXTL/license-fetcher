@@ -105,7 +105,7 @@ fn parse_metadata(
         .into_iter()
         .filter(move |metadata_package| used_packages.contains(&metadata_package.id))
         .map(|metadata_package| Package {
-            license_text: None,
+            license_texts: vec![],
             authors: metadata_package.authors,
             license_identifier: metadata_package.license,
             name: metadata_package.name,

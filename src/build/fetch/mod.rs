@@ -37,14 +37,16 @@ pub enum LicenseFetchError {
 
 impl Error for LicenseFetchError {}
 
-pub(crate) fn license_text_from_folder(path: &Path) -> Result<Option<String>, std::io::Error> {
+pub(crate) fn license_texts_from_folder(
+    path: &Path,
+) -> Result<Vec<(String, String)>, std::io::Error> {
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
     trace!("Fetching license in folder: {}", path.display());
 
     // TODO: Split this up.
-    let license_text = read_dir(path)
+    let license_texts: Vec<(String, String)> = read_dir(path)
         .attach_printable_lazy(|| CPath::from(path))?
         .filter_map(std::result::Result::ok)
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
@@ -70,25 +72,24 @@ pub(crate) fn license_text_from_folder(path: &Path) -> Result<Option<String>, st
         .flat_map(std::iter::IntoIterator::into_iter)
         .filter(|e| e.file_type().is_ok_and(|e| e.is_file()))
         .filter_map(|e| {
-            read_to_string(e.path())
+            let abs_path = e.path();
+            read_to_string(&abs_path)
                 .map_err(|err| {
-                    let path = e.path();
-                    error!("Error during reading of license file. Skipping. Path: '{}'. Error: \n {err}", path.display());
+                    error!("Error during reading of license file. Skipping. Path: '{}'. Error: \n {err}", abs_path.display());
                 })
                 .ok()
+                .map(|text| {
+                    let rel_path = abs_path.strip_prefix(path).unwrap_or(&abs_path).to_string_lossy().into_owned();
+                    (rel_path, text)
+                })
         })
-        .fold(String::new(), |mut a, b| {
-            a += &b;
-            a += "\n\n";
-            a
-        });
+        .collect();
 
-    if license_text.is_empty() {
+    if license_texts.is_empty() {
         warn!("Found no licenses in folder: {}", path.display());
-        return Ok(None);
     }
 
-    Ok(Some(license_text))
+    Ok(license_texts)
 }
 
 /// Populate a package list with licenses from the cargo source folder.
@@ -101,7 +102,7 @@ pub fn populate_package_list_licenses(
 ) -> Result<(), LicenseFetchError> {
     let mut package_hash_map: HashMap<String, &mut PackageWrapper> = package_list
         .iter_mut()
-        .filter(|p| p.package.license_text.is_none() && !p.restored_from_cache)
+        .filter(|p| p.package.license_texts.is_empty() && !p.restored_from_cache)
         .map(|p| (format!("{}-{}", p.package.name, p.package.version), p))
         .collect::<HashMap<_, _>>();
 
@@ -127,8 +128,8 @@ pub fn populate_package_list_licenses(
                 {
                     info!("Fetching license for: {}", &p.package.name);
 
-                    match license_text_from_folder(&e.path()) {
-                        Ok(res) => p.package.license_text = res,
+                    match license_texts_from_folder(&e.path()) {
+                        Ok(res) => p.package.license_texts = res,
                         Err(err) => {
                             error!("Failure");
                             let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);

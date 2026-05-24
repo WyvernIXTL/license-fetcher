@@ -8,9 +8,9 @@ use serial_test::serial;
 
 static TEST_CRATE_ROOT_PACKAGE: LazyLock<Package> = LazyLock::new(|| {
     Package::builder("test_crate", "0.1.0")
-        .authors(["Max Mustermann"])
+        .add_author("Max Mustermann")
         .license_identifier("CC0-1.0")
-        .license_text("THIS IS NOT A LICENSE")
+        .add_license_text("LICENSE", "THIS IS NOT A LICENSE\n")
         .homepage("https://example.com")
         .build()
 });
@@ -36,10 +36,7 @@ fn test_generate_licenses_with_test_crate() {
         .build()
         .unwrap();
 
-    let mut licenses = license_fetcher::build::package_list_with_licenses(&config).unwrap();
-    if let Some(license_text) = licenses[0].license_text.as_mut() {
-        *license_text = license_text.trim().to_string();
-    }
+    let licenses = license_fetcher::build::package_list_with_licenses(&config).unwrap();
 
     check!(
         licenses.len() > 0
@@ -47,7 +44,7 @@ fn test_generate_licenses_with_test_crate() {
             && TEST_CRATE_DIRECT_DEPS
                 .iter()
                 .all(|name| licenses[1..].iter().any(|p| p.name == *name))
-            && licenses[1..].iter().any(|e| e.license_text.is_some())
+            && licenses[1..].iter().any(|e| !e.license_texts.is_empty())
             && licenses[1..].iter().all(|e| !e.name.is_empty())
             && licenses[1..].iter().all(|e| !e.version.is_empty())
             && licenses[1..].iter().any(|e| !e.authors.is_empty())
@@ -96,10 +93,7 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
 
     assert!(let Ok(read_binary) = read(temp_dir.path().join(OUT_FILE_NAME)));
 
-    assert!(let Ok(mut read_packages) = PackageList::from_encoded(&read_binary));
-    if let Some(license_text) = read_packages[0].license_text.as_mut() {
-        *license_text = license_text.trim().to_string();
-    }
+    assert!(let Ok(read_packages) = PackageList::from_encoded(&read_binary));
 
     check!(
         read_packages[0] == *TEST_CRATE_ROOT_PACKAGE

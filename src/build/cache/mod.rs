@@ -45,7 +45,9 @@ pub fn populate_with_cache_from_package_list(
         let cached_package = cache
             .iter()
             .find(|c| c.name == p.name && c.version == p.version);
-        p.license_text = cached_package.and_then(|c| c.license_text.clone());
+        p.license_texts = cached_package
+            .map(|c| c.license_texts.clone())
+            .unwrap_or(vec![]);
         PackageWrapper {
             package: p,
             restored_from_cache: cached_package.is_some(),
