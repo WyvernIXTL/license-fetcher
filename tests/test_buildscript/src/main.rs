@@ -7,7 +7,7 @@ fn main() {
 
     assert_eq!(package_list[0].name, "test_buildscript");
     assert_eq!(
-        package_list[0].license_text.clone().unwrap().trim(),
+        package_list[0].license_texts.clone()[0].1.trim(),
         "THIS IS NOT A LICENSE"
     );
 
