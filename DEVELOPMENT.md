@@ -9,3 +9,12 @@ Before a new version is released or a PR is accepted following tasks should run 
 ```sh
 task --parallel test:check test:integration test:clippy test:fmt doc
 ```
+
+## Zed Setup
+
+I recommend following extensions:
+
+- Comments Highlighter
+- Typos spell checker
+- ltex
+- Cyberpunk Scarlet
