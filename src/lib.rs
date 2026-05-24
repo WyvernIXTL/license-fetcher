@@ -200,6 +200,7 @@ impl Package {
         const SEPARATOR_WIDTH: usize = 80;
         let separator: String = "=".repeat(SEPARATOR_WIDTH);
         let separator_light: String = "-".repeat(SEPARATOR_WIDTH);
+        let separator_lighter: String = "- ".repeat(SEPARATOR_WIDTH / 2);
 
         writeln!(f, "Package:     {} {}", self.name, self.version)?;
         if let Some(description) = &self.description {
@@ -231,7 +232,7 @@ impl Package {
             // ? provisional implementation
             writeln!(
                 f,
-                "\n{separator_light}\n{lic_location}\n{separator_light}\n\n{lic_text}"
+                "\n{separator_light}\n{lic_location}\n{separator_lighter}\n\n{lic_text}"
             )?;
         }
 
