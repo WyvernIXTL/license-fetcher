@@ -56,7 +56,7 @@
 //! }
 //! ```
 //!
-//! For a more advanced example visit the [`build` module documentation](crate::build).
+//! *For a more advanced example visit the [`build` module documentation](crate::build).*
 //!
 //! ## Adding Packages that are not Crates
 //!
