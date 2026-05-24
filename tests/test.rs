@@ -10,7 +10,14 @@ static TEST_CRATE_ROOT_PACKAGE: LazyLock<Package> = LazyLock::new(|| {
     Package::builder("test_crate", "0.1.0")
         .add_author("Max Mustermann")
         .license_identifier("CC0-1.0")
-        .add_license_text("LICENSE", "THIS IS NOT A LICENSE\n")
+        .add_license_text(
+            "LICENSE",
+            if cfg!(target_os = "windows") {
+                "THIS IS NOT A LICENSE\r\n"
+            } else {
+                "THIS IS NOT A LICENSE\n"
+            },
+        )
         .homepage("https://example.com")
         .build()
 });
