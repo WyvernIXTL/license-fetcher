@@ -105,7 +105,14 @@
 //!
 //! ## Features
 //!
+//! - `build` enables license metadata parsing and license text fetching.
 //! - `serde` enables the derivation of `Serialize` and `Deserialize` for `Package` and `PackageList`.
+//!
+//! ## Error Handling
+//!
+//! During build time, error handling is done via the [`error_stack ` crate](https://docs.rs/error-stack/latest/error_stack/).
+//! The [`read_package_list_from_out_dir`] macro on the other hand returns [`UnpackError`](error::UnpackError), which can be normally handled with
+//! match clauses (see the [`build` module documentation](crate::build) for an example).
 //!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]

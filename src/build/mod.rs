@@ -180,11 +180,6 @@
 //! Failed to embed license data during build. Please see ... for license data information.
 //! ```
 //!
-//!
-//! ## Error Handling
-//!
-//! See [error-stack](https://docs.rs/error-stack/latest/error_stack/struct.Report.html).
-//!
 
 use std::env::var_os;
 use std::error::Error;
