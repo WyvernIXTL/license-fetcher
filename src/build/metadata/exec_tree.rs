@@ -6,14 +6,16 @@
 
 use std::{collections::HashSet, process::Output};
 
-use error_stack::{Result, ResultExt};
+use error_stack::{Report, ResultExt};
 
 use crate::build::{
     config::MetadataConfig,
     metadata::{exec::exec_cargo, PkgListFromCargoMetadataError},
 };
 
-fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, PkgListFromCargoMetadataError> {
+fn exec_cargo_tree(
+    config: &MetadataConfig,
+) -> Result<Output, Report<PkgListFromCargoMetadataError>> {
     const ARGUMENTS: &[&str] = &[
         "tree",
         "-e",
@@ -32,7 +34,7 @@ fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, PkgListFromCargoMe
 
 fn parse_cargo_tree_output(
     output: Output,
-) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
+) -> Result<HashSet<String>, Report<PkgListFromCargoMetadataError>> {
     Ok(String::from_utf8(output.stdout)
         .change_context(PkgListFromCargoMetadataError::ParseString)?
         .lines()
@@ -45,7 +47,7 @@ fn parse_cargo_tree_output(
 
 pub fn exec_cargo_tree_and_parse_output(
     config: &MetadataConfig,
-) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
+) -> Result<HashSet<String>, Report<PkgListFromCargoMetadataError>> {
     let output = exec_cargo_tree(config)?;
     parse_cargo_tree_output(output)
 }

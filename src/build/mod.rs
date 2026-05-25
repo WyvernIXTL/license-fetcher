@@ -203,8 +203,7 @@ mod metadata;
 
 use cache::CacheError;
 use config::Config;
-use error_stack::Result;
-use error_stack::ResultExt;
+use error_stack::{Report, ResultExt};
 use fetch::license_texts_from_folder;
 use log::{error, info};
 use lz4_flex::compress_prepend_size;
@@ -247,12 +246,12 @@ fn wrap_package_iter(
 fn sort_package_list(
     root_package_name: &str,
     package_vec: &mut [Package],
-) -> Result<(), BuildError> {
+) -> Result<(), Report<BuildError>> {
     let root_pos = package_vec
         .iter()
         .position(|e| e.name == root_package_name)
         .ok_or(BuildError::RootPackageNotInOutput)
-        .attach_printable_lazy(|| "Root package is not in package list.")?;
+        .attach_with(|| "Root package is not in package list.")?;
 
     package_vec.swap(0, root_pos);
     package_vec[1..].sort();
@@ -263,7 +262,7 @@ fn sort_package_list(
 fn attach_root_package_license(
     config: &Config,
     root_package: &mut Package,
-) -> Result<(), BuildError> {
+) -> Result<(), Report<BuildError>> {
     root_package.license_texts = license_texts_from_folder(&config.metadata_config.manifest_dir)
         .change_context(BuildError::FailedLicenseFetch)?;
 
@@ -280,7 +279,7 @@ fn attach_root_package_license(
 /// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 ///
-pub fn package_list(config: impl AsRef<MetadataConfig>) -> Result<PackageList, BuildError> {
+pub fn package_list(config: impl AsRef<MetadataConfig>) -> Result<PackageList, Report<BuildError>> {
     let (package_root_name, package_iter) =
         package_list_impl(config.as_ref()).change_context(BuildError::FailedMetadataFetching)?;
 
@@ -294,7 +293,9 @@ pub fn package_list(config: impl AsRef<MetadataConfig>) -> Result<PackageList, B
 /// Generates a package list with package name, authors and license text.
 ///
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
-pub fn package_list_with_licenses(config: impl AsRef<Config>) -> Result<PackageList, BuildError> {
+pub fn package_list_with_licenses(
+    config: impl AsRef<Config>,
+) -> Result<PackageList, Report<BuildError>> {
     let (root_package_name, package_iter) = package_list_impl(&config.as_ref().metadata_config)
         .change_context(BuildError::FailedMetadataFetching)?;
 
@@ -372,7 +373,7 @@ impl PackageList {
     /// The reason for the latter variant, [`WriteError::NotBuildScript`], is that this function depends on environment variables set during
     /// compilation.
     ///
-    pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
+    pub fn write_package_list_to_out_dir(&self) -> Result<(), Report<WriteError>> {
         let compressed_data = self.encode();
 
         let path =

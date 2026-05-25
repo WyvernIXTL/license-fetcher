@@ -6,7 +6,7 @@
 
 use std::{ffi::OsStr, fmt, path::PathBuf};
 
-use error_stack::{Context, Report};
+use error_stack::Report;
 
 /// Encoded path for error handling.
 #[derive(Debug, Clone)]
@@ -43,29 +43,29 @@ impl fmt::Display for CEnvVar {
 }
 
 #[derive(Debug)]
-pub(crate) struct ReportJoin<E: Context> {
-    error: Result<(), Report<E>>,
+pub(crate) struct ReportJoin<E: std::error::Error> {
+    error: Result<(), Report<[E]>>,
 }
 
 impl<E> ReportJoin<E>
 where
-    E: Context,
+    E: std::error::Error,
 {
-    pub fn result(self) -> Result<(), Report<E>> {
+    pub fn result(self) -> Result<(), Report<[E]>> {
         self.error
     }
 
     pub fn join(&mut self, e: Report<E>) {
         match self.error.as_mut() {
-            Ok(()) => self.error = Err(e),
-            Err(error) => error.extend_one(e),
+            Ok(()) => self.error = Err(e.expand()),
+            Err(error) => error.push(e),
         }
     }
 }
 
 impl<E> Default for ReportJoin<E>
 where
-    E: Context,
+    E: std::error::Error,
 {
     fn default() -> Self {
         Self { error: Ok(()) }

@@ -12,7 +12,7 @@ use std::{
     fs::{read_dir, read_to_string},
 };
 
-use error_stack::{Result, ResultExt};
+use error_stack::{Report, ResultExt};
 use log::{error, info, trace, warn};
 use regex_lite::Regex;
 
@@ -39,7 +39,7 @@ impl Error for LicenseFetchError {}
 
 pub(crate) fn license_texts_from_folder(
     path: &Path,
-) -> Result<Vec<(String, String)>, std::io::Error> {
+) -> Result<Vec<(String, String)>, Report<std::io::Error>> {
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
@@ -47,7 +47,7 @@ pub(crate) fn license_texts_from_folder(
 
     // TODO: Split this up.
     let license_texts: Vec<(String, String)> = read_dir(path)
-        .attach_printable_lazy(|| CPath::from(path))?
+        .attach_with(|| CPath::from(path))?
         .filter_map(std::result::Result::ok)
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .filter_map(|e| {
@@ -99,15 +99,16 @@ pub(crate) fn license_texts_from_folder(
 pub fn populate_package_list_licenses(
     package_list: &mut [PackageWrapper],
     cargo_home_dir: &Path,
-) -> Result<(), LicenseFetchError> {
+) -> Result<(), Report<[LicenseFetchError]>> {
     let mut package_hash_map: HashMap<String, &mut PackageWrapper> = package_list
         .iter_mut()
         .filter(|p| p.package.license_texts.is_empty() && !p.restored_from_cache)
         .map(|p| (format!("{}-{}", p.package.name, p.package.version), p))
         .collect::<HashMap<_, _>>();
 
-    let src_folder_iterator =
-        src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;
+    let src_folder_iterator = src_registry_folders(cargo_home_dir)
+        .change_context(LicenseFetchError::RegistrySrc)
+        .map_err(error_stack::Report::expand)?;
 
     let mut result = ReportJoin::default();
 
@@ -115,8 +116,9 @@ pub fn populate_package_list_licenses(
         info!("src folder: {}", &src_folder.display());
 
         read_dir(&src_folder)
-            .attach_printable_lazy(|| CPath::from(src_folder))
-            .change_context(LicenseFetchError::SrcFolderRecursion)?
+            .attach_with(|| CPath::from(src_folder))
+            .change_context(LicenseFetchError::SrcFolderRecursion)
+            .map_err(error_stack::Report::expand)?
             .filter_map(std::result::Result::ok)
             .filter(|e| e.file_type().is_ok_and(|e| e.is_dir()))
             .for_each(|e| {
@@ -132,7 +134,8 @@ pub fn populate_package_list_licenses(
                         Ok(res) => p.package.license_texts = res,
                         Err(err) => {
                             error!("Failure");
-                            let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);
+                            let err = Report::new(LicenseFetchError::LicenseFetchForPackage)
+                                .attach(err.to_string());
                             result.join(err);
                         }
                     }

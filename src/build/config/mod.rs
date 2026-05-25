@@ -54,7 +54,7 @@
 use std::{env::var_os, error::Error, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
-use error_stack::{Report, Result, ResultExt};
+use error_stack::{Report, ResultExt};
 
 use crate::OUT_FILE_NAME;
 
@@ -337,13 +337,13 @@ impl ConfigBuilder {
     /// ## Errors
     ///
     /// Returns [`ConfigBuildError`] on failure to build the configuration.
-    pub fn build(self) -> Result<Config, ConfigBuildError> {
+    pub fn build(self) -> Result<Config, Report<[ConfigBuildError]>> {
         self.error.result()?;
 
         let metadata_config = MetadataConfig {
             manifest_dir: self.manifest_dir.ok_or_else(|| {
                 Report::new(ConfigBuildError::RequiredFieldNotSet)
-                    .attach_printable("Field 'manifest_dir' is required but not set.")
+                    .attach("Field 'manifest_dir' is required but not set.")
             })?,
             cargo_path: self.cargo_path.unwrap_or_else(|| {
                 PathBuf::from(var_os("CARGO").unwrap_or_else(|| "cargo".into()))
@@ -358,7 +358,9 @@ impl ConfigBuilder {
             metadata_config,
             cargo_home_dir: match self.cargo_home_dir {
                 Some(dir) => dir,
-                None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
+                None => cargo_folder()
+                    .change_context(ConfigBuildError::CargoHomeDir)
+                    .map_err(error_stack::Report::expand)?,
             },
             cache_path: self.cache_path.or_else(maybe_cache_path_from_env),
         })

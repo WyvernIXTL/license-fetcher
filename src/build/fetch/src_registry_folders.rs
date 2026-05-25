@@ -10,7 +10,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use error_stack::{ensure, Report, Result, ResultExt};
+use error_stack::{ensure, Report, ResultExt};
 
 use crate::build::error::CPath;
 
@@ -29,18 +29,18 @@ impl Error for SrcRegistryInferenceError {}
 
 pub fn src_registry_folders(
     path: &Path,
-) -> Result<impl Iterator<Item = PathBuf>, SrcRegistryInferenceError> {
+) -> Result<impl Iterator<Item = PathBuf>, Report<SrcRegistryInferenceError>> {
     let src_dir = path.join("registry/src");
     ensure!(
         src_dir.exists(),
-        Report::new(SrcRegistryInferenceError::DoesNotExist).attach_printable(CPath::from(src_dir))
+        Report::new(SrcRegistryInferenceError::DoesNotExist).attach(CPath::from(src_dir))
     );
     ensure!(
         src_dir.is_dir(),
-        Report::new(SrcRegistryInferenceError::IsNotAFolder).attach_printable(CPath::from(src_dir))
+        Report::new(SrcRegistryInferenceError::IsNotAFolder).attach(CPath::from(src_dir))
     );
     Ok(read_dir(&src_dir)
-        .attach_printable_lazy(|| CPath::from(&src_dir))
+        .attach_with(|| CPath::from(&src_dir))
         .change_context(SrcRegistryInferenceError::FailedReadDir)?
         .filter_map(std::result::Result::ok)
         .filter(|e| e.file_type().is_ok_and(|ft| ft.is_dir()))

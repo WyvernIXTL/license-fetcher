@@ -9,7 +9,7 @@ use std::{
     sync::LazyLock,
 };
 
-use error_stack::{report, Result, ResultExt};
+use error_stack::{Report, ResultExt};
 use nanoserde::DeJson;
 use regex_lite::Regex;
 
@@ -25,7 +25,9 @@ use crate::{
     Package,
 };
 
-fn exec_cargo_metadata(config: &MetadataConfig) -> Result<Metadata, PkgListFromCargoMetadataError> {
+fn exec_cargo_metadata(
+    config: &MetadataConfig,
+) -> Result<Metadata, Report<PkgListFromCargoMetadataError>> {
     const ARGUMENTS: &[&str] = &["metadata", "--format-version", "1", "--color", "never"];
 
     let output =
@@ -72,7 +74,7 @@ fn used_package_names_from_metadata_resolve_nodes(
 
 fn parse_package_name_from_package_id(
     package_id: &String,
-) -> Result<String, PkgListFromCargoMetadataError> {
+) -> Result<String, Report<PkgListFromCargoMetadataError>> {
     static PARSE_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r".*?[#|\/](?<name>[a-z\-\_\d]+)[@|#][\d\.]+").unwrap());
 
@@ -80,21 +82,21 @@ fn parse_package_name_from_package_id(
         Ok(caps["name"].to_owned())
     } else {
         Err(
-            report!(PkgListFromCargoMetadataError::PackageNameParseError)
-                .attach_printable(format!("package id: '{package_id}'")),
+            Report::new(PkgListFromCargoMetadataError::PackageNameParseError)
+                .attach(format!("package id: '{package_id}'")),
         )
     }
 }
 
 fn parse_metadata(
     metadata_parsed: Metadata,
-) -> Result<(String, impl Iterator<Item = Package>), PkgListFromCargoMetadataError> {
+) -> Result<(String, impl Iterator<Item = Package>), Report<PkgListFromCargoMetadataError>> {
     let packages = metadata_parsed.packages;
     let root_package_id = metadata_parsed
         .resolve
         .root
         .ok_or(PkgListFromCargoMetadataError::ParseJson)
-        .attach_printable("Failed to resolve root package id from output.")?;
+        .attach("Failed to resolve root package id from output.")?;
     let root_package_name = parse_package_name_from_package_id(&root_package_id)?;
     let dependencies = metadata_parsed.resolve.nodes;
 
@@ -120,7 +122,7 @@ fn parse_metadata(
 
 pub fn exec_cargo_metadata_and_parse_result(
     config: &MetadataConfig,
-) -> Result<(String, impl Iterator<Item = Package> + '_), PkgListFromCargoMetadataError> {
+) -> Result<(String, impl Iterator<Item = Package> + '_), Report<PkgListFromCargoMetadataError>> {
     let metadata = exec_cargo_metadata(config)?;
     parse_metadata(metadata)
 }

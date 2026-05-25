@@ -7,7 +7,7 @@
 use std::{env::var_os, error::Error, path::PathBuf};
 
 use directories::BaseDirs;
-use error_stack::{ensure, Report, Result};
+use error_stack::{ensure, Report};
 
 use crate::build::error::CPath;
 
@@ -24,7 +24,7 @@ pub enum CargoFolderError {
 
 impl Error for CargoFolderError {}
 
-pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
+pub fn cargo_folder() -> Result<PathBuf, Report<CargoFolderError>> {
     let cargo_home: PathBuf;
 
     if let Some(path) = var_os("CARGO_HOME") {
@@ -40,11 +40,11 @@ pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
 
     ensure!(
         cargo_home.exists(),
-        Report::new(CargoFolderError::DoesNotExist).attach_printable(CPath::from(&cargo_home))
+        Report::new(CargoFolderError::DoesNotExist).attach(CPath::from(&cargo_home))
     );
     ensure!(
         cargo_home.is_dir(),
-        Report::new(CargoFolderError::IsNotDir).attach_printable(CPath::from(&cargo_home))
+        Report::new(CargoFolderError::IsNotDir).attach(CPath::from(&cargo_home))
     );
 
     Ok(cargo_home)
