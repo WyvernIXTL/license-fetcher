@@ -7,7 +7,7 @@
 use std::env::VarError;
 use std::{env::var_os, ffi::OsStr, path::PathBuf};
 
-use error_stack::{Report, ResultExt};
+use error_stack::{Result, ResultExt};
 
 use crate::build::error::CEnvVar;
 
@@ -19,7 +19,7 @@ struct MetadataEnv {
 }
 
 impl MetadataEnv {
-    fn new() -> Result<Self, Report<VarError>> {
+    fn new() -> Result<Self, VarError> {
         Ok(Self {
             manifest_dir: path_buf_from_env("CARGO_MANIFEST_DIR")?,
             cargo_path: path_buf_from_env("CARGO")?,
@@ -27,10 +27,10 @@ impl MetadataEnv {
     }
 }
 
-fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, Report<VarError>> {
+fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, VarError> {
     let env_value = var_os(&env)
         .ok_or(VarError::NotPresent)
-        .attach_with(|| CEnvVar::from(env))?;
+        .attach_printable_lazy(|| CEnvVar::from(env))?;
 
     Ok(PathBuf::from(env_value))
 }
@@ -78,7 +78,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_config_from_env() -> Result<(), Report<[ConfigBuildError]>> {
+    fn test_config_from_env() -> Result<(), ConfigBuildError> {
         setup_test();
         let conf = ConfigBuilder::from_build_env().build()?;
         assert_eq!(

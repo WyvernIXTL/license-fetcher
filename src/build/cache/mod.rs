@@ -6,7 +6,7 @@
 
 use std::{error::Error, fs::read, path::Path};
 
-use error_stack::{ensure, Report, ResultExt};
+use error_stack::{ensure, report, Result, ResultExt};
 
 use crate::{
     build::{error::CPath, wrapper::PackageWrapper},
@@ -24,16 +24,14 @@ pub enum CacheError {
 
 impl Error for CacheError {}
 
-pub fn read_package_list_with_tests(
-    cache_file_path: &Path,
-) -> Result<PackageList, Report<CacheError>> {
+pub fn read_package_list_with_tests(cache_file_path: &Path) -> Result<PackageList, CacheError> {
     ensure!(
         cache_file_path
             .try_exists()
             .change_context(CacheError::Invalid)
-            .attach_with(|| CPath::from(&cache_file_path))?
+            .attach_printable_lazy(|| CPath::from(&cache_file_path))?
             && cache_file_path.is_file(),
-        Report::new(CacheError::Invalid).attach(CPath::from(&cache_file_path))
+        report!(CacheError::Invalid).attach_printable(CPath::from(&cache_file_path))
     );
     let cache_bin = read(cache_file_path).change_context(CacheError::ReadError)?;
     PackageList::from_encoded(&cache_bin).change_context(CacheError::Invalid)

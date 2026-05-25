@@ -11,7 +11,7 @@ use std::{
     process::{Command, Output},
 };
 
-use error_stack::{Report, ResultExt};
+use error_stack::{Report, Result, ResultExt};
 
 use crate::build::config::{CargoDirective, MetadataConfig};
 
@@ -32,7 +32,7 @@ fn exec_cargo_single<P, S, I>(
     manifest_dir: P,
     features_opt: Option<&OsString>,
     arguments: I,
-) -> Result<Output, Report<ExecCargoError>>
+) -> Result<Output, ExecCargoError>
 where
     P: AsRef<Path>,
     I: IntoIterator<Item = S>,
@@ -54,21 +54,18 @@ where
     let output = command
         .output()
         .change_context(ExecCargoError::FailedToExecute)
-        .attach_with(|| format!("cargo directive: {cargo_directive}"))?;
+        .attach_printable_lazy(|| format!("cargo directive: {cargo_directive}"))?;
 
     if output.status.success() {
         Ok(output)
     } else {
         Err(Report::new(ExecCargoError::ExecutionWithError)
-            .attach(format!("cargo directive: {cargo_directive}"))
-            .attach(String::from_utf8_lossy(&output.stderr).into_owned()))
+            .attach_printable(format!("cargo directive: {cargo_directive}"))
+            .attach_printable(String::from_utf8_lossy(&output.stderr).into_owned()))
     }
 }
 
-pub fn exec_cargo<I, S>(
-    config: &MetadataConfig,
-    arguments: &I,
-) -> Result<Output, Report<[ExecCargoError]>>
+pub fn exec_cargo<I, S>(config: &MetadataConfig, arguments: &I) -> Result<Output, ExecCargoError>
 where
     I: IntoIterator<Item = S> + Clone,
     S: AsRef<OsStr> + Clone,
@@ -78,7 +75,7 @@ where
         "cargo directives in config passed to `exec_cargo` should not have been empty"
     );
 
-    let mut err: Option<Report<[ExecCargoError]>> = None;
+    let mut err: Option<Report<ExecCargoError>> = None;
 
     for directive in config.cargo_directives.iter() {
         let result_single = exec_cargo_single(
@@ -89,10 +86,10 @@ where
             arguments.clone(),
         );
         match result_single {
-            Ok(output) => return Ok(output),
+            Ok(_) => return result_single,
             Err(e) => match err.as_mut() {
-                None => err = Some(e.expand()),
-                Some(err) => err.push(e),
+                None => err = Some(e),
+                Some(err) => err.extend_one(e),
             },
         }
     }
@@ -102,5 +99,5 @@ where
         "cargo execution failed, but the combined error is None"
     );
 
-    Err(err.unwrap_or_else(|| Report::new(ExecCargoError::ExecutionWithError).expand()))
+    Err(err.unwrap_or_else(|| Report::new(ExecCargoError::ExecutionWithError)))
 }

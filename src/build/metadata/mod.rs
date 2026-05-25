@@ -6,7 +6,7 @@
 
 use std::{error::Error, thread::scope};
 
-use error_stack::Report;
+use error_stack::{report, Result};
 
 use crate::{
     build::metadata::{
@@ -42,7 +42,7 @@ impl Error for PkgListFromCargoMetadataError {}
 
 pub fn package_list_impl(
     config: &MetadataConfig,
-) -> Result<(String, impl Iterator<Item = Package> + '_), Report<[PkgListFromCargoMetadataError]>> {
+) -> Result<(String, impl Iterator<Item = Package> + '_), PkgListFromCargoMetadataError> {
     scope(|scope| {
         let cargo_metadata_thread_handle =
             scope.spawn(|| exec_cargo_metadata_and_parse_result(config));
@@ -50,24 +50,19 @@ pub fn package_list_impl(
         let cargo_tree_thread_handle = scope.spawn(|| exec_cargo_tree_and_parse_output(config));
 
         let cargo_metadata_thread_result = cargo_metadata_thread_handle.join().map_err(|e| {
-            Report::new(PkgListFromCargoMetadataError::Thread)
-                .attach(format!("{e:?}"))
-                .expand()
+            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
         let cargo_tree_thread_result = cargo_tree_thread_handle.join().map_err(|e| {
-            Report::new(PkgListFromCargoMetadataError::Thread)
-                .attach(format!("{e:?}"))
-                .expand()
+            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
 
         match (cargo_metadata_thread_result, cargo_tree_thread_result) {
-            (Err(cargo_metadata_err), Err(cargo_tree_err)) => {
-                let mut combined = cargo_metadata_err.expand();
-                combined.push(cargo_tree_err);
-                Err(combined)
+            (Err(mut cargo_metadata_err), Err(cargo_tree_err)) => {
+                cargo_metadata_err.extend_one(cargo_tree_err);
+                Err(cargo_metadata_err)
             }
-            (Err(cargo_metadata_err), _) => Err(cargo_metadata_err.expand()),
-            (_, Err(cargo_tree_err)) => Err(cargo_tree_err.expand()),
+            (Err(cargo_metadata_err), _) => Err(cargo_metadata_err),
+            (_, Err(cargo_tree_err)) => Err(cargo_tree_err),
             (Ok((root_package_name, packages_iter)), Ok(used_package_names)) => Ok((
                 root_package_name,
                 packages_iter.filter(move |p| used_package_names.contains(&p.name)),
