@@ -12,8 +12,8 @@ This release changes the API slightly to make the crate easier to use.
 
 ### Added
 
-- License texts are now stored in a vector of string instead of being joined into a single string.
-- License texts are displayed separately with their file name as header.
+- Add text wrapping for crate description and license in display trait.
+- The license texts of a crate are now stored and shown separately.
 - Documentation for all errors.
 
 
