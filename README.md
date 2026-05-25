@@ -140,7 +140,7 @@ A big shout-out!
 
 _Display trait included_ 😉
 
-![Screenshot](./img/example_print.png)
+![Screenshot](./img/example_print_v0.10.0.png)
 
 
 ## License
