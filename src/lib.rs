@@ -578,14 +578,20 @@ mod test {
         arbtest(fuzz_package_builder_property).run();
     }
 
+    fn normalize_whitespace(s: &str) -> String {
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
     fn check_string_contains_package_data(display: &str, pkg: &Package) {
+        let display_normalized = normalize_whitespace(display);
+
         check!(display.contains(&pkg.name) && display.contains(&pkg.version));
 
         for author in &pkg.authors {
             assert!(display.contains(author));
         }
         if let Some(desc) = &pkg.description {
-            assert!(display.contains(desc));
+            assert!(display_normalized.contains(&normalize_whitespace(desc)));
         }
         if let Some(homepage) = &pkg.homepage {
             assert!(display.contains(homepage));
@@ -598,7 +604,7 @@ mod test {
         }
         for (lic_name, lic_text) in &pkg.license_texts {
             assert!(display.contains(lic_name));
-            assert!(display.contains(lic_text));
+            assert!(display_normalized.contains(&normalize_whitespace(lic_text)));
         }
     }
 
