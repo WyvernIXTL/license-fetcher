@@ -7,8 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-This release changes the API slightly to make the crate easier to use.
-
+## v0.10.0
 
 ### Added
 
