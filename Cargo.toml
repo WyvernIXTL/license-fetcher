@@ -34,6 +34,7 @@ lz4_flex = { version = "0.13.0", default-features = false, features = ["checked-
 nanoserde = { version = "0.2.1", default-features = false, features = ["std", "json", "binary"] }
 regex-lite = { version = "0.1.6", optional = true }
 serde = { version = "1.0.228", features = ["derive"], optional = true }
+textwrap = { version = "0.16.2", default-features = false }
 
 [dev-dependencies]
 arbitrary = { version = "1.4.2", features = ["derive"] }

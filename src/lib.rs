@@ -204,9 +204,22 @@ impl Package {
 
         writeln!(f, "Package:     {} {}", self.name, self.version)?;
         if let Some(description) = &self.description {
-            writeln!(f, "Description: {description}")?;
+            let opt = textwrap::Options::new(SEPARATOR_WIDTH)
+                .initial_indent("Description: ")
+                .subsequent_indent("             ");
+            let lines = textwrap::wrap(description, opt);
+            for l in lines {
+                writeln!(f, "{l}")?;
+            }
         }
-        if !self.authors.is_empty() {
+        if self.authors.len() == 1 {
+            writeln!(
+                f,
+                "Author:      {}",
+                self.authors.first().unwrap_or(&String::new())
+            )?;
+        }
+        if self.authors.len() > 1 {
             writeln!(
                 f,
                 "Authors:     - {}",
@@ -227,13 +240,15 @@ impl Package {
         }
 
         for (lic_location, lic_text) in &self.license_texts {
-            // TODO: Test and tune new license printing.
-
-            // ? provisional implementation
             writeln!(
                 f,
-                "\n{separator_light}\n{lic_location}\n{separator_lighter}\n\n{lic_text}"
+                "\n{separator_light}\n{lic_location}\n{separator_lighter}\n\n"
             )?;
+
+            let lines = textwrap::wrap(lic_text, SEPARATOR_WIDTH);
+            for l in lines {
+                writeln!(f, "{l}")?;
+            }
         }
 
         writeln!(f, "\n{separator}\n")?;
