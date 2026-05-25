@@ -166,7 +166,7 @@
 //!         }
 //!         Err(err) => {
 //!             eprintln!(
-//!                 "An error during decompression or deserialization of license data has occured:\n{err}"
+//!                 "An error during decompression or deserialization of license data has occurred:\n{err}"
 //!             );
 //!             exit(1);
 //!         }
