@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, fs::read, path::Path};
+use std::{error::Error, fmt, fs::read, path::Path};
 
 use error_stack::{ensure, report, Result, ResultExt};
 
@@ -14,12 +14,21 @@ use crate::{
 };
 
 /// Error occurring when reading cache file (old license data)
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum CacheError {
     /// cache not found or cache is invalid
     Invalid,
     /// failed to read cache file
     ReadError,
+}
+
+impl fmt::Display for CacheError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Invalid => write!(f, "cache not found or cache is invalid"),
+            Self::ReadError => write!(f, "failed to read cache file"),
+        }
+    }
 }
 
 impl Error for CacheError {}

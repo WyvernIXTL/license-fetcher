@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{env::var_os, error::Error, path::PathBuf};
+use std::{env::var_os, error::Error, fmt, path::PathBuf};
 
 use directories::BaseDirs;
 use error_stack::{ensure, Report, Result};
@@ -12,7 +12,7 @@ use error_stack::{ensure, Report, Result};
 use crate::build::error::CPath;
 
 /// Error dealing with failed attempts to determine the users cargo home folder.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum CargoFolderError {
     /// failed determining users home directory
     BaseDirs,
@@ -20,6 +20,16 @@ pub enum CargoFolderError {
     DoesNotExist,
     /// inferred or supplied cargo home folder is not a folder
     IsNotDir,
+}
+
+impl fmt::Display for CargoFolderError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::BaseDirs => write!(f, "failed determining users home directory"),
+            Self::DoesNotExist => write!(f, "given or inferred cargo home folder location does not exist"),
+            Self::IsNotDir => write!(f, "inferred or supplied cargo home folder is not a folder"),
+        }
+    }
 }
 
 impl Error for CargoFolderError {}

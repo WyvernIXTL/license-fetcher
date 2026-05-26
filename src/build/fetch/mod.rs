@@ -9,6 +9,7 @@ use std::path::Path;
 use std::sync::LazyLock;
 use std::{
     error::Error,
+    fmt,
     fs::{read_dir, read_to_string},
 };
 
@@ -25,7 +26,7 @@ use src_registry_folders::src_registry_folders;
 use super::error::ReportJoin;
 
 /// Errors that may occur when reading and walking the cargo src registry folder.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum LicenseFetchError {
     /// failed to infer or read cargo src registry folder
     RegistrySrc,
@@ -33,6 +34,16 @@ pub enum LicenseFetchError {
     LicenseFetchForPackage,
     /// failed to walk a crates src folder
     SrcFolderRecursion,
+}
+
+impl fmt::Display for LicenseFetchError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::RegistrySrc => write!(f, "failed to infer or read cargo src registry folder"),
+            Self::LicenseFetchForPackage => write!(f, "failed to fetch license from a crates src folder"),
+            Self::SrcFolderRecursion => write!(f, "failed to walk a crates src folder"),
+        }
+    }
 }
 
 impl Error for LicenseFetchError {}

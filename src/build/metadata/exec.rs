@@ -7,6 +7,7 @@
 use std::{
     error::Error,
     ffi::{OsStr, OsString},
+    fmt,
     path::Path,
     process::{Command, Output},
 };
@@ -16,12 +17,21 @@ use error_stack::{Report, Result, ResultExt};
 use crate::build::config::{CargoDirective, MetadataConfig};
 
 /// Error that occurs when `cargo` does not execute or returns itself an error.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum ExecCargoError {
     /// `cargo` executed, but returned an error
     ExecutionWithError,
     /// failed to execute `cargo`
     FailedToExecute,
+}
+
+impl fmt::Display for ExecCargoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ExecutionWithError => write!(f, "`cargo` executed, but returned an error"),
+            Self::FailedToExecute => write!(f, "failed to execute `cargo`"),
+        }
+    }
 }
 
 impl Error for ExecCargoError {}

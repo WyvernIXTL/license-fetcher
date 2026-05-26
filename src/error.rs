@@ -4,10 +4,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::error::Error;
+use std::{error::Error, fmt};
 
 /// Error union representing errors that might occur during unpacking of embedded license data.
-#[derive(Debug, displaydoc::Display)]
+#[derive(Debug)]
 pub enum UnpackError {
     /// failed decompressing embedded license data
     DecompressError(lz4_flex::block::DecompressError),
@@ -26,6 +26,16 @@ impl From<lz4_flex::block::DecompressError> for UnpackError {
 impl From<nanoserde::DeBinErr> for UnpackError {
     fn from(value: nanoserde::DeBinErr) -> Self {
         Self::DecodeError(value)
+    }
+}
+
+impl fmt::Display for UnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DecompressError(_) => write!(f, "failed decompressing embedded license data"),
+            Self::DecodeError(_) => write!(f, "failed deserialization of embedded decompressed license data"),
+            Self::Empty => write!(f, "embedded license data is empty"),
+        }
     }
 }
 

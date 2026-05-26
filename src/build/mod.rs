@@ -183,6 +183,7 @@
 
 use std::env::var_os;
 use std::error::Error;
+use std::fmt;
 use std::fs::write;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -221,7 +222,7 @@ use crate::OUT_FILE_NAME;
 use fetch::populate_package_list_licenses;
 
 /// Error that might occur during fetching of license data.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum BuildError {
     /// failed to fetch package metadata with `cargo metadata` and `cargo tree`
     FailedMetadataFetching,
@@ -231,6 +232,17 @@ pub enum BuildError {
     FailedLicenseFetch,
     /// root package is not in output license data
     RootPackageNotInOutput,
+}
+
+impl fmt::Display for BuildError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FailedMetadataFetching => write!(f, "failed to fetch package metadata with `cargo metadata` and `cargo tree`"),
+            Self::CacheReadError => write!(f, "failed to read cache with an io error"),
+            Self::FailedLicenseFetch => write!(f, "failed to read licenses from cargo sources folder"),
+            Self::RootPackageNotInOutput => write!(f, "root package is not in output license data"),
+        }
+    }
 }
 
 impl Error for BuildError {}
@@ -329,12 +341,21 @@ pub fn package_list_with_licenses(config: impl AsRef<Config>) -> Result<PackageL
 }
 
 /// Errors that might occur during the writing process of the license data to the output directory.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum WriteError {
     /// failed writing license data to output directory
     Write,
     /// function was called not in build script which is disallowed
     NotBuildScript,
+}
+
+impl fmt::Display for WriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Write => write!(f, "failed writing license data to output directory"),
+            Self::NotBuildScript => write!(f, "function was called not in build script which is disallowed"),
+        }
+    }
 }
 
 impl Error for WriteError {}

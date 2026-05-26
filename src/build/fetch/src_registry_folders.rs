@@ -6,6 +6,7 @@
 
 use std::{
     error::Error,
+    fmt,
     fs::read_dir,
     path::{Path, PathBuf},
 };
@@ -15,7 +16,7 @@ use error_stack::{ensure, Report, Result, ResultExt};
 use crate::build::error::CPath;
 
 /// Error that may occur, when failing to read or determine cargo source registry folder.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum SrcRegistryInferenceError {
     /// source registry folder does not exist at the inferred path
     DoesNotExist,
@@ -23,6 +24,16 @@ pub enum SrcRegistryInferenceError {
     IsNotAFolder,
     /// failed to read the inferred source registry directory
     FailedReadDir,
+}
+
+impl fmt::Display for SrcRegistryInferenceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DoesNotExist => write!(f, "source registry folder does not exist at the inferred path"),
+            Self::IsNotAFolder => write!(f, "the inferred path of the source registry is not a folder"),
+            Self::FailedReadDir => write!(f, "failed to read the inferred source registry directory"),
+        }
+    }
 }
 
 impl Error for SrcRegistryInferenceError {}

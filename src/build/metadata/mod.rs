@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, thread::scope};
+use std::{error::Error, fmt, thread::scope};
 
 use error_stack::{report, Result};
 
@@ -24,7 +24,7 @@ mod exec_tree;
 mod json_parsing;
 
 /// Error handling the execution and parsing of package metadata.
-#[derive(Debug, Clone, Copy, displaydoc::Display)]
+#[derive(Debug, Clone, Copy)]
 pub enum PkgListFromCargoMetadataError {
     /// failed to execute `cargo metadata` or `cargo tree`
     ExecCargo,
@@ -36,6 +36,18 @@ pub enum PkgListFromCargoMetadataError {
     Thread,
     /// failed to parse a package name from a package id
     PackageNameParseError,
+}
+
+impl fmt::Display for PkgListFromCargoMetadataError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ExecCargo => write!(f, "failed to execute `cargo metadata` or `cargo tree`"),
+            Self::ParseJson => write!(f, "failed to parse the output of `cargo metadata`"),
+            Self::ParseString => write!(f, "failed to parse the output of `cargo tree` as it is not valid UTF-8"),
+            Self::Thread => write!(f, "a thread executing `cargo metadata` or `cargo tree` panicked"),
+            Self::PackageNameParseError => write!(f, "failed to parse a package name from a package id"),
+        }
+    }
 }
 
 impl Error for PkgListFromCargoMetadataError {}
