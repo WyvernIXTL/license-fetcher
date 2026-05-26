@@ -60,7 +60,11 @@ tasks:
 
   test:check:3:
     cmds:
-      - cargo check -F build,serde
+      - cargo check -F serde
+
+  test:check:4:
+    cmds:
+      - cargo check -F build,directories
 
   test:fmt:
     desc: Check cargo fmt.

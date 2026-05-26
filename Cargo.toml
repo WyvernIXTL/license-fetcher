@@ -47,8 +47,9 @@ tempfile = "3.27.0"
 
 [features]
 default = []
-build = [ "dep:log", "dep:directories", "dep:regex-lite", "dep:error-stack"]
+build = [ "dep:log", "dep:regex-lite", "dep:error-stack"]
 serde = ["dep:serde"]
+directories = ["dep:directories"]
 
 [[bench]]
 name = "bench"

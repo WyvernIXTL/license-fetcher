@@ -6,7 +6,9 @@
 
 use std::{env::var_os, error::Error, fmt, path::PathBuf};
 
+#[cfg(feature = "directories")]
 use directories::BaseDirs;
+
 use error_stack::{ensure, Report, Result};
 
 use crate::build::error::CPath;
@@ -15,6 +17,7 @@ use crate::build::error::CPath;
 #[derive(Debug, Clone, Copy)]
 pub enum CargoFolderError {
     /// failed determining users home directory
+    #[cfg(feature = "directories")]
     BaseDirs,
     /// given or inferred cargo home folder location does not exist
     DoesNotExist,
@@ -25,6 +28,7 @@ pub enum CargoFolderError {
 impl fmt::Display for CargoFolderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            #[cfg(feature = "directories")]
             Self::BaseDirs => write!(f, "failed determining users home directory"),
             Self::DoesNotExist => write!(
                 f,
@@ -43,12 +47,20 @@ pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
     if let Some(path) = var_os("CARGO_HOME") {
         cargo_home = path.into();
     } else {
-        let base_dir = BaseDirs::new().ok_or(CargoFolderError::BaseDirs)?;
-        let home_dir = base_dir.home_dir();
-        let mut cargo_dir = home_dir.to_path_buf();
-        cargo_dir.push(".cargo");
+        let home_dir;
 
-        cargo_home = cargo_dir;
+        #[cfg(feature = "directories")]
+        {
+            let base_dir = BaseDirs::new().ok_or(CargoFolderError::BaseDirs)?;
+            home_dir = base_dir.home_dir().to_path_buf();
+        }
+
+        #[cfg(not(feature = "directories"))]
+        {
+            home_dir = std::env::home_dir().ok_or(Report::new(CargoFolderError::DoesNotExist))?;
+        }
+
+        cargo_home = home_dir.join(".cargo");
     }
 
     ensure!(
