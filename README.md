@@ -167,7 +167,7 @@ _Please note that these timings are for **v0.10.0**. I used `cargo add --path` a
 These timings are of course for a clean build. For incremental builds setting `cargo::rerun-if-changed` like shown in the example above, will result
 in the build script only being run if `Cargo.toml`, `Cargo.lock` or `build.rs` change and build artifacts are of course also cached by cargo.
 
-In conclusion, the build script is fast (0.14s). It is only run if necessary. Compiling `license-fetcher` is also very fast (1.4s for a clean build). 
+In conclusion, the build script is fast (0.05s). It is only run if necessary. Compiling `license-fetcher` is also very fast (1.4s for a clean build). 
 As cargo compiles crates in parallel, you'll likely never notice :)
 
 
