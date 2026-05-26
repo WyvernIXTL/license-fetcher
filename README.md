@@ -27,7 +27,9 @@
 
 Crates that are compiled with your program are fetched via `cargo metadata` and `cargo tree`.
 License texts are read from the `.cargo/registry/src` folder.
-The data is then serialized and compressed.
+The data is then serialized, compressed and embedded.
+At runtime `license-fetcher` has only very few and lightweight dependencies needed for the
+decompression, deserialization and pretty print of the license data.
 
 ## Usage
 
@@ -83,25 +85,26 @@ use license_fetcher::read_package_list_from_out_dir;
 
 fn main() {
     let package_list = read_package_list_from_out_dir!().unwrap();
+    println!("{package_list}");
 }
 ```
 
 
 ### Much Better Setup With Leniency
 
-I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html). Take a look!
+**I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html). Take a look!**
 
 
 ## Caveats
 
-`license-fetcher` fetches licenses that are at the root of a package. This results in some caveats, mainly:
+`license-fetcher` fetches licenses that are at the root of a crate or in subfolders. This results in some caveats, mainly:
 
-- Some projects do not upload licenses with their packages. This might happen if a project is split up into many packages.
+- Some projects do not upload licenses with their crates. This might happen if a project is split up into many crates.
 - Some wrappers do not attribute the library they are wrapping.
-- Dependencies that are not packages, like dictionaries, are not detected.
+- Dependencies that are not crates, like dictionaries, are not detected.
 
-To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your package,
-to see what packages license-fetcher fetches.
+To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your crates,
+to see what crates license-fetcher fetches.
 
 For the latter point there is no workaround, as there is no automated way to detect the use of such dependencies.
 
