@@ -162,7 +162,7 @@
 //!             eprintln!(
 //!                 "Failed to embed license data during build. Please see ... for license data information."
 //!             );
-//!             exit(1);
+//!             exit(0); // or exitcode 1 for signaling failure
 //!         }
 //!         Err(err) => {
 //!             eprintln!(
