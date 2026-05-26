@@ -168,7 +168,7 @@ These timings are of course for a clean build. For incremental builds setting `c
 in the build script only being run if `Cargo.toml`, `Cargo.lock` or `build.rs` change and build artifacts are of course also cached by cargo.
 
 In conclusion, the build script is fast (0.14s). It is only run if necessary. Compiling `license-fetcher` is also very fast (1.4s for a clean build). 
-As cargo is highly parallel you'll likely never notice :)
+As cargo compiles crates in parallel, you'll likely never notice :)
 
 
 ## License
