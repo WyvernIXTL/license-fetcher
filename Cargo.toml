@@ -26,7 +26,6 @@ debug = true
 
 
 [dependencies]
-directories = {version = "6.0.0", optional = true}
 error-stack = { version = "0.5.0", optional = true}
 log = { version = "0.4.22", optional = true}
 lz4_flex = { version = "0.13.0", default-features = false, features = ["checked-decode"]}
@@ -49,7 +48,6 @@ tempfile = "3.27.0"
 default = []
 build = [ "dep:log", "dep:regex-lite", "dep:error-stack"]
 serde = ["dep:serde"]
-directories = ["dep:directories"]
 
 [[bench]]
 name = "bench"

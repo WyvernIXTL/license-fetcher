@@ -107,10 +107,6 @@
 //!
 //! - `build` enables license metadata parsing and license text fetching.
 //! - `serde` enables the derivation of `Serialize` and `Deserialize` for `Package` and `PackageList`.
-//! - `directories` enables the use of the `directories` crate for finding the users home dir instead of [`std::env::home_dir`].
-//!   In previous versions `directories` was used, as [`std::env::home_dir`] was unstable.
-//!   Enabling this feature results in a small compile time penalty (roughly 0.2s for unix).
-//!
 //!
 //! ## Error Handling
 //!

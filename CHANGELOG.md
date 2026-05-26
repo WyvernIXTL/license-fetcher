@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The `Package` struct now does not have private fields and can be freely constructed and inspected.
 - Replaced the `package!` macro with `PackageBuilder` builder.
-- The `directories` crate is now optional (enabled by the `directories` feature) and `std::env::home_dir` is used instead.
+- The `directories` crate is removed in favor of the now stabilized `std::env::home_dir` function.
 - The `cache` method of the `ConfigBuilder` now requires a path to a cache file.
 - The `package_list` method is moved into the `build` module.
 - The `package_list` method now returns the packages sorted with the first package being the root package.
