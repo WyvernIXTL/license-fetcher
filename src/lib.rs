@@ -110,7 +110,9 @@
 //!
 //! ## Error Handling
 //!
-//! During build time, error handling is done via the [`error_stack ` crate](https://docs.rs/error-stack/latest/error_stack/).
+//! During build time, error handling is done via the [`error_stack` crate](https://docs.rs/error-stack/latest/error_stack/).
+//! `error_stack`s `Report`s offer very good debug prints, but are relatively hard to parse or match against.
+//!
 //! The [`read_package_list_from_out_dir`] macro on the other hand returns [`UnpackError`](error::UnpackError), which can be normally handled with
 //! match clauses (see the [`build` module documentation](crate::build) for an example).
 //!
