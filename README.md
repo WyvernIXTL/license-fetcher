@@ -142,6 +142,20 @@ _Display trait included_ 😉
 
 ![Screenshot](./img/example_print_v0.10.0.png)
 
+## Performance
+
+With the advanced example of the docs, where licenses are fetched, compressed and embedded at build time 
+and just printed at runtime in the main, I got these timings with "`cargo b --release --timings`":
+
+![cargo timings for v0.10.0](./img/cargo_timinings_v0.10.0.png)
+
+The full report is available in [`img/timings`](./img/timings).
+
+_Please note that these timings are of **v0.10.0**. I used `cargo add --path` and just have not bumped the version yet, as I use `cargo-release` for that._
+
+These timings are of course for a clean build. For incremental builds setting `cargo::rerun-if-changed` like shown in the example above, will result
+in the build script only being run if `Cargo.toml`, `Cargo.lock` or `build.rs` change and build artifacts are of course also cached by cargo.
+
 
 ## License
 
