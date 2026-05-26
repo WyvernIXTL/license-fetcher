@@ -29,9 +29,17 @@ pub enum SrcRegistryInferenceError {
 impl fmt::Display for SrcRegistryInferenceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DoesNotExist => write!(f, "source registry folder does not exist at the inferred path"),
-            Self::IsNotAFolder => write!(f, "the inferred path of the source registry is not a folder"),
-            Self::FailedReadDir => write!(f, "failed to read the inferred source registry directory"),
+            Self::DoesNotExist => write!(
+                f,
+                "source registry folder does not exist at the inferred path"
+            ),
+            Self::IsNotAFolder => write!(
+                f,
+                "the inferred path of the source registry is not a folder"
+            ),
+            Self::FailedReadDir => {
+                write!(f, "failed to read the inferred source registry directory")
+            }
         }
     }
 }

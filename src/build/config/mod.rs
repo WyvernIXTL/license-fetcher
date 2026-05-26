@@ -253,7 +253,10 @@ impl fmt::Display for ConfigBuildError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::RequiredFieldNotSet => write!(f, "required field in builder is not set"),
-            Self::FailedFromEnvVars => write!(f, "failed reading required fields from build environment variables"),
+            Self::FailedFromEnvVars => write!(
+                f,
+                "failed reading required fields from build environment variables"
+            ),
             Self::FailedFromPath => write!(f, "failed finding manifest path"),
             Self::CargoHomeDir => write!(f, "failed determining cargo home directory"),
         }

@@ -40,7 +40,9 @@ impl fmt::Display for LicenseFetchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::RegistrySrc => write!(f, "failed to infer or read cargo src registry folder"),
-            Self::LicenseFetchForPackage => write!(f, "failed to fetch license from a crates src folder"),
+            Self::LicenseFetchForPackage => {
+                write!(f, "failed to fetch license from a crates src folder")
+            }
             Self::SrcFolderRecursion => write!(f, "failed to walk a crates src folder"),
         }
     }

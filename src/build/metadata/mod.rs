@@ -43,9 +43,17 @@ impl fmt::Display for PkgListFromCargoMetadataError {
         match self {
             Self::ExecCargo => write!(f, "failed to execute `cargo metadata` or `cargo tree`"),
             Self::ParseJson => write!(f, "failed to parse the output of `cargo metadata`"),
-            Self::ParseString => write!(f, "failed to parse the output of `cargo tree` as it is not valid UTF-8"),
-            Self::Thread => write!(f, "a thread executing `cargo metadata` or `cargo tree` panicked"),
-            Self::PackageNameParseError => write!(f, "failed to parse a package name from a package id"),
+            Self::ParseString => write!(
+                f,
+                "failed to parse the output of `cargo tree` as it is not valid UTF-8"
+            ),
+            Self::Thread => write!(
+                f,
+                "a thread executing `cargo metadata` or `cargo tree` panicked"
+            ),
+            Self::PackageNameParseError => {
+                write!(f, "failed to parse a package name from a package id")
+            }
         }
     }
 }

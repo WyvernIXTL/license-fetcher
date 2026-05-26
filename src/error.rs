@@ -33,7 +33,10 @@ impl fmt::Display for UnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::DecompressError(_) => write!(f, "failed decompressing embedded license data"),
-            Self::DecodeError(_) => write!(f, "failed deserialization of embedded decompressed license data"),
+            Self::DecodeError(_) => write!(
+                f,
+                "failed deserialization of embedded decompressed license data"
+            ),
             Self::Empty => write!(f, "embedded license data is empty"),
         }
     }

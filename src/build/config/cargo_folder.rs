@@ -26,7 +26,10 @@ impl fmt::Display for CargoFolderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::BaseDirs => write!(f, "failed determining users home directory"),
-            Self::DoesNotExist => write!(f, "given or inferred cargo home folder location does not exist"),
+            Self::DoesNotExist => write!(
+                f,
+                "given or inferred cargo home folder location does not exist"
+            ),
             Self::IsNotDir => write!(f, "inferred or supplied cargo home folder is not a folder"),
         }
     }
