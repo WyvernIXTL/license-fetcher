@@ -116,25 +116,33 @@ A big shout-out!
 
 #### Pros
 
-- Also retrieves licenses in the build step and loads them into the program.
-- Can also use repo URL to fetch licenses.
-- Can also use SPDX to fetch licenses.
+- Also retrieves licenses in the build step and embeds them.
+- Can use repo URL to fetch licenses.
+- Can use SPDX to fetch licenses.
+- Smaller and simpler crate.
 
 #### Cons
 
 - Does not compress licenses.
-- LGPL-3.0
+- Uses the LGPL-3.0 license. 
+  This means that your code also needs to be licenses LGPL-3.0 or compatible as rust links statically by default.
+- Has many large dependencies and thus compiles slower.
+- No option to disable fetching via git.
+- Does not differentiate between dependencies for build and runtime, leading to larger executables with more dependencies.
 
 ### [`cargo-about`](https://github.com/EmbarkStudios/cargo-about)
 
 #### Pros
 
-- Generates very nice HTML.
+- Can generate very nice HTML.
+- Can use repo URL to fetch licenses.
 
 #### Cons
 
 - Is not a library to access said data but rather a command line tool.
-- Does not fetch licenses from local source files.
+  You need to keep the license file up to date (via CI for example).
+- If you export and embed the license data as JSON, you need to handle compression, validation and display of it yourself.
+
 
 ## Screenshots
 
