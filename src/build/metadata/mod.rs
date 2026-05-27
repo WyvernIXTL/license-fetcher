@@ -6,7 +6,7 @@
 
 use std::{error::Error, fmt, thread::scope};
 
-use error_stack::{report, Result};
+use exn::{Exn, Result};
 
 use crate::{
     build::metadata::{
@@ -70,10 +70,10 @@ pub fn package_list_impl(
         let cargo_tree_thread_handle = scope.spawn(|| exec_cargo_tree_and_parse_output(config));
 
         let cargo_metadata_thread_result = cargo_metadata_thread_handle.join().map_err(|e| {
-            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
+            Exn::new(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
         let cargo_tree_thread_result = cargo_tree_thread_handle.join().map_err(|e| {
-            report!(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
+            Exn::new(PkgListFromCargoMetadataError::Thread).attach_printable(format!("{e:?}"))
         })?;
 
         match (cargo_metadata_thread_result, cargo_tree_thread_result) {

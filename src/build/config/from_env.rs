@@ -7,7 +7,7 @@
 use std::env::VarError;
 use std::{env::var_os, ffi::OsStr, path::PathBuf};
 
-use error_stack::{Result, ResultExt};
+use exn::{Result, ResultExt};
 
 use crate::build::error::CEnvVar;
 

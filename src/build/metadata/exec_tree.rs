@@ -6,7 +6,7 @@
 
 use std::{collections::HashSet, process::Output};
 
-use error_stack::{Result, ResultExt};
+use exn::{Result, ResultExt};
 
 use crate::build::{
     config::MetadataConfig,

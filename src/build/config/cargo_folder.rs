@@ -6,7 +6,7 @@
 
 use std::{env::var_os, error::Error, fmt, path::PathBuf};
 
-use error_stack::{ensure, Report, Result};
+use exn::{ensure, Exn, Result};
 
 use crate::build::error::CPath;
 
@@ -42,18 +42,17 @@ pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
     if let Some(path) = var_os("CARGO_HOME") {
         cargo_home = path.into();
     } else {
-        let home_dir =
-            std::env::home_dir().ok_or(Report::new(CargoFolderError::HomeDirNotFound))?;
+        let home_dir = std::env::home_dir().ok_or(Exn::new(CargoFolderError::HomeDirNotFound))?;
         cargo_home = home_dir.join(".cargo");
     }
 
     ensure!(
         cargo_home.exists(),
-        Report::new(CargoFolderError::DoesNotExist).attach_printable(CPath::from(&cargo_home))
+        Exn::new(CargoFolderError::DoesNotExist).attach_printable(CPath::from(&cargo_home))
     );
     ensure!(
         cargo_home.is_dir(),
-        Report::new(CargoFolderError::IsNotDir).attach_printable(CPath::from(&cargo_home))
+        Exn::new(CargoFolderError::IsNotDir).attach_printable(CPath::from(&cargo_home))
     );
 
     Ok(cargo_home)

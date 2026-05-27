@@ -6,8 +6,7 @@
 
 use std::{error::Error, fmt, fs::read_dir};
 
-use error_stack::{ensure, Report};
-use error_stack::{Result, ResultExt};
+use exn::{ensure, Exn, Result, ResultExt};
 
 use crate::build::error::CPath;
 
@@ -46,7 +45,7 @@ fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf,
             .attach_printable("Path to file provided has an invalid file name.")
             .attach_printable_lazy(|| CPath::from(&uncertain_file_path))?
             == "Cargo.toml",
-        Report::new(FromPathError::ManifestNotFound)
+        Exn::new(FromPathError::ManifestNotFound)
             .attach_printable("The provided path points to a file that is not 'Cargo.toml'.")
             .attach_printable(CPath::from(&uncertain_file_path))
     );
@@ -63,7 +62,7 @@ fn manifest_path_from_dir_path(uncertain_dir_path: &PathBuf) -> Result<PathBuf, 
         .filter_map(std::result::Result::ok)
         .find(|e| e.file_type().is_ok_and(|e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
-        .ok_or_else(|| Report::new(FromPathError::ManifestNotFound))
+        .ok_or_else(|| Exn::new(FromPathError::ManifestNotFound))
         .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
 }
 
@@ -74,7 +73,7 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
             .attach_printable_lazy(|| CPath::from(&uncertain_path))
             .attach_printable("Failed verifying existence of provided path.")
             .change_context(FromPathError::Io)?,
-        Report::new(FromPathError::PathDoesNotExist).attach_printable(CPath::from(&uncertain_path))
+        Exn::new(FromPathError::PathDoesNotExist).attach_printable(CPath::from(&uncertain_path))
     );
 
     let manifest_path = if uncertain_path.is_file() {

@@ -54,7 +54,7 @@
 use std::{env::var_os, error::Error, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
-use error_stack::{Report, Result, ResultExt};
+use exn::{Exn, Result, ResultExt};
 
 use crate::OUT_FILE_NAME;
 
@@ -356,7 +356,7 @@ impl ConfigBuilder {
 
         let metadata_config = MetadataConfig {
             manifest_dir: self.manifest_dir.ok_or_else(|| {
-                Report::new(ConfigBuildError::RequiredFieldNotSet)
+                Exn::new(ConfigBuildError::RequiredFieldNotSet)
                     .attach_printable("Field 'manifest_dir' is required but not set.")
             })?,
             cargo_path: self.cargo_path.unwrap_or_else(|| {

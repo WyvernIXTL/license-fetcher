@@ -13,7 +13,7 @@ use std::{
     fs::{read_dir, read_to_string},
 };
 
-use error_stack::{Result, ResultExt};
+use exn::{Result, ResultExt};
 use log::{error, info, trace, warn};
 use regex_lite::Regex;
 

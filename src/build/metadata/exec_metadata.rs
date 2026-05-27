@@ -9,7 +9,7 @@ use std::{
     sync::LazyLock,
 };
 
-use error_stack::{report, Result, ResultExt};
+use exn::{Exn, Result, ResultExt};
 use nanoserde::DeJson;
 use regex_lite::Regex;
 
@@ -80,7 +80,7 @@ fn parse_package_name_from_package_id(
         Ok(caps["name"].to_owned())
     } else {
         Err(
-            report!(PkgListFromCargoMetadataError::PackageNameParseError)
+            Exn::new(PkgListFromCargoMetadataError::PackageNameParseError)
                 .attach_printable(format!("package id: '{package_id}'")),
         )
     }

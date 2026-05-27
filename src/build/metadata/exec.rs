@@ -12,7 +12,7 @@ use std::{
     process::{Command, Output},
 };
 
-use error_stack::{Report, Result, ResultExt};
+use exn::{Exn, Result, ResultExt};
 
 use crate::build::config::{CargoDirective, MetadataConfig};
 
@@ -69,7 +69,7 @@ where
     if output.status.success() {
         Ok(output)
     } else {
-        Err(Report::new(ExecCargoError::ExecutionWithError)
+        Err(Exn::new(ExecCargoError::ExecutionWithError)
             .attach_printable(format!("cargo directive: {cargo_directive}"))
             .attach_printable(String::from_utf8_lossy(&output.stderr).into_owned()))
     }
@@ -85,7 +85,7 @@ where
         "cargo directives in config passed to `exec_cargo` should not have been empty"
     );
 
-    let mut err: Option<Report<ExecCargoError>> = None;
+    let mut err: Option<Exn<ExecCargoError>> = None;
 
     for directive in config.cargo_directives.iter() {
         let result_single = exec_cargo_single(
@@ -109,5 +109,5 @@ where
         "cargo execution failed, but the combined error is None"
     );
 
-    Err(err.unwrap_or_else(|| Report::new(ExecCargoError::ExecutionWithError)))
+    Err(err.unwrap_or_else(|| Exn::new(ExecCargoError::ExecutionWithError)))
 }

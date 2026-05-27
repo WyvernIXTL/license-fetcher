@@ -11,7 +11,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use error_stack::{ensure, Report, Result, ResultExt};
+use exn::{ensure, Exn, Result, ResultExt};
 
 use crate::build::error::CPath;
 
@@ -52,11 +52,11 @@ pub fn src_registry_folders(
     let src_dir = path.join("registry/src");
     ensure!(
         src_dir.exists(),
-        Report::new(SrcRegistryInferenceError::DoesNotExist).attach_printable(CPath::from(src_dir))
+        Exn::new(SrcRegistryInferenceError::DoesNotExist).attach_printable(CPath::from(src_dir))
     );
     ensure!(
         src_dir.is_dir(),
-        Report::new(SrcRegistryInferenceError::IsNotAFolder).attach_printable(CPath::from(src_dir))
+        Exn::new(SrcRegistryInferenceError::IsNotAFolder).attach_printable(CPath::from(src_dir))
     );
     Ok(read_dir(&src_dir)
         .attach_printable_lazy(|| CPath::from(&src_dir))
