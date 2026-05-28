@@ -5,13 +5,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::collections::HashMap;
+use std::fs::{read_dir, read_to_string};
 use std::path::Path;
 use std::sync::LazyLock;
-use std::{
-    error::Error,
-    fmt,
-    fs::{read_dir, read_to_string},
-};
 
 use exn::{Result, ResultExt};
 use log::{error, info, trace, warn};
@@ -19,40 +15,13 @@ use regex_lite::Regex;
 
 mod src_registry_folders;
 
-use crate::build::error::CPath;
+use crate::build::error::{EK, IE};
 use crate::build::wrapper::PackageWrapper;
 use src_registry_folders::src_registry_folders;
 
 use super::error::ReportJoin;
 
-/// Errors that may occur when reading and walking the cargo src registry folder.
-#[derive(Debug, Clone, Copy)]
-pub enum LicenseFetchError {
-    /// failed to infer or read cargo src registry folder
-    RegistrySrc,
-    /// failed to fetch license from a crates src folder
-    LicenseFetchForPackage,
-    /// failed to walk a crates src folder
-    SrcFolderRecursion,
-}
-
-impl fmt::Display for LicenseFetchError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::RegistrySrc => write!(f, "failed to infer or read cargo src registry folder"),
-            Self::LicenseFetchForPackage => {
-                write!(f, "failed to fetch license from a crates src folder")
-            }
-            Self::SrcFolderRecursion => write!(f, "failed to walk a crates src folder"),
-        }
-    }
-}
-
-impl Error for LicenseFetchError {}
-
-pub(crate) fn license_texts_from_folder(
-    path: &Path,
-) -> Result<Vec<(String, String)>, std::io::Error> {
+pub(super) fn license_texts_from_folder(path: &Path) -> Result<Vec<(String, String)>, IE> {
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i).*(license|copying|authors|notice|eula).*").unwrap());
 
@@ -60,7 +29,7 @@ pub(crate) fn license_texts_from_folder(
 
     // TODO: Split this up.
     let license_texts: Vec<(String, String)> = read_dir(path)
-        .attach_printable_lazy(|| CPath::from(path))?
+        .or_raise(|| IE::new("path to crate in cargo src folder should be readable, exist and be a folder").with_path(path))?
         .filter_map(std::result::Result::ok)
         .filter(|e| LICENSE_FILE_NAME_REGEX.is_match(&e.file_name().to_string_lossy()))
         .filter_map(|e| {
@@ -109,27 +78,34 @@ pub(crate) fn license_texts_from_folder(
 ///
 /// If a package was loaded from a cache, it is ignored.
 /// Failure of reading directories of packages are ignored.
-pub fn populate_package_list_licenses(
+pub(super) fn populate_package_list_licenses(
     package_list: &mut [PackageWrapper],
     cargo_home_dir: &Path,
-) -> Result<(), LicenseFetchError> {
+) -> Result<(), IE> {
     let mut package_hash_map: HashMap<String, &mut PackageWrapper> = package_list
         .iter_mut()
         .filter(|p| p.package.license_texts.is_empty() && !p.restored_from_cache)
         .map(|p| (format!("{}-{}", p.package.name, p.package.version), p))
         .collect::<HashMap<_, _>>();
 
-    let src_folder_iterator =
-        src_registry_folders(cargo_home_dir).change_context(LicenseFetchError::RegistrySrc)?;
+    let src_folder_iterator = src_registry_folders(cargo_home_dir).or_raise(|| {
+        IE::new("src registry foulders should be in cargo home dir and should be readable")
+            .with_path(cargo_home_dir)
+    })?;
 
-    let mut result = ReportJoin::default();
+    let mut result = ReportJoin::new(IE::new(
+        "recursively searching for licenses in src registries and fetching them should succeed",
+    ));
 
     for src_folder in src_folder_iterator {
         info!("src folder: {}", &src_folder.display());
 
         read_dir(&src_folder)
-            .attach_printable_lazy(|| CPath::from(src_folder))
-            .change_context(LicenseFetchError::SrcFolderRecursion)?
+            .or_raise(|| {
+                IE::new("reading src registry folder should succeed")
+                    .with_path(src_folder)
+                    .with_kind(EK::RegistryFolder)
+            })?
             .filter_map(std::result::Result::ok)
             .filter(|e| e.file_type().is_ok_and(|e| e.is_dir()))
             .for_each(|e| {
@@ -145,8 +121,15 @@ pub fn populate_package_list_licenses(
                         Ok(res) => p.package.license_texts = res,
                         Err(err) => {
                             error!("Failure");
-                            let err = err.change_context(LicenseFetchError::LicenseFetchForPackage);
-                            result.join(err);
+                            result.join(
+                                err.raise(
+                                    IE::new(format!(
+                                        "fetching licenese for crate \"{}\" should succeed",
+                                        &p.package.name
+                                    ))
+                                    .with_path(&e.path()),
+                                ),
+                            );
                         }
                     }
                 }

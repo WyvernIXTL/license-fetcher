@@ -20,10 +20,10 @@ impl fmt::Display for IE {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.msg)?;
         if let Some(path) = &self.maybe_path {
-            write!(f, " | {}", path.display())?;
+            write!(f, " | path: \"{}\"", path.display())?;
         }
         if let Some(env_var) = &self.maybe_env {
-            write!(f, " | {}", env_var)?;
+            write!(f, " | env: \"{}\"", env_var)?;
         }
         Ok(())
     }
@@ -55,15 +55,54 @@ impl IE {
     }
 }
 
+/// The kind of error encountered when using `license-fetcher`.
 #[derive(Debug, Clone, Copy)]
 pub enum EK {
+    /// The error is unrecoverable.
     Unrecoverable,
+    /// The cache file should be a file, that exists, that can be read,
+    /// that can be decompressed and deserialized into a [`PackageList`](crate::PackageList).
+    ///
+    /// To recover from this error, disable the use of the cache.
+    /// ```
+    /// # use crate::build::config::{Config, ConfigBuilder};
+    /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
+    /// let recovery_config: Config = Config {
+    ///     cache_path: None,
+    ///     ..your_config
+    /// };
+    /// ```
     Cache,
+    /// The source registry folder should exist and be readable.
+    ///
+    /// There can be multiple causes:
+    /// 1. The program does not have the permissions to read the folder.
+    /// 2. The source registry folder does not exist.
+    /// 3. The source registry folder is somewhere else.
+    /// 4. The layout of the cargo home folder has changed.
+    ///
+    /// You could try to recover from this error by testing different common paths.
+    /// ```
+    /// # use crate::build::config::{Config, ConfigBuilder};
+    /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
+    /// let recovery_config: Config = Config {
+    ///     // This folder is checked by default when using [`crate::build::config::ConfigBuilder`]
+    ///     // if `CARGO_HOME` is not set.
+    ///     cargo_home_dir: std::env::home_dir().unwrap().join(".cargo"),
+    ///     ..your_config
+    /// };
+    /// ```
+    RegistryFolder,
 }
 
+/// Error occurring when fetching licenses.
+///
+/// This error aims to be somewhat recoverable. The docs of [`EK`] (Error Kind) have some tips on recovery.
 #[derive(Debug, Clone)]
 pub struct LicenseFetcherError {
+    /// Error message.
     message: String,
+    /// Error kind. Check the docs for recovery examples.
     kind: EK,
 }
 

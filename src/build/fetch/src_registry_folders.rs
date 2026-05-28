@@ -5,62 +5,34 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::{
-    error::Error,
-    fmt,
     fs::read_dir,
     path::{Path, PathBuf},
 };
 
-use exn::{ensure, Exn, Result, ResultExt};
+use exn::{ensure, Result, ResultExt};
 
-use crate::build::error::CPath;
+use crate::build::error::{EK, IE};
 
-/// Error that may occur, when failing to read or determine cargo source registry folder.
-#[derive(Debug, Clone, Copy)]
-pub enum SrcRegistryInferenceError {
-    /// source registry folder does not exist at the inferred path
-    DoesNotExist,
-    /// the inferred path of the source registry is not a folder
-    IsNotAFolder,
-    /// failed to read the inferred source registry directory
-    FailedReadDir,
-}
-
-impl fmt::Display for SrcRegistryInferenceError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::DoesNotExist => write!(
-                f,
-                "source registry folder does not exist at the inferred path"
-            ),
-            Self::IsNotAFolder => write!(
-                f,
-                "the inferred path of the source registry is not a folder"
-            ),
-            Self::FailedReadDir => {
-                write!(f, "failed to read the inferred source registry directory")
-            }
-        }
-    }
-}
-
-impl Error for SrcRegistryInferenceError {}
-
-pub fn src_registry_folders(
-    path: &Path,
-) -> Result<impl Iterator<Item = PathBuf>, SrcRegistryInferenceError> {
+pub(crate) fn src_registry_folders(path: &Path) -> Result<impl Iterator<Item = PathBuf>, IE> {
     let src_dir = path.join("registry/src");
     ensure!(
         src_dir.exists(),
-        Exn::new(SrcRegistryInferenceError::DoesNotExist).attach_printable(CPath::from(src_dir))
+        IE::new("source registry folder should exist")
+            .with_path(src_dir)
+            .with_kind(EK::RegistryFolder)
     );
     ensure!(
         src_dir.is_dir(),
-        Exn::new(SrcRegistryInferenceError::IsNotAFolder).attach_printable(CPath::from(src_dir))
+        IE::new("path to source registry folder should point to a folder")
+            .with_path(src_dir)
+            .with_kind(EK::RegistryFolder)
     );
     Ok(read_dir(&src_dir)
-        .attach_printable_lazy(|| CPath::from(&src_dir))
-        .change_context(SrcRegistryInferenceError::FailedReadDir)?
+        .or_raise(|| {
+            IE::new("source registry foulder should be readable")
+                .with_path(src_dir)
+                .with_kind(EK::RegistryFolder)
+        })?
         .filter_map(std::result::Result::ok)
         .filter(|e| e.file_type().is_ok_and(|ft| ft.is_dir()))
         .map(|e| e.path()))
