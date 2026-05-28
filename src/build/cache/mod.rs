@@ -4,93 +4,46 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{
-    error::Error,
-    fmt,
-    fs::read,
-    path::{Path, PathBuf},
-};
+use std::{fs::read, path::Path};
 
 use exn::{ensure, Result, ResultExt};
 
-use crate::{build::wrapper::PackageWrapper, Package, PackageList};
+use crate::{
+    build::{
+        error::{EK, IE},
+        wrapper::PackageWrapper,
+    },
+    Package, PackageList,
+};
 
-/// Error kinds occurring when reading cache file (old license data)
-#[derive(Debug, Clone, Copy)]
-pub enum CacheErrorKind {
-    /// cache not found or cache is invalid
-    Invalid,
-    /// failed to read cache file
-    ReadError,
-}
-
-/// Error occurring when reading cache file (old license data)
-#[derive(Debug, Clone)]
-pub struct CacheError {
-    pub kind: CacheErrorKind,
-    pub message: String,
-    pub path: Option<PathBuf>,
-}
-
-impl fmt::Display for CacheError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(path) = &self.path {
-            write!(f, "{} with path '{}'", self.message, path.display())
-        } else {
-            f.write_str(&self.message)
-        }
-    }
-}
-
-impl Error for CacheError {}
-
-impl CacheError {
-    fn new(kind: CacheErrorKind, message: impl Into<String>) -> Self {
-        Self {
-            kind,
-            message: message.into(),
-            path: None,
-        }
-    }
-
-    fn add_path(mut self, path: impl Into<PathBuf>) -> Self {
-        self.path = Some(path.into());
-        self
-    }
-}
-
-pub(super) fn read_package_list_with_tests(
-    cache_file_path: &Path,
-) -> Result<PackageList, CacheError> {
+pub(super) fn read_package_list_with_tests(cache_file_path: &Path) -> Result<PackageList, IE> {
     ensure!(
-        cache_file_path.try_exists().or_raise(|| CacheError::new(
-            CacheErrorKind::Invalid,
+        cache_file_path.try_exists().or_raise(|| IE::new(
             "cache path should not point to the root of a volume"
         )
-        .add_path(cache_file_path))?,
-        CacheError::new(
-            CacheErrorKind::Invalid,
-            "cache path should point to a file, currently points to nothing"
-        )
-        .add_path(cache_file_path)
+        .with_path(cache_file_path)
+        .with_kind(EK::Cache))?,
+        IE::new("cache path should point to a file, currently points to nothing")
+            .with_path(cache_file_path)
+            .with_kind(EK::Cache)
     );
 
     ensure!(
         cache_file_path.is_file(),
-        CacheError::new(CacheErrorKind::Invalid, "cache path should point to a file")
-            .add_path(cache_file_path)
+        IE::new("cache path should point to a file")
+            .with_path(cache_file_path)
+            .with_kind(EK::Cache)
     );
 
     let cache_bin = read(cache_file_path).or_raise(|| {
-        CacheError::new(CacheErrorKind::ReadError, "cache file should be readable")
-            .add_path(cache_file_path)
+        IE::new("cache file should be readable")
+            .with_path(cache_file_path)
+            .with_kind(EK::Cache)
     })?;
     PackageList::from_encoded(&cache_bin).or_raise(|| {
-        CacheError::new(
-            CacheErrorKind::Invalid,
-            "cache file should be a valid serialized and compressed package list",
-        )
-        .add_path(cache_file_path)
+        IE::new("cache file should be a valid serialized and compressed package list")
+            .with_path(cache_file_path)
+            .with_kind(EK::Cache)
     })
 }
 
