@@ -6,60 +6,121 @@
 
 use std::{ffi::OsStr, fmt, path::PathBuf};
 
-use exn::Exn;
+use exn::{Exn, Frame};
 
-/// Encoded path for error handling.
-#[derive(Debug, Clone)]
-pub struct CPath(pub PathBuf);
-
-impl<T: AsRef<OsStr>> From<T> for CPath {
-    fn from(value: T) -> Self {
-        Self(value.as_ref().into())
-    }
+#[derive(Debug, Clone, Default)]
+pub(crate) struct IE {
+    msg: String,
+    maybe_path: Option<PathBuf>,
+    maybe_env: Option<String>,
+    maybe_kind: Option<EK>,
 }
 
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for CPath {
+impl fmt::Display for IE {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Path: {}", self.0.display())
+        f.write_str(&self.msg)?;
+        if let Some(path) = &self.maybe_path {
+            write!(f, " | {}", path.display())?;
+        }
+        if let Some(env_var) = &self.maybe_env {
+            write!(f, " | {}", env_var)?;
+        }
+        Ok(())
     }
 }
 
-/// Encoded environment variable for error handling.
+impl std::error::Error for IE {}
+
+impl IE {
+    pub(crate) fn new(msg: impl Into<String>) -> Self {
+        Self {
+            msg: msg.into(),
+            ..Self::default()
+        }
+    }
+
+    pub(crate) fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.maybe_path = Some(path.into());
+        self
+    }
+
+    pub(crate) fn with_env(mut self, env_var: impl AsRef<OsStr>) -> Self {
+        self.maybe_env = Some(env_var.as_ref().to_string_lossy().to_string());
+        self
+    }
+
+    pub(crate) fn with_kind(mut self, kind: EK) -> Self {
+        self.maybe_kind = Some(kind);
+        self
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum EK {
+    Unrecoverable,
+    Cache,
+}
+
 #[derive(Debug, Clone)]
-pub struct CEnvVar(pub String);
+pub struct LicenseFetcherError {
+    message: String,
+    kind: EK,
+}
 
-impl<T: AsRef<OsStr>> From<T> for CEnvVar {
-    fn from(value: T) -> Self {
-        Self(value.as_ref().to_string_lossy().to_string())
+impl fmt::Display for LicenseFetcherError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
     }
 }
 
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl fmt::Display for CEnvVar {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Environment Variable: {}", self.0)
+impl std::error::Error for LicenseFetcherError {}
+
+impl LicenseFetcherError {
+    fn find_next_non_generic(exn: &Exn<IE>) -> Option<(&IE, EK)> {
+        fn walk(frame: &Frame) -> Option<(&IE, EK)> {
+            if let Some(err) = frame.error().downcast_ref::<IE>() {
+                if let Some(kind) = err.maybe_kind {
+                    return Some((err, kind));
+                }
+            }
+            frame.children().iter().find_map(walk)
+        }
+
+        walk(exn.frame())
+    }
+
+    pub(crate) fn from_internal(err: Exn<IE>) -> Exn<LicenseFetcherError> {
+        match Self::find_next_non_generic(&err) {
+            Some((err_ref, kind)) => {
+                let message = err_ref.msg.clone();
+                err.raise(LicenseFetcherError { message, kind })
+            }
+            None => {
+                let message = err.msg.clone();
+                err.raise(LicenseFetcherError {
+                    message,
+                    kind: EK::Unrecoverable,
+                })
+            }
+        }
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct ReportJoin<E: std::error::Error + Send + Sync + 'static> {
-    root_err: E,
-    errors: Vec<Exn<E>>,
+pub(crate) struct ReportJoin {
+    root_err: IE,
+    errors: Vec<Exn<IE>>,
 }
 
-impl<E> ReportJoin<E>
-where
-    E: std::error::Error + Send + Sync + 'static,
-{
-    pub fn new(root_err: E) -> Self {
+impl ReportJoin {
+    pub fn new(root_err: IE) -> Self {
         Self {
             root_err,
             errors: vec![],
         }
     }
 
-    pub fn result(self) -> Result<(), Exn<E>> {
+    pub fn result(self) -> Result<(), Exn<IE>> {
         if !self.errors.is_empty() {
             Err(Exn::raise_all(self.root_err, self.errors))
         } else {
@@ -67,7 +128,7 @@ where
         }
     }
 
-    pub fn join(&mut self, e: impl Into<Exn<E>>) {
+    pub fn join(&mut self, e: impl Into<Exn<IE>>) {
         self.errors.push(e.into());
     }
 }
