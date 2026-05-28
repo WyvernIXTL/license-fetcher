@@ -9,31 +9,32 @@ use std::{
     sync::LazyLock,
 };
 
-use exn::{Exn, Result, ResultExt};
+use exn::{bail, OptionExt, Result, ResultExt};
 use nanoserde::DeJson;
 use regex_lite::Regex;
 
 use crate::{
     build::{
         config::MetadataConfig,
+        error::IE,
         metadata::{
             exec::exec_cargo,
             json_parsing::{Metadata, MetadataResolveNode},
-            PkgListFromCargoMetadataError,
         },
     },
     Package,
 };
 
-fn exec_cargo_metadata(config: &MetadataConfig) -> Result<Metadata, PkgListFromCargoMetadataError> {
+fn exec_cargo_metadata(config: &MetadataConfig) -> Result<Metadata, IE> {
     const ARGUMENTS: &[&str] = &["metadata", "--format-version", "1", "--color", "never"];
 
-    let output =
-        exec_cargo(config, &ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)?;
+    let output = exec_cargo(config, &ARGUMENTS)
+        .or_raise(|| IE::new("`cargo metadata` execution should succeed"))?;
 
     let output_str = String::from_utf8_lossy(&output.stdout);
 
-    Metadata::deserialize_json(&output_str).change_context(PkgListFromCargoMetadataError::ParseJson)
+    Metadata::deserialize_json(&output_str)
+        .or_raise(|| IE::new("`cargo metadata` json output should parse successfully"))
 }
 
 fn walk_metadata_resolve_nodes(
@@ -70,32 +71,29 @@ fn used_package_names_from_metadata_resolve_nodes(
     used_packages
 }
 
-fn parse_package_name_from_package_id(
-    package_id: &String,
-) -> Result<String, PkgListFromCargoMetadataError> {
+fn parse_package_name_from_package_id(package_id: &String) -> Result<String, IE> {
     static PARSE_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r".*?[#|\/](?<name>[a-z\-\_\d]+)[@|#][\d\.]+").unwrap());
 
     if let Some(caps) = PARSE_REGEX.captures(package_id) {
         Ok(caps["name"].to_owned())
     } else {
-        Err(
-            Exn::new(PkgListFromCargoMetadataError::PackageNameParseError)
-                .attach_printable(format!("package id: '{package_id}'")),
-        )
+        bail!(IE::new(format!(
+            "regex of package id should result in package name | package id: '{package_id}'"
+        )))
     }
 }
 
 fn parse_metadata(
     metadata_parsed: Metadata,
-) -> Result<(String, impl Iterator<Item = Package>), PkgListFromCargoMetadataError> {
+) -> Result<(String, impl Iterator<Item = Package>), IE> {
     let packages = metadata_parsed.packages;
     let root_package_id = metadata_parsed
         .resolve
         .root
-        .ok_or(PkgListFromCargoMetadataError::ParseJson)
-        .attach_printable("Failed to resolve root package id from output.")?;
-    let root_package_name = parse_package_name_from_package_id(&root_package_id)?;
+        .ok_or_raise(|| IE::new("`cargo metadata` json output should contain the `root` field, used to identify the root package"))?;
+    let root_package_name = parse_package_name_from_package_id(&root_package_id)
+        .or_raise(|| IE::new("package id should parse to package name"))?;
     let dependencies = metadata_parsed.resolve.nodes;
 
     let used_packages =
@@ -118,9 +116,9 @@ fn parse_metadata(
     Ok((root_package_name, res_iter))
 }
 
-pub fn exec_cargo_metadata_and_parse_result(
+pub(super) fn exec_cargo_metadata_and_parse_result(
     config: &MetadataConfig,
-) -> Result<(String, impl Iterator<Item = Package> + '_), PkgListFromCargoMetadataError> {
+) -> Result<(String, impl Iterator<Item = Package> + '_), IE> {
     let metadata = exec_cargo_metadata(config)?;
     parse_metadata(metadata)
 }

@@ -199,7 +199,7 @@ impl ErrorJoin {
         if !self.errors.is_empty() {
             Exn::raise_all(self.root_err, self.errors)
         } else {
-            panic!("`ErrorJoin` should always be handled. `err` method was called even though join does not contain other errors.")
+            Exn::new(IE::new("`ErrorJoin` should always be handled. `err` method was called even though join does not contain other errors."))
         }
     }
 }

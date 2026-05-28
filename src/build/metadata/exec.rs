@@ -64,7 +64,7 @@ where
 {
     ensure!(
         !config.cargo_directives.is_empty(),
-        IE::new("cargo directives in config passed to `exec_cargo` should conain at least one directive")
+        IE::new("cargo directives in config passed to `exec_cargo` should contain at least one directive")
     );
 
     let mut err_join = ErrorJoin::new(IE::new("cargo should at least succeed with one directive"));
