@@ -10,7 +10,7 @@ use exn::{ensure, Result, ResultExt};
 
 use crate::{
     build::{
-        error::{EK, IE},
+        fetching_error::{EK, IE},
         wrapper::PackageWrapper,
     },
     Package, PackageList,

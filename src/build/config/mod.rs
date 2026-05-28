@@ -58,7 +58,7 @@ use exn::{Exn, Result, ResultExt};
 
 use crate::OUT_FILE_NAME;
 
-use super::error::ErrorJoin;
+use super::fetching_error::ErrorJoin;
 
 #[doc(hidden)]
 pub mod from_env;
@@ -265,6 +265,8 @@ impl fmt::Display for ConfigBuildError {
 
 impl Error for ConfigBuildError {}
 
+// TODO: This must be changed due to cache error handling becoming explicit (accidentally, lol).
+// ! set cache path to none if it does not exist or is empty!!!
 fn maybe_cache_path_from_env() -> Option<PathBuf> {
     var_os("OUT_DIR").map(|out_dir| PathBuf::from(out_dir).join(OUT_FILE_NAME))
 }

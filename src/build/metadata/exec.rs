@@ -14,7 +14,7 @@ use exn::{bail, ensure, Result, ResultExt};
 
 use crate::build::{
     config::{CargoDirective, MetadataConfig},
-    error::{ErrorJoin, EK, IE},
+    fetching_error::{ErrorJoin, EK, IE},
 };
 
 fn exec_cargo_single<P, S, I>(

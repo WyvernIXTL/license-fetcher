@@ -194,7 +194,7 @@ pub mod config;
 #[cfg(test)]
 mod debug;
 /// Errors that might appear during build.
-pub mod error;
+pub mod fetching_error;
 
 mod fetch;
 
@@ -202,12 +202,12 @@ mod wrapper;
 
 mod metadata;
 
-use cache::CacheError;
 use config::Config;
-use error_stack::Result;
-use error_stack::ResultExt;
+use exn::OptionExt;
+use exn::Result;
+use exn::ResultExt;
 use fetch::license_texts_from_folder;
-use log::{error, info};
+use log::info;
 use lz4_flex::compress_prepend_size;
 use metadata::package_list_impl;
 use nanoserde::SerBin;
@@ -215,42 +215,13 @@ use nanoserde::SerBin;
 use crate::build::cache::populate_with_cache_from_package_list;
 use crate::build::cache::read_package_list_with_tests;
 use crate::build::config::MetadataConfig;
+use crate::build::fetching_error::LicenseFetcherError;
+use crate::build::fetching_error::IE;
 use crate::build::wrapper::PackageWrapper;
 use crate::Package;
 use crate::PackageList;
 use crate::OUT_FILE_NAME;
 use fetch::populate_package_list_licenses;
-
-/// Error that might occur during fetching of license data.
-#[derive(Debug, Clone, Copy)]
-pub enum BuildError {
-    /// failed to fetch package metadata with `cargo metadata` and `cargo tree`
-    FailedMetadataFetching,
-    /// failed to read cache with an io error
-    CacheReadError,
-    /// failed to read licenses from cargo sources folder
-    FailedLicenseFetch,
-    /// root package is not in output license data
-    RootPackageNotInOutput,
-}
-
-impl fmt::Display for BuildError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::FailedMetadataFetching => write!(
-                f,
-                "failed to fetch package metadata with `cargo metadata` and `cargo tree`"
-            ),
-            Self::CacheReadError => write!(f, "failed to read cache with an io error"),
-            Self::FailedLicenseFetch => {
-                write!(f, "failed to read licenses from cargo sources folder")
-            }
-            Self::RootPackageNotInOutput => write!(f, "root package is not in output license data"),
-        }
-    }
-}
-
-impl Error for BuildError {}
 
 fn wrap_package_iter(
     package_iter: impl Iterator<Item = Package>,
@@ -261,15 +232,11 @@ fn wrap_package_iter(
     })
 }
 
-fn sort_package_list(
-    root_package_name: &str,
-    package_vec: &mut [Package],
-) -> Result<(), BuildError> {
+fn sort_package_list(root_package_name: &str, package_vec: &mut [Package]) -> Result<(), IE> {
     let root_pos = package_vec
         .iter()
         .position(|e| e.name == root_package_name)
-        .ok_or(BuildError::RootPackageNotInOutput)
-        .attach_printable_lazy(|| "Root package is not in package list.")?;
+        .ok_or_raise(|| IE::new("root crate should be part of license metadata"))?;
 
     package_vec.swap(0, root_pos);
     package_vec[1..].sort();
@@ -277,14 +244,25 @@ fn sort_package_list(
     Ok(())
 }
 
-fn attach_root_package_license(
-    config: &Config,
-    root_package: &mut Package,
-) -> Result<(), BuildError> {
+fn attach_root_package_license(config: &Config, root_package: &mut Package) -> Result<(), IE> {
     root_package.license_texts = license_texts_from_folder(&config.metadata_config.manifest_dir)
-        .change_context(BuildError::FailedLicenseFetch)?;
+        .or_raise(|| {
+            IE::new("license of root package should fetch from it's manifest directory")
+        })?;
 
     Ok(())
+}
+
+fn package_list_internal(config: impl AsRef<MetadataConfig>) -> Result<PackageList, IE> {
+    let (package_root_name, package_iter) =
+        package_list_impl(config.as_ref()).or_raise(|| IE::new("license metadata should fetch"))?;
+
+    let mut package_vec: Vec<Package> = package_iter.collect();
+
+    sort_package_list(package_root_name.as_str(), &mut package_vec)
+        .or_raise(|| IE::new("crate list should sort"))?;
+
+    Ok(package_vec.into())
 }
 
 /// Get a list of dependencies.
@@ -297,13 +275,37 @@ fn attach_root_package_license(
 /// [`cargo tree`]: https://doc.rust-lang.org/cargo/commands/cargo-tree.html
 /// [`cargo metadata`]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html
 ///
-pub fn package_list(config: impl AsRef<MetadataConfig>) -> Result<PackageList, BuildError> {
-    let (package_root_name, package_iter) =
-        package_list_impl(config.as_ref()).change_context(BuildError::FailedMetadataFetching)?;
+pub fn package_list(
+    config: impl AsRef<MetadataConfig>,
+) -> Result<PackageList, LicenseFetcherError> {
+    package_list_internal(config).map_err(LicenseFetcherError::from_internal)
+}
 
-    let mut package_vec: Vec<Package> = package_iter.collect();
+fn package_list_with_licenses_internal(config: impl AsRef<Config>) -> Result<PackageList, IE> {
+    let (root_package_name, package_iter) = package_list_impl(&config.as_ref().metadata_config)
+        .or_raise(|| IE::new("license metadata should fetch"))?;
 
-    sort_package_list(package_root_name.as_str(), &mut package_vec)?;
+    let mut wrapped_package_vec: Vec<PackageWrapper> =
+        if let Some(cache_path) = &config.as_ref().cache_path {
+            let cached_packages = read_package_list_with_tests(cache_path).or_raise(|| {
+                IE::new("reading cache from cache path should succeed").with_path(cache_path)
+            })?;
+            populate_with_cache_from_package_list(package_iter, cached_packages).collect()
+        } else {
+            wrap_package_iter(package_iter).collect()
+        };
+
+    populate_package_list_licenses(&mut wrapped_package_vec, &config.as_ref().cargo_home_dir)
+        .or_raise(|| IE::new("populating packages with licenses should succeed"))?;
+
+    let mut package_vec = Vec::with_capacity(wrapped_package_vec.capacity());
+    package_vec.extend(wrapped_package_vec.into_iter().map(|p| p.package));
+
+    sort_package_list(&root_package_name, &mut package_vec)
+        .or_raise(|| IE::new("crate list should sort"))?;
+
+    attach_root_package_license(config.as_ref(), &mut package_vec[0])
+        .or_raise(|| IE::new("license should fetch for root package"))?;
 
     Ok(package_vec.into())
 }
@@ -311,57 +313,29 @@ pub fn package_list(config: impl AsRef<MetadataConfig>) -> Result<PackageList, B
 /// Generates a package list with package name, authors and license text.
 ///
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
-pub fn package_list_with_licenses(config: impl AsRef<Config>) -> Result<PackageList, BuildError> {
-    let (root_package_name, package_iter) = package_list_impl(&config.as_ref().metadata_config)
-        .change_context(BuildError::FailedMetadataFetching)?;
-
-    let mut wrapped_package_vec: Vec<PackageWrapper> = if let Some(cache_path) =
-        &config.as_ref().cache_path
-    {
-        match read_package_list_with_tests(cache_path) {
-            Ok(cache) => populate_with_cache_from_package_list(package_iter, cache).collect(),
-            Err(err) => match err.current_context() {
-                CacheError::Invalid => {
-                    error!("Cache is invalid. Skipping cache. Error: \n{err}");
-                    wrap_package_iter(package_iter).collect()
-                }
-                CacheError::ReadError => return Err(err.change_context(BuildError::CacheReadError)),
-            },
-        }
-    } else {
-        wrap_package_iter(package_iter).collect()
-    };
-
-    populate_package_list_licenses(&mut wrapped_package_vec, &config.as_ref().cargo_home_dir)
-        .change_context(BuildError::FailedLicenseFetch)?;
-
-    let mut package_vec = Vec::with_capacity(wrapped_package_vec.capacity());
-    package_vec.extend(wrapped_package_vec.into_iter().map(|p| p.package));
-
-    sort_package_list(&root_package_name, &mut package_vec)?;
-
-    attach_root_package_license(config.as_ref(), &mut package_vec[0])?;
-
-    Ok(package_vec.into())
+pub fn package_list_with_licenses(
+    config: impl AsRef<Config>,
+) -> Result<PackageList, LicenseFetcherError> {
+    package_list_with_licenses_internal(config).map_err(LicenseFetcherError::from_internal)
 }
 
-/// Errors that might occur during the writing process of the license data to the output directory.
+/// Error that might occur during the writing process of the license data to the output file.
 #[derive(Debug, Clone, Copy)]
 pub enum WriteError {
-    /// failed writing license data to output directory
+    /// serialized and compressed license data should write to file
     Write,
-    /// function was called not in build script which is disallowed
+    /// should only be called if in build script
     NotBuildScript,
 }
 
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Write => write!(f, "failed writing license data to output directory"),
-            Self::NotBuildScript => write!(
+            Self::Write => write!(
                 f,
-                "function was called not in build script which is disallowed"
+                "serialized and compressed license data should write to file"
             ),
+            Self::NotBuildScript => write!(f, "should only be called if in build script"),
         }
     }
 }
@@ -408,7 +382,7 @@ impl PackageList {
             PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?).join(OUT_FILE_NAME);
 
         info!("Writing to file: {}", &path.display());
-        write(path, compressed_data).change_context(WriteError::Write)?;
+        write(path, compressed_data).or_raise(|| WriteError::Write)?;
 
         Ok(())
     }

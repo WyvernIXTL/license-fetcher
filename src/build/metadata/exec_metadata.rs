@@ -16,7 +16,7 @@ use regex_lite::Regex;
 use crate::{
     build::{
         config::MetadataConfig,
-        error::IE,
+        fetching_error::IE,
         metadata::{
             exec::exec_cargo,
             json_parsing::{Metadata, MetadataResolveNode},

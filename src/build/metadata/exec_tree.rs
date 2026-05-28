@@ -8,7 +8,7 @@ use std::{collections::HashSet, process::Output};
 
 use exn::{Result, ResultExt};
 
-use crate::build::{config::MetadataConfig, error::IE, metadata::exec::exec_cargo};
+use crate::build::{config::MetadataConfig, fetching_error::IE, metadata::exec::exec_cargo};
 
 fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, IE> {
     const ARGUMENTS: &[&str] = &[
@@ -38,7 +38,9 @@ fn parse_cargo_tree_output(output: Output) -> Result<HashSet<String>, IE> {
         .collect::<HashSet<String>>())
 }
 
-pub fn exec_cargo_tree_and_parse_output(config: &MetadataConfig) -> Result<HashSet<String>, IE> {
+pub(super) fn exec_cargo_tree_and_parse_output(
+    config: &MetadataConfig,
+) -> Result<HashSet<String>, IE> {
     let output = exec_cargo_tree(config)?;
     parse_cargo_tree_output(output)
 }

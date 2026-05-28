@@ -9,7 +9,7 @@ use std::thread::scope;
 
 use crate::{
     build::{
-        error::{ErrorJoin, IE},
+        fetching_error::{ErrorJoin, IE},
         metadata::{
             exec_metadata::exec_cargo_metadata_and_parse_result,
             exec_tree::exec_cargo_tree_and_parse_output,
@@ -25,7 +25,7 @@ mod exec_metadata;
 mod exec_tree;
 mod json_parsing;
 
-pub fn package_list_impl(
+pub(super) fn package_list_impl(
     config: &MetadataConfig,
 ) -> Result<(String, impl Iterator<Item = Package> + '_), IE> {
     scope(|scope| {
