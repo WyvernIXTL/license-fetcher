@@ -131,7 +131,7 @@ impl LicenseFetcherError {
     pub(crate) fn from_internal(err: Exn<IE>) -> Exn<LicenseFetcherError> {
         match Self::find_next_non_generic(&err) {
             Some((err_ref, kind)) => {
-                let message = err_ref.msg.clone();
+                let message = format!("{err_ref}");
                 err.raise(LicenseFetcherError { message, kind })
             }
             None => {

@@ -4,21 +4,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::sync::Once;
+use std::{fs::File, path::PathBuf, sync::Once};
 
-use exn::Exn;
+use simplelog::{CombinedLogger, Config, WriteLogger};
 
 static SETUP_ONCE: Once = Once::new();
 
 pub(crate) fn setup_logger() {
-    use simplelog::Config;
+    let log_file_path = PathBuf::from(
+        std::env::var_os("CARGO_TARGET_DIR ")
+            .expect("'CARGO_TARGET_DIR' should be set for the initialization of logger"),
+    )
+    .join("license-fetcher.log");
 
-    simplelog::TermLogger::new(
-        log::LevelFilter::Debug,
-        Config::default(),
-        simplelog::TerminalMode::Mixed,
-        simplelog::ColorChoice::Auto,
-    );
+    let log_file = File::create(log_file_path).expect("log file should be creatable");
+
+    CombinedLogger::init(vec![
+        simplelog::TermLogger::new(
+            log::LevelFilter::Debug,
+            Config::default(),
+            simplelog::TerminalMode::Mixed,
+            simplelog::ColorChoice::Auto,
+        ),
+        WriteLogger::new(log::LevelFilter::Debug, Config::default(), log_file),
+    ])
+    .expect("logger should initialize");
 }
 
 pub(crate) fn setup_test() {
