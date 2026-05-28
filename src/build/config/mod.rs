@@ -58,7 +58,7 @@ use exn::{Exn, Result, ResultExt};
 
 use crate::OUT_FILE_NAME;
 
-use super::error::ReportJoin;
+use super::error::ErrorJoin;
 
 #[doc(hidden)]
 pub mod from_env;
@@ -288,7 +288,7 @@ pub struct ConfigBuilder {
     cargo_directives: Option<CargoDirectiveList>,
     cache_path: Option<PathBuf>,
     enabled_features: Option<OsString>,
-    error: ReportJoin<ConfigBuildError>,
+    error: ErrorJoin<ConfigBuildError>,
 }
 
 impl ConfigBuilder {

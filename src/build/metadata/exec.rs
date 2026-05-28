@@ -5,36 +5,17 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::{
-    error::Error,
     ffi::{OsStr, OsString},
-    fmt,
     path::Path,
     process::{Command, Output},
 };
 
-use exn::{Exn, Result, ResultExt};
+use exn::{bail, ensure, Result, ResultExt};
 
-use crate::build::config::{CargoDirective, MetadataConfig};
-
-/// Error that occurs when `cargo` does not execute or returns itself an error.
-#[derive(Debug, Clone, Copy)]
-pub enum ExecCargoError {
-    /// `cargo` executed, but returned an error
-    ExecutionWithError,
-    /// failed to execute `cargo`
-    FailedToExecute,
-}
-
-impl fmt::Display for ExecCargoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ExecutionWithError => write!(f, "`cargo` executed, but returned an error"),
-            Self::FailedToExecute => write!(f, "failed to execute `cargo`"),
-        }
-    }
-}
-
-impl Error for ExecCargoError {}
+use crate::build::{
+    config::{CargoDirective, MetadataConfig},
+    error::{ErrorJoin, EK, IE},
+};
 
 fn exec_cargo_single<P, S, I>(
     cargo: P,
@@ -42,7 +23,7 @@ fn exec_cargo_single<P, S, I>(
     manifest_dir: P,
     features_opt: Option<&OsString>,
     arguments: I,
-) -> Result<Output, ExecCargoError>
+) -> Result<Output, IE>
 where
     P: AsRef<Path>,
     I: IntoIterator<Item = S>,
@@ -61,31 +42,32 @@ where
         command.arg(cargo_directive);
     }
 
-    let output = command
-        .output()
-        .change_context(ExecCargoError::FailedToExecute)
-        .attach_printable_lazy(|| format!("cargo directive: {cargo_directive}"))?;
+    let output = command.output().or_raise(|| {
+        IE::new(format!(
+            "cargo executable should execute at all | directive: \"{cargo_directive}\""
+        ))
+        .with_path(cargo.as_ref())
+        .with_kind(EK::CargoFailedExecution)
+    })?;
 
     if output.status.success() {
         Ok(output)
     } else {
-        Err(Exn::new(ExecCargoError::ExecutionWithError)
-            .attach_printable(format!("cargo directive: {cargo_directive}"))
-            .attach_printable(String::from_utf8_lossy(&output.stderr).into_owned()))
+        bail!(IE::new(format!("cargo should execute with status success (0) | directive: \"{cargo_directive}\" | stderr: \"{}\"", String::from_utf8_lossy(&output.stderr))))
     }
 }
 
-pub fn exec_cargo<I, S>(config: &MetadataConfig, arguments: &I) -> Result<Output, ExecCargoError>
+pub(super) fn exec_cargo<I, S>(config: &MetadataConfig, arguments: &I) -> Result<Output, IE>
 where
     I: IntoIterator<Item = S> + Clone,
     S: AsRef<OsStr> + Clone,
 {
-    debug_assert!(
+    ensure!(
         !config.cargo_directives.is_empty(),
-        "cargo directives in config passed to `exec_cargo` should not have been empty"
+        IE::new("cargo directives in config passed to `exec_cargo` should conain at least one directive")
     );
 
-    let mut err: Option<Exn<ExecCargoError>> = None;
+    let mut err_join = ErrorJoin::new(IE::new("cargo should at least succeed with one directive"));
 
     for directive in config.cargo_directives.iter() {
         let result_single = exec_cargo_single(
@@ -97,17 +79,9 @@ where
         );
         match result_single {
             Ok(_) => return result_single,
-            Err(e) => match err.as_mut() {
-                None => err = Some(e),
-                Some(err) => err.extend_one(e),
-            },
+            Err(e) => err_join.join(e),
         }
     }
 
-    debug_assert!(
-        err.is_some(),
-        "cargo execution failed, but the combined error is None"
-    );
-
-    Err(err.unwrap_or_else(|| Exn::new(ExecCargoError::ExecutionWithError)))
+    Err(err_join.err())
 }

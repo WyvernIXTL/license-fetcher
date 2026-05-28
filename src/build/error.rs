@@ -93,6 +93,26 @@ pub enum EK {
     /// };
     /// ```
     RegistryFolder,
+    /// Cargo should execute at all.
+    ///
+    /// This error is caused, when cargo cannot be executed.
+    /// Maybe the path set is wrong or the program does not have the permissions to execute cargo.
+    ///
+    /// `ConfigBuilder` defaults to reading the `CARGO` environment variable and sets `cargo` as path on failure.
+    /// *Maybe* setting the cargo path to `cargo` fixes the issue (I think, I actually encountered this once with `deps` in CI).
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use crate::build::config::{Config, ConfigBuilder};
+    /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
+    /// let recovery_config: Config = Config {
+    ///     metadata_config: {
+    ///         cargo_path: PathBuf::from("cargo"),
+    ///         ..your_config.metadata_config
+    ///     },
+    ///     ..your_config
+    /// };
+    /// ```
+    CargoFailedExecution,
 }
 
 /// Error occurring when fetching licenses.
@@ -146,17 +166,21 @@ impl LicenseFetcherError {
 }
 
 #[derive(Debug)]
-pub(crate) struct ReportJoin {
+pub(crate) struct ErrorJoin {
     root_err: IE,
     errors: Vec<Exn<IE>>,
 }
 
-impl ReportJoin {
+impl ErrorJoin {
     pub fn new(root_err: IE) -> Self {
         Self {
             root_err,
             errors: vec![],
         }
+    }
+
+    pub fn join(&mut self, e: impl Into<Exn<IE>>) {
+        self.errors.push(e.into());
     }
 
     pub fn result(self) -> Result<(), Exn<IE>> {
@@ -167,7 +191,15 @@ impl ReportJoin {
         }
     }
 
-    pub fn join(&mut self, e: impl Into<Exn<IE>>) {
-        self.errors.push(e.into());
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
+
+    pub fn err(self) -> Exn<IE> {
+        if !self.errors.is_empty() {
+            Exn::raise_all(self.root_err, self.errors)
+        } else {
+            panic!("`ErrorJoin` should always be handled. `err` method was called even though join does not contain other errors.")
+        }
     }
 }

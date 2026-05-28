@@ -19,7 +19,7 @@ use crate::build::error::{EK, IE};
 use crate::build::wrapper::PackageWrapper;
 use src_registry_folders::src_registry_folders;
 
-use super::error::ReportJoin;
+use super::error::ErrorJoin;
 
 pub(super) fn license_texts_from_folder(path: &Path) -> Result<Vec<(String, String)>, IE> {
     static LICENSE_FILE_NAME_REGEX: LazyLock<Regex> =
@@ -93,7 +93,7 @@ pub(super) fn populate_package_list_licenses(
             .with_path(cargo_home_dir)
     })?;
 
-    let mut result = ReportJoin::new(IE::new(
+    let mut result = ErrorJoin::new(IE::new(
         "recursively searching for licenses in src registries and fetching them should succeed",
     ));
 
