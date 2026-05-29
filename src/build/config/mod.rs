@@ -58,14 +58,15 @@ use exn::{Exn, Result, ResultExt};
 
 use crate::OUT_FILE_NAME;
 
-use super::fetching_error::ErrorJoin;
-
 #[doc(hidden)]
 pub mod from_env;
 #[doc(hidden)]
 pub mod from_path;
 
 mod cargo_folder;
+
+/// Config builder error.
+pub mod error;
 
 /// Configures how Cargo [fetches metadata].
 ///
