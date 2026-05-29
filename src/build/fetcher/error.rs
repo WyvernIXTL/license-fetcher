@@ -9,20 +9,20 @@ use std::{ffi::OsStr, fmt, path::PathBuf};
 use exn::{Exn, Frame};
 
 #[derive(Debug, Clone, Default)]
-pub(crate) struct IE {
+pub(super) struct IE {
     msg: String,
-    maybe_path: Option<PathBuf>,
-    maybe_env: Option<String>,
-    maybe_kind: Option<EK>,
+    path_maybe: Option<PathBuf>,
+    env_maybe: Option<String>,
+    kind_maybe: Option<EK>,
 }
 
 impl fmt::Display for IE {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.msg)?;
-        if let Some(path) = &self.maybe_path {
+        if let Some(path) = &self.path_maybe {
             write!(f, " | path: \"{}\"", path.display())?;
         }
-        if let Some(env_var) = &self.maybe_env {
+        if let Some(env_var) = &self.env_maybe {
             write!(f, " | env: \"{}\"", env_var)?;
         }
         Ok(())
@@ -32,25 +32,25 @@ impl fmt::Display for IE {
 impl std::error::Error for IE {}
 
 impl IE {
-    pub(crate) fn new(msg: impl Into<String>) -> Self {
+    pub(super) fn new(msg: impl Into<String>) -> Self {
         Self {
             msg: msg.into(),
             ..Self::default()
         }
     }
 
-    pub(crate) fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
-        self.maybe_path = Some(path.into());
+    pub(super) fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.path_maybe = Some(path.into());
         self
     }
 
-    pub(crate) fn with_env(mut self, env_var: impl AsRef<OsStr>) -> Self {
-        self.maybe_env = Some(env_var.as_ref().to_string_lossy().to_string());
+    pub(super) fn with_env(mut self, env_var: impl AsRef<OsStr>) -> Self {
+        self.env_maybe = Some(env_var.as_ref().to_string_lossy().to_string());
         self
     }
 
-    pub(crate) fn with_kind(mut self, kind: EK) -> Self {
-        self.maybe_kind = Some(kind);
+    pub(super) fn with_kind(mut self, kind: EK) -> Self {
+        self.kind_maybe = Some(kind);
         self
     }
 }
@@ -118,11 +118,12 @@ pub enum EK {
 /// Error occurring when fetching licenses.
 ///
 /// This error aims to be somewhat recoverable. The docs of [`EK`] (Error Kind) have some tips on recovery.
+///
+/// This error is likely returned being wrapped in [`Exn`]. `Exn` stores an human readable error chain with the module and lines attached, where the error stems from.
+/// If you want to debug the error, I advise not to remove this wrapper.
 #[derive(Debug, Clone)]
 pub struct LicenseFetcherError {
-    /// Error message.
     message: String,
-    /// Error kind. Check the docs for recovery examples.
     kind: EK,
 }
 
@@ -138,7 +139,7 @@ impl LicenseFetcherError {
     fn find_next_non_generic(exn: &Exn<IE>) -> Option<(&IE, EK)> {
         fn walk(frame: &Frame) -> Option<(&IE, EK)> {
             if let Some(err) = frame.error().downcast_ref::<IE>() {
-                if let Some(kind) = err.maybe_kind {
+                if let Some(kind) = err.kind_maybe {
                     return Some((err, kind));
                 }
             }
@@ -148,7 +149,7 @@ impl LicenseFetcherError {
         walk(exn.frame())
     }
 
-    pub(crate) fn from_internal(err: Exn<IE>) -> Exn<LicenseFetcherError> {
+    pub(super) fn from_internal(err: Exn<IE>) -> Exn<LicenseFetcherError> {
         match Self::find_next_non_generic(&err) {
             Some((err_ref, kind)) => {
                 let message = format!("{err_ref}");
@@ -163,27 +164,41 @@ impl LicenseFetcherError {
             }
         }
     }
+
+    /// The kind of the error.
+    ///
+    /// See [`EK`] on the different kinds and how to handle them.
+    pub fn kind(&self) -> EK {
+        self.kind
+    }
+
+    /// The error message.
+    ///
+    /// This message is for humans and can change even in minor patches.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
 }
 
 #[derive(Debug)]
-pub(crate) struct ErrorJoin {
+pub(super) struct ErrorJoin {
     root_err: IE,
     errors: Vec<Exn<IE>>,
 }
 
 impl ErrorJoin {
-    pub fn new(root_err: IE) -> Self {
+    pub(super) fn new(root_err: IE) -> Self {
         Self {
             root_err,
             errors: vec![],
         }
     }
 
-    pub fn join(&mut self, e: impl Into<Exn<IE>>) {
+    pub(super) fn join(&mut self, e: impl Into<Exn<IE>>) {
         self.errors.push(e.into());
     }
 
-    pub fn result(self) -> Result<(), Exn<IE>> {
+    pub(super) fn result(self) -> Result<(), Exn<IE>> {
         if !self.errors.is_empty() {
             Err(Exn::raise_all(self.root_err, self.errors))
         } else {
@@ -191,11 +206,11 @@ impl ErrorJoin {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub(super) fn is_empty(&self) -> bool {
         self.errors.is_empty()
     }
 
-    pub fn err(self) -> Exn<IE> {
+    pub(super) fn err(self) -> Exn<IE> {
         if !self.errors.is_empty() {
             Exn::raise_all(self.root_err, self.errors)
         } else {
