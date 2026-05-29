@@ -140,6 +140,9 @@ pub mod error;
 #[cfg(feature = "build")]
 pub mod build;
 
+/// Prelude of `license-fetcher`.
+pub mod prelude;
+
 /// The file name used for writing and reading the serialized package list.
 pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 
