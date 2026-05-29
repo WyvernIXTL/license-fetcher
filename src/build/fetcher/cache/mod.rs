@@ -10,8 +10,8 @@ use exn::{ensure, Result, ResultExt};
 
 use crate::{
     build::{
-        fetching_error::{EK, IE},
-        wrapper::PackageWrapper,
+        fetcher::error::{EK, IE},
+        fetcher::wrapper::PackageWrapper,
     },
     Package, PackageList,
 };

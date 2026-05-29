@@ -8,7 +8,10 @@ use std::{collections::HashSet, process::Output};
 
 use exn::{Result, ResultExt};
 
-use crate::build::{config::MetadataConfig, fetching_error::IE, metadata::exec::exec_cargo};
+use crate::build::{
+    config::MetadataConfig,
+    fetcher::{error::IE, metadata::exec::exec_cargo},
+};
 
 fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, IE> {
     const ARGUMENTS: &[&str] = &[

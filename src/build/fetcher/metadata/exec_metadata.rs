@@ -16,10 +16,12 @@ use regex_lite::Regex;
 use crate::{
     build::{
         config::MetadataConfig,
-        fetching_error::IE,
-        metadata::{
-            exec::exec_cargo,
-            json_parsing::{Metadata, MetadataResolveNode},
+        fetcher::{
+            error::IE,
+            metadata::{
+                exec::exec_cargo,
+                json_parsing::{Metadata, MetadataResolveNode},
+            },
         },
     },
     Package,

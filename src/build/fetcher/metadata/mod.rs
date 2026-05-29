@@ -8,8 +8,8 @@ use exn::Result;
 use std::thread::scope;
 
 use crate::{
-    build::{
-        fetching_error::{ErrorJoin, IE},
+    build::fetcher::{
+        error::{ErrorJoin, IE},
         metadata::{
             exec_metadata::exec_cargo_metadata_and_parse_result,
             exec_tree::exec_cargo_tree_and_parse_output,
@@ -18,7 +18,7 @@ use crate::{
     Package,
 };
 
-use super::config::MetadataConfig;
+use crate::build::config::MetadataConfig;
 
 mod exec;
 mod exec_metadata;

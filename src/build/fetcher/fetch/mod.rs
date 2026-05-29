@@ -15,8 +15,8 @@ use regex_lite::Regex;
 
 mod src_registry_folders;
 
-use crate::build::fetching_error::{ErrorJoin, EK, IE};
-use crate::build::wrapper::PackageWrapper;
+use crate::build::fetcher::error::{ErrorJoin, EK, IE};
+use crate::build::fetcher::wrapper::PackageWrapper;
 use src_registry_folders::src_registry_folders;
 
 pub(super) fn license_texts_from_folder(path: &Path) -> Result<Vec<(String, String)>, IE> {

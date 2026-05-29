@@ -207,6 +207,7 @@ impl AsRef<MetadataConfig> for MetadataConfig {
     }
 }
 
+// ! Add config for soft failing on invalid cache.
 /// Struct to configure the behavior of the license fetching.
 #[derive(Debug, Clone)]
 pub struct Config {

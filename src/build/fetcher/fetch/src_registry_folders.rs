@@ -11,7 +11,7 @@ use std::{
 
 use exn::{ensure, Result, ResultExt};
 
-use crate::build::fetching_error::{EK, IE};
+use crate::build::fetcher::error::{EK, IE};
 
 pub(crate) fn src_registry_folders(path: &Path) -> Result<impl Iterator<Item = PathBuf>, IE> {
     let src_dir = path.join("registry/src");
