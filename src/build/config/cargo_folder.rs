@@ -6,31 +6,14 @@
 
 use std::{env::var_os, error::Error, fmt, path::PathBuf};
 
-use exn::{ensure, Exn, Result};
+use exn::{ensure, OptionExt, Result};
 
-use crate::build::error::CPath;
-
-/// Error dealing with failed attempts to determine the users cargo home folder.
-#[derive(Debug, Clone, Copy)]
-pub enum CargoFolderError {
-    /// failed to find the home directory
-    HomeDirNotFound,
-    /// given or inferred cargo home folder location does not exist
-    DoesNotExist,
-    /// inferred or supplied cargo home folder is not a folder
-    IsNotDir,
-}
+#[derive(Debug, Clone)]
+pub(super) struct CargoFolderError(String);
 
 impl fmt::Display for CargoFolderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::HomeDirNotFound => write!(f, "failed to find the home directory"),
-            Self::DoesNotExist => write!(
-                f,
-                "given or inferred cargo home folder location does not exist"
-            ),
-            Self::IsNotDir => write!(f, "inferred or supplied cargo home folder is not a folder"),
-        }
+        write!(f, "failed to infer cargo home, {}", self.0)
     }
 }
 
@@ -42,17 +25,28 @@ pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
     if let Some(path) = var_os("CARGO_HOME") {
         cargo_home = path.into();
     } else {
-        let home_dir = std::env::home_dir().ok_or(Exn::new(CargoFolderError::HomeDirNotFound))?;
+        let home_dir = std::env::home_dir().ok_or_raise(|| {
+            CargoFolderError(
+                "system could not find user home directory, see docs of `std::env::home_dir`"
+                    .to_string(),
+            )
+        })?;
         cargo_home = home_dir.join(".cargo");
     }
 
     ensure!(
         cargo_home.exists(),
-        Exn::new(CargoFolderError::DoesNotExist).attach_printable(CPath::from(&cargo_home))
+        CargoFolderError(format!(
+            "path '{}' was expected to exist",
+            cargo_home.display()
+        ))
     );
     ensure!(
         cargo_home.is_dir(),
-        Exn::new(CargoFolderError::IsNotDir).attach_printable(CPath::from(&cargo_home))
+        CargoFolderError(format!(
+            "path '{}' was expected to be a directory",
+            cargo_home.display()
+        ))
     );
 
     Ok(cargo_home)

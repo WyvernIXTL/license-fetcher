@@ -119,8 +119,8 @@ pub enum EK {
 ///
 /// This error aims to be somewhat recoverable. The docs of [`EK`] (Error Kind) have some tips on recovery.
 ///
-/// This error is likely returned being wrapped in [`Exn`]. `Exn` stores an human readable error chain with the module and lines attached, where the error stems from.
-/// If you want to debug the error, I advise not to remove this wrapper.
+/// This error is always returned being wrapped in [`Exn`]. `Exn` stores an human readable error chain with the module and lines attached, where the error stems from.
+/// If you want to debug the error, I advise you not to remove this wrapper.
 #[derive(Debug, Clone)]
 pub struct LicenseFetcherError {
     message: String,
@@ -163,20 +163,6 @@ impl LicenseFetcherError {
                 })
             }
         }
-    }
-
-    /// The kind of the error.
-    ///
-    /// See [`EK`] on the different kinds and how to handle them.
-    pub fn kind(&self) -> EK {
-        self.kind
-    }
-
-    /// The error message.
-    ///
-    /// This message is for humans and can change even in minor patches.
-    pub fn message(&self) -> &str {
-        &self.message
     }
 }
 

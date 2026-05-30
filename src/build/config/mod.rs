@@ -54,9 +54,12 @@
 use std::{env::var_os, error::Error, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
-use exn::{Exn, Result, ResultExt};
+use exn::{ensure, Exn, OptionExt, Result, ResultExt};
 
-use crate::OUT_FILE_NAME;
+use crate::{
+    build::config::error::{ConfigBuilderError, CIE},
+    OUT_FILE_NAME,
+};
 
 #[doc(hidden)]
 pub mod from_env;
@@ -199,6 +202,10 @@ pub struct MetadataConfig {
     /// Set Cargo directives for fetching metadata.
     pub cargo_directives: CargoDirectiveList,
     /// Set enabled features used when detecting package metadata.
+    ///
+    /// The format is a comma separated list of features described [here]. (`build,serde,stuff`)
+    ///
+    /// [here]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#feature-selection
     pub enabled_features: Option<OsString>,
 }
 
@@ -238,35 +245,6 @@ impl AsRef<MetadataConfig> for Config {
     }
 }
 
-/// Errors which might occur during the building of the config.
-#[derive(Debug, Clone, Copy)]
-pub enum ConfigBuildError {
-    /// required field in builder is not set
-    RequiredFieldNotSet,
-    /// failed reading required fields from build environment variables
-    FailedFromEnvVars,
-    /// failed finding manifest path
-    FailedFromPath,
-    /// failed determining cargo home directory
-    CargoHomeDir,
-}
-
-impl fmt::Display for ConfigBuildError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::RequiredFieldNotSet => write!(f, "required field in builder is not set"),
-            Self::FailedFromEnvVars => write!(
-                f,
-                "failed reading required fields from build environment variables"
-            ),
-            Self::FailedFromPath => write!(f, "failed finding manifest path"),
-            Self::CargoHomeDir => write!(f, "failed determining cargo home directory"),
-        }
-    }
-}
-
-impl Error for ConfigBuildError {}
-
 // TODO: This must be changed due to cache error handling becoming explicit (accidentally, lol).
 // ! set cache path to none if it does not exist or is empty!!!
 fn maybe_cache_path_from_env() -> Option<PathBuf> {
@@ -292,7 +270,7 @@ pub struct ConfigBuilder {
     cargo_directives: Option<CargoDirectiveList>,
     cache_path: Option<PathBuf>,
     enabled_features: Option<OsString>,
-    error: ErrorJoin<ConfigBuildError>,
+    errors: Vec<Exn<CIE>>,
 }
 
 impl ConfigBuilder {
@@ -338,7 +316,7 @@ impl ConfigBuilder {
 
     /// Set features used explicitly.
     ///
-    /// The format is a comma separated list of features described [here].
+    /// The format is a comma separated list of features described [here]. (`build,serde,stuff`)
     ///
     /// If not set and inside a build script (`build.rs`), the builder defaults to features enabled via the [`CARGO_CFG_FEATURE`] environment variable.
     ///
@@ -350,19 +328,19 @@ impl ConfigBuilder {
         self
     }
 
-    /// Builds the Config with all required fields.
-    ///
-    /// ## Errors
-    ///
-    /// Returns [`ConfigBuildError`] on failure to build the configuration.
-    pub fn build(self) -> Result<Config, ConfigBuildError> {
-        self.error.result()?;
+    fn build_impl(self) -> Result<Config, CIE> {
+        ensure!(
+            self.errors.is_empty(),
+            Exn::raise_all(
+                CIE("multiple errors in methods before build was called".to_owned()),
+                self.errors
+            )
+        );
 
         let metadata_config = MetadataConfig {
-            manifest_dir: self.manifest_dir.ok_or_else(|| {
-                Exn::new(ConfigBuildError::RequiredFieldNotSet)
-                    .attach_printable("Field 'manifest_dir' is required but not set.")
-            })?,
+            manifest_dir: self
+                .manifest_dir
+                .ok_or_raise(|| CIE("field manifest_dir should be set".to_owned()))?,
             cargo_path: self.cargo_path.unwrap_or_else(|| {
                 PathBuf::from(var_os("CARGO").unwrap_or_else(|| "cargo".into()))
             }),
@@ -376,9 +354,19 @@ impl ConfigBuilder {
             metadata_config,
             cargo_home_dir: match self.cargo_home_dir {
                 Some(dir) => dir,
-                None => cargo_folder().change_context(ConfigBuildError::CargoHomeDir)?,
+                None => cargo_folder()
+                    .or_raise(|| CIE("cargo folder should have been inferred".to_owned()))?,
             },
             cache_path: self.cache_path.or_else(maybe_cache_path_from_env),
         })
+    }
+
+    /// Builds the Config with all required fields.
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ConfigBuildError`] on failure to build the configuration.
+    pub fn build(self) -> Result<Config, ConfigBuilderError> {
+        self.build_impl().map_err(ConfigBuilderError::from_internal)
     }
 }

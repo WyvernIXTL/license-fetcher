@@ -12,10 +12,14 @@
  * ```
  */
 
-pub use crate::{read_package_list_from_out_dir, Package, PackageList};
+pub use crate::{read_package_list_from_out_dir, Package, PackageList, OUT_FILE_NAME};
 
 #[cfg(feature = "build")]
 pub use crate::build::{
+    config::{
+        error::ConfigBuilderError, error::ConfigBuilderErrorKind, CargoDirective,
+        CargoDirectiveList, Config, ConfigBuilder, MetadataConfig,
+    },
     fetcher::{
         error::{LicenseFetcherError, EK},
         package_list, package_list_with_licenses,
