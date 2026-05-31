@@ -8,14 +8,14 @@ use std::error::Error;
 use std::fmt;
 use std::{env::var_os, path::PathBuf};
 
-use exn::{OptionExt, Result};
+use exn::{bail, OptionExt, Result};
 
 use crate::build::config::CIE;
 
 use super::ConfigBuilder;
 
 #[derive(Debug, Clone)]
-struct MetadataEnvError(String);
+pub(super) struct MetadataEnvError(String);
 
 impl fmt::Display for MetadataEnvError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

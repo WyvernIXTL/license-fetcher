@@ -11,7 +11,9 @@
 
 use std::{error::Error, fmt};
 
-use exn::{Exn, Frame};
+use exn::{ErrorExt, Exn, Frame};
+
+use crate::build::config::from_env::MetadataEnvError;
 
 #[derive(Debug, Clone)]
 pub(super) struct CIE(pub String);
@@ -40,6 +42,12 @@ pub enum ConfigBuilderErrorKind {
     ///
     /// To handle this error you could use [`ConfigBuilder::from_path`](super::ConfigBuilder::from_path).
     FailedFromEnvVars,
+    /// Path is invalid or does not point to folder with manifest or directly to manifest file.
+    ///
+    /// The [`ConfigBuilder::from_path`](super::ConfigBuilder::from_path) differentiates between folders and files.
+    /// Files are checked for being named `Cargo.toml`. Folders are checked for containing a file named `Cargo.toml`.
+    /// This error also occurs, when a file or folder cannot be shown to exist.
+    FailedFromPath,
 }
 
 /// Error occurring when using [`ConfigBuilder`](super::ConfigBuilder)
@@ -62,19 +70,27 @@ impl fmt::Display for ConfigBuilderError {
 
 impl std::error::Error for ConfigBuilderError {}
 
-impl ConfigBuilderError {
-    fn find_error<T: Error + 'static>(exn: &Exn<impl Error + Send + Sync>) -> Option<&T> {
-        fn walk<T: Error + 'static>(frame: &Frame) -> Option<&T> {
-            if let Some(err) = frame.error().downcast_ref::<T>() {
-                return Some(err);
-            }
-            frame.children().iter().find_map(walk::<T>)
+fn find_error<T: Error + 'static>(exn: &Exn<impl Error + Send + Sync>) -> Option<&T> {
+    fn walk<T: Error + 'static>(frame: &Frame) -> Option<&T> {
+        if let Some(err) = frame.error().downcast_ref::<T>() {
+            return Some(err);
         }
-
-        walk(exn.frame())
+        frame.children().iter().find_map(walk::<T>)
     }
 
+    walk(exn.frame())
+}
+
+impl ConfigBuilderError {
     pub(super) fn from_internal(err: Exn<CIE>) -> Exn<ConfigBuilderError> {
+        if let Some(cause) = find_error::<MetadataEnvError>(&err) {
+            let msg = format!("{cause}");
+            return err.raise(Self {
+                message: msg,
+                kind: ConfigBuilderErrorKind::FailedFromEnvVars,
+            });
+        }
+
         todo!()
     }
 }
