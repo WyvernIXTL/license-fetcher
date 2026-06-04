@@ -125,7 +125,7 @@ pub(super) fn populate_package_list_licenses(
                                         "fetching licenese for crate \"{}\" should succeed",
                                         &p.package.name
                                     ))
-                                    .with_path(&e.path()),
+                                    .with_path(e.path()),
                                 ),
                             );
                         }

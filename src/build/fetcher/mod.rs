@@ -86,7 +86,7 @@ fn package_list_internal(config: impl AsRef<MetadataConfig>) -> Result<PackageLi
 ///
 pub fn package_list(
     config: impl AsRef<MetadataConfig>,
-) -> Result<PackageList, LicenseFetcherError> {
+) -> std::result::Result<PackageList, LicenseFetcherError> {
     package_list_internal(config).map_err(LicenseFetcherError::from_internal)
 }
 
@@ -124,6 +124,6 @@ fn package_list_with_licenses_internal(config: impl AsRef<Config>) -> Result<Pac
 /// Fetches the the metadata of a cargo project via `cargo metadata` and walks the `.cargo/registry/src` path, searching for license files of dependencies.
 pub fn package_list_with_licenses(
     config: impl AsRef<Config>,
-) -> Result<PackageList, LicenseFetcherError> {
+) -> std::result::Result<PackageList, LicenseFetcherError> {
     package_list_with_licenses_internal(config).map_err(LicenseFetcherError::from_internal)
 }

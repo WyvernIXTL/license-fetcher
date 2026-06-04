@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{ffi::OsStr, fmt, path::PathBuf};
+use std::{ffi::OsStr, fmt, fmt::Write, path::PathBuf};
 
 use exn::{Exn, Frame};
 
@@ -19,12 +19,6 @@ pub(super) struct IE {
 impl fmt::Display for IE {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.msg)?;
-        if let Some(path) = &self.path_maybe {
-            write!(f, " | path: \"{}\"", path.display())?;
-        }
-        if let Some(env_var) = &self.env_maybe {
-            write!(f, " | env: \"{}\"", env_var)?;
-        }
         Ok(())
     }
 }
@@ -56,7 +50,7 @@ impl IE {
 }
 
 /// The kind of error encountered when using `license-fetcher`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EK {
     /// The error is unrecoverable.
     Unrecoverable,
@@ -121,10 +115,12 @@ pub enum EK {
 ///
 /// This error is always returned being wrapped in [`Exn`]. `Exn` stores an human readable error chain with the module and lines attached, where the error stems from.
 /// If you want to debug the error, I advise you not to remove this wrapper.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LicenseFetcherError {
-    message: String,
-    kind: EK,
+    /// Verbose message with error chain to root cause.
+    pub message: String,
+    /// Machine readable error enum.
+    pub kind: EK,
 }
 
 impl fmt::Display for LicenseFetcherError {
@@ -133,35 +129,62 @@ impl fmt::Display for LicenseFetcherError {
     }
 }
 
+impl fmt::Debug for LicenseFetcherError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.kind == EK::Unrecoverable {
+            write!(f, "\n--- {{ UNRECOVERABLE ERROR }} ---\n{}", self.message)
+        } else {
+            write!(f, "\n--- {{ RECOVERABLE ERROR }} ---\n{}", self.message)
+        }
+    }
+}
+
 impl std::error::Error for LicenseFetcherError {}
 
-impl LicenseFetcherError {
-    fn find_next_non_generic(exn: &Exn<IE>) -> Option<(&IE, EK)> {
-        fn walk(frame: &Frame) -> Option<(&IE, EK)> {
-            if let Some(err) = frame.error().downcast_ref::<IE>() {
-                if let Some(kind) = err.kind_maybe {
-                    return Some((err, kind));
-                }
+fn get_error_kind(exn: &Exn<IE>) -> EK {
+    fn walk(frame: &Frame) -> Option<EK> {
+        if let Some(err) = frame.error().downcast_ref::<IE>() {
+            if let Some(kind) = err.kind_maybe {
+                return Some(kind);
             }
-            frame.children().iter().find_map(walk)
         }
-
-        walk(exn.frame())
+        frame.children().iter().find_map(walk)
     }
 
-    pub(super) fn from_internal(err: Exn<IE>) -> Exn<LicenseFetcherError> {
-        match Self::find_next_non_generic(&err) {
-            Some((err_ref, kind)) => {
-                let message = format!("{err_ref}");
-                err.raise(LicenseFetcherError { message, kind })
+    walk(exn.frame()).unwrap_or(EK::Unrecoverable)
+}
+
+fn get_message(exn: &Exn<IE>) -> String {
+    fn collect_frames(report: &mut String, i: usize, frame: &Frame) {
+        if i > 0 {
+            report.push('\n');
+        }
+        writeln!(report, "{:>2}: Msg: {}", i, frame.error()).unwrap();
+        if let Some(err) = frame.error().downcast_ref::<IE>() {
+            if let Some(path) = &err.path_maybe {
+                writeln!(report, "    Pth: {}", path.display()).unwrap();
             }
-            None => {
-                let message = err.msg.clone();
-                err.raise(LicenseFetcherError {
-                    message,
-                    kind: EK::Unrecoverable,
-                })
+            if let Some(env) = &err.env_maybe {
+                writeln!(report, "    Env: {env}").unwrap();
             }
+        }
+        writeln!(report, "    Loc: {}", frame.location()).unwrap();
+        for child in frame.children() {
+            collect_frames(report, i + 1, child);
+        }
+    }
+
+    let mut message = String::new();
+    collect_frames(&mut message, 0, exn.frame());
+    message
+}
+
+impl LicenseFetcherError {
+    #[allow(clippy::needless_pass_by_value)]
+    pub(super) fn from_internal(err: Exn<IE>) -> LicenseFetcherError {
+        LicenseFetcherError {
+            message: get_message(&err),
+            kind: get_error_kind(&err),
         }
     }
 }
@@ -185,22 +208,18 @@ impl ErrorJoin {
     }
 
     pub(super) fn result(self) -> Result<(), Exn<IE>> {
-        if !self.errors.is_empty() {
-            Err(Exn::raise_all(self.root_err, self.errors))
-        } else {
+        if self.errors.is_empty() {
             Ok(())
+        } else {
+            Err(Exn::raise_all(self.root_err, self.errors))
         }
     }
 
-    pub(super) fn is_empty(&self) -> bool {
-        self.errors.is_empty()
-    }
-
     pub(super) fn err(self) -> Exn<IE> {
-        if !self.errors.is_empty() {
-            Exn::raise_all(self.root_err, self.errors)
-        } else {
+        if self.errors.is_empty() {
             Exn::new(IE::new("`ErrorJoin` should always be handled. `err` method was called even though join does not contain other errors."))
+        } else {
+            Exn::raise_all(self.root_err, self.errors)
         }
     }
 }
