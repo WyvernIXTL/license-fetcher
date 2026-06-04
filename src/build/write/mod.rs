@@ -8,7 +8,6 @@ pub mod error;
 
 use std::{env::var_os, fs::write, path::PathBuf, time::Instant};
 
-use exn::{Result, ResultExt};
 use log::info;
 use lz4_flex::compress_prepend_size;
 use nanoserde::SerBin;
@@ -48,14 +47,14 @@ impl PackageList {
     /// The reason for the latter variant, [`WriteError::NotBuildScript`], is that this function depends on environment variables set during
     /// compilation.
     ///
-    pub fn write_package_list_to_out_dir(&self) -> Result<(), WriteError> {
+    pub fn write_package_list_to_out_dir(&self) -> std::result::Result<(), WriteError> {
         let compressed_data = self.encode();
 
         let path =
             PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?).join(OUT_FILE_NAME);
 
         info!("Writing to file: {}", &path.display());
-        write(path, compressed_data).or_raise(|| WriteError::Write)?;
+        write(path, compressed_data).map_err(WriteError::Write)?;
 
         Ok(())
     }

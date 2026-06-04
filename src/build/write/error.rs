@@ -7,10 +7,10 @@
 use std::{error::Error, fmt};
 
 /// Error that might occur during the writing process of the license data to the output file.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub enum WriteError {
     /// serialized and compressed license data should write to file
-    Write,
+    Write(std::io::Error),
     /// should only be called if in build script
     NotBuildScript,
 }
@@ -18,9 +18,9 @@ pub enum WriteError {
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Write => write!(
+            Self::Write(err) => write!(
                 f,
-                "serialized and compressed license data should write to file"
+                "serialized and compressed license data should write to file\n{err}"
             ),
             Self::NotBuildScript => write!(f, "should only be called if in build script"),
         }
