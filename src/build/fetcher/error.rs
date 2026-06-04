@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{ffi::OsStr, fmt, fmt::Write, path::PathBuf};
+use std::{fmt, fmt::Write, path::PathBuf};
 
 use exn::{Exn, Frame};
 
@@ -12,7 +12,6 @@ use exn::{Exn, Frame};
 pub(super) struct IE {
     msg: String,
     path_maybe: Option<PathBuf>,
-    env_maybe: Option<String>,
     kind_maybe: Option<EK>,
 }
 
@@ -35,11 +34,6 @@ impl IE {
 
     pub(super) fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.path_maybe = Some(path.into());
-        self
-    }
-
-    pub(super) fn with_env(mut self, env_var: impl AsRef<OsStr>) -> Self {
-        self.env_maybe = Some(env_var.as_ref().to_string_lossy().to_string());
         self
     }
 
@@ -163,9 +157,6 @@ fn get_message(exn: &Exn<IE>) -> String {
         if let Some(err) = frame.error().downcast_ref::<IE>() {
             if let Some(path) = &err.path_maybe {
                 writeln!(report, "    Pth: {}", path.display()).unwrap();
-            }
-            if let Some(env) = &err.env_maybe {
-                writeln!(report, "    Env: {env}").unwrap();
             }
         }
         writeln!(report, "    Loc: {}", frame.location()).unwrap();
