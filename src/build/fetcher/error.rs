@@ -17,8 +17,7 @@ pub(super) struct IE {
 
 impl fmt::Display for IE {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.msg)?;
-        Ok(())
+        f.write_str(&self.msg)
     }
 }
 

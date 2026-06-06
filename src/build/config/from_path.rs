@@ -4,73 +4,63 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, fmt, fs::read_dir};
+use std::fs::read_dir;
 
 use exn::{ensure, OptionExt, Result, ResultExt};
 
-use super::{ConfigBuilder, PathBuf, CIE};
+use crate::build::config::error::CEK;
 
-#[derive(Debug, Clone)]
-struct FromPathError(String);
+use super::{Cie, ConfigBuilder, PathBuf};
 
-impl fmt::Display for FromPathError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "failed to get and validate path of manifest, {}", self.0)
-    }
-}
-
-impl Error for FromPathError {}
-
-fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf, Cie> {
     debug_assert!(uncertain_file_path.is_file());
 
     ensure!(
-        uncertain_file_path
-            .file_name()
-            .ok_or_raise(|| FromPathError(format!(
-                "manifest file path is not allowed to end in `..` '{}',  it should point to 'Cargo.toml'",
-                uncertain_file_path.display()
-            )))?
+        uncertain_file_path.file_name().ok_or_raise(|| Cie::new(
+            "path to manifest file should point to a file with a file name not `..`"
+        )
+        .with_path(&uncertain_file_path)
+        .with_kind(CEK::FailedFromPath))?
             == "Cargo.toml",
-            FromPathError(format!("manifest file path points to '{}', it should point to 'Cargo.toml'", uncertain_file_path.display()))
+        Cie::new("path to manifest file should point to a file with the name `Cargo.toml`")
+            .with_path(&uncertain_file_path)
+            .with_kind(CEK::FailedFromPath)
     );
 
     Ok(uncertain_file_path)
 }
 
-fn manifest_path_from_dir_path(uncertain_dir_path: &PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_path_from_dir_path(uncertain_dir_path: &PathBuf) -> Result<PathBuf, Cie> {
     debug_assert!(uncertain_dir_path.is_dir());
 
     read_dir(uncertain_dir_path)
         .or_raise(|| {
-            FromPathError(format!(
-                "cannot read dir '{}'",
-                uncertain_dir_path.display()
-            ))
+            Cie::new("directory with manifest file should be readable")
+                .with_path(uncertain_dir_path)
+                .with_kind(CEK::FailedFromPath)
         })?
         .filter_map(std::result::Result::ok)
         .find(|e| e.file_type().is_ok_and(|e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
         .ok_or_raise(|| {
-            FromPathError(format!(
-                "failed to find manifest in '{}'",
-                uncertain_dir_path.display()
-            ))
+            Cie::new("manifest file should be in directory")
+                .with_path(uncertain_dir_path)
+                .with_kind(CEK::FailedFromPath)
         })
 }
 
-fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, Cie> {
     ensure!(
-        uncertain_path
-            .try_exists()
-            .or_raise(|| FromPathError(format!(
-                "failed to verify existence of path '{}'",
-                uncertain_path.display()
-            )))?,
-        FromPathError(format!(
-            "path '{}' does not exist",
-            uncertain_path.display()
-        ))
+        uncertain_path.try_exists().or_raise(|| Cie::new(
+            "path to manifest file or dir should be verifiable to exist or not exist"
+        )
+        .with_path(&uncertain_path)
+        .with_kind(CEK::FailedFromPath))?,
+        Cie::new(
+            "path to manifest file or dir should point to an existing entity (file or folder)"
+        )
+        .with_path(uncertain_path)
+        .with_kind(CEK::FailedFromPath)
     );
 
     let manifest_path = if uncertain_path.is_file() {
@@ -82,10 +72,9 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
     Ok(manifest_path
         .parent()
         .ok_or_raise(|| {
-            FromPathError(format!(
-                "failed to get parent dir of '{}'",
-                manifest_path.display()
-            ))
+            Cie::new("path to manifest was determined, but path to the parent directory should also be determinable")
+                .with_path(&manifest_path)
+                .with_kind(CEK::FailedFromPath)
         })?
         .to_path_buf())
 }
@@ -101,7 +90,7 @@ impl ConfigBuilder {
             Ok(manifest_dir) => self = self.manifest_dir(manifest_dir),
             Err(err) => self
                 .errors
-                .push(err.raise(CIE("failed to infer config from path".to_owned()))),
+                .push(err.raise(Cie::new("manifest directory should be determinable"))),
         }
         self
     }

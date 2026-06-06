@@ -51,13 +51,13 @@
 //! [`ConfigBuilder::from_build_env()`]: crate::build::config::ConfigBuilder::from_build_env
 //! [`ConfigBuilder::from_path()`]:  crate::build::config::ConfigBuilder::from_path
 
-use std::{env::var_os, error::Error, ffi::OsString, fmt, ops::Deref, path::PathBuf};
+use std::{env::var_os, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
 use exn::{ensure, Exn, OptionExt, Result, ResultExt};
 
 use crate::{
-    build::config::error::{ConfigBuilderError, CIE},
+    build::config::error::{Cie, ConfigBuilderError},
     OUT_FILE_NAME,
 };
 
@@ -270,7 +270,7 @@ pub struct ConfigBuilder {
     cargo_directives: Option<CargoDirectiveList>,
     cache_path: Option<PathBuf>,
     enabled_features: Option<OsString>,
-    errors: Vec<Exn<CIE>>,
+    errors: Vec<Exn<Cie>>,
 }
 
 impl ConfigBuilder {
@@ -328,11 +328,11 @@ impl ConfigBuilder {
         self
     }
 
-    fn build_impl(self) -> Result<Config, CIE> {
+    fn build_impl(self) -> Result<Config, Cie> {
         ensure!(
             self.errors.is_empty(),
             Exn::raise_all(
-                CIE("multiple errors in methods before build was called".to_owned()),
+                Cie::new("from methods of config builder should succeed"),
                 self.errors
             )
         );
@@ -340,7 +340,7 @@ impl ConfigBuilder {
         let metadata_config = MetadataConfig {
             manifest_dir: self
                 .manifest_dir
-                .ok_or_raise(|| CIE("field manifest_dir should be set".to_owned()))?,
+                .ok_or_raise(|| Cie::new("field `manifest_dir` should be set"))?,
             cargo_path: self.cargo_path.unwrap_or_else(|| {
                 PathBuf::from(var_os("CARGO").unwrap_or_else(|| "cargo".into()))
             }),
@@ -355,7 +355,7 @@ impl ConfigBuilder {
             cargo_home_dir: match self.cargo_home_dir {
                 Some(dir) => dir,
                 None => cargo_folder()
-                    .or_raise(|| CIE("cargo folder should have been inferred".to_owned()))?,
+                    .or_raise(|| Cie::new("cargo folder should have been inferred"))?,
             },
             cache_path: self.cache_path.or_else(maybe_cache_path_from_env),
         })
@@ -366,7 +366,7 @@ impl ConfigBuilder {
     /// ## Errors
     ///
     /// Returns [`ConfigBuildError`] on failure to build the configuration.
-    pub fn build(self) -> Result<Config, ConfigBuilderError> {
+    pub fn build(self) -> std::result::Result<Config, ConfigBuilderError> {
         self.build_impl().map_err(ConfigBuilderError::from_internal)
     }
 }

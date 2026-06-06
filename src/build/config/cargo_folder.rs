@@ -4,49 +4,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{env::var_os, error::Error, fmt, path::PathBuf};
+use std::{env::var_os, path::PathBuf};
 
 use exn::{ensure, OptionExt, Result};
 
-#[derive(Debug, Clone)]
-pub(super) struct CargoFolderError(String);
+use crate::build::config::Cie;
 
-impl fmt::Display for CargoFolderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "failed to infer cargo home, {}", self.0)
-    }
-}
-
-impl Error for CargoFolderError {}
-
-pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
+pub(super) fn cargo_folder() -> Result<PathBuf, Cie> {
     let cargo_home: PathBuf;
 
     if let Some(path) = var_os("CARGO_HOME") {
         cargo_home = path.into();
     } else {
         let home_dir = std::env::home_dir().ok_or_raise(|| {
-            CargoFolderError(
-                "system could not find user home directory, see docs of `std::env::home_dir`"
-                    .to_string(),
-            )
+            Cie::new("`std::env::home_dir` should return the home directory of the user")
         })?;
         cargo_home = home_dir.join(".cargo");
     }
 
     ensure!(
         cargo_home.exists(),
-        CargoFolderError(format!(
-            "path '{}' was expected to exist",
-            cargo_home.display()
-        ))
+        Cie::new("cargo home folder should exist at path").with_path(cargo_home)
     );
     ensure!(
         cargo_home.is_dir(),
-        CargoFolderError(format!(
-            "path '{}' was expected to be a directory",
-            cargo_home.display()
-        ))
+        Cie::new("cargo home path should point to a folder").with_path(cargo_home)
     );
 
     Ok(cargo_home)

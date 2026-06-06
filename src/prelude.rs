@@ -17,8 +17,8 @@ pub use crate::{read_package_list_from_out_dir, Package, PackageList, OUT_FILE_N
 #[cfg(feature = "build")]
 pub use crate::build::{
     config::{
-        error::ConfigBuilderError, error::ConfigBuilderErrorKind, CargoDirective,
-        CargoDirectiveList, Config, ConfigBuilder, MetadataConfig,
+        error::ConfigBuilderError, error::CEK, CargoDirective, CargoDirectiveList, Config,
+        ConfigBuilder, MetadataConfig,
     },
     fetcher::{
         error::{LicenseFetcherError, EK},

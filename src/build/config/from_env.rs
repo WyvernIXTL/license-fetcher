@@ -1,29 +1,17 @@
-// Copyright Adam McKellar 2025
+// Copyright Adam McKellar 2025, 2026
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::error::Error;
-use std::fmt;
 use std::{env::var_os, path::PathBuf};
 
-use exn::{bail, OptionExt, Result};
+use exn::{OptionExt, Result};
 
-use crate::build::config::CIE;
+use crate::build::config::error::CEK;
+use crate::build::config::Cie;
 
 use super::ConfigBuilder;
-
-#[derive(Debug, Clone)]
-pub(super) struct MetadataEnvError(String);
-
-impl fmt::Display for MetadataEnvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "failed to get environment variables, {}", self.0)
-    }
-}
-
-impl Error for MetadataEnvError {}
 
 struct MetadataEnv {
     manifest_dir: PathBuf,
@@ -31,13 +19,19 @@ struct MetadataEnv {
 }
 
 impl MetadataEnv {
-    fn new() -> Result<Self, MetadataEnvError> {
+    fn new() -> Result<Self, Cie> {
         Ok(Self {
             manifest_dir: var_os("CARGO_MANIFEST_DIR")
-                .ok_or_raise(|| MetadataEnvError("'CARGO_MANIFEST_DIR' not set".to_owned()))?
+                .ok_or_raise(|| {
+                    Cie::new("within a build script the `CARGO_MANIFEST_DIR` env var should be set")
+                        .with_kind(CEK::FailedFromEnvVars)
+                })?
                 .into(),
             cargo_path: var_os("CARGO")
-                .ok_or_raise(|| MetadataEnvError("'CARGO' not set".to_owned()))?
+                .ok_or_raise(|| {
+                    Cie::new("within a build script the `CARGO` env var should be set")
+                        .with_kind(CEK::FailedFromEnvVars)
+                })?
                 .into(),
         })
     }
@@ -57,9 +51,7 @@ impl ConfigBuilder {
                     .cargo_path(meta.cargo_path);
             }
             Err(err) => {
-                self.errors.push(err.raise(CIE(
-                    "failed to infer config from environment variables".to_owned(),
-                )));
+                self.errors.push(err.raise(Cie::new("within a build script the `with_build_env` and `from_build_env` methods should succeed")));
             }
         }
 
