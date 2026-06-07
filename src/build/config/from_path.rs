@@ -111,13 +111,12 @@ impl ConfigBuilder {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    use crate::build::{config::error::ConfigBuilderError, debug::setup_test};
+    use crate::build::config::error::ConfigBuilderError;
 
     use super::*;
 
     #[test]
     fn test_from_path_with_file_path() -> Result<(), ConfigBuilderError> {
-        setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH")).build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,
@@ -133,7 +132,6 @@ mod test {
 
     #[test]
     fn test_from_path_with_dir_path() -> Result<(), ConfigBuilderError> {
-        setup_test();
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR")).build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,

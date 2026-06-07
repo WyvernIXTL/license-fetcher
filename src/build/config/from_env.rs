@@ -75,13 +75,12 @@ impl ConfigBuilder {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    use crate::build::{config::error::ConfigBuilderError, debug::setup_test};
+    use crate::build::config::error::ConfigBuilderError;
 
     use super::*;
 
     #[test]
     fn test_config_from_env() -> Result<(), ConfigBuilderError> {
-        setup_test();
         let conf = ConfigBuilder::from_build_env().build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,

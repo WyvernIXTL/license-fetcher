@@ -174,9 +174,6 @@
 /// Configuration structs and builders.
 pub mod config;
 
-#[cfg(test)]
-mod debug;
-
 /// Functions for fetching metadata and licenses.
 pub mod fetcher;
 

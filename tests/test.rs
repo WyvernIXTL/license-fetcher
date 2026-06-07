@@ -6,6 +6,10 @@ use assert2::assert;
 use license_fetcher::prelude::*;
 use serial_test::serial;
 
+mod common;
+
+use common::setup;
+
 static TEST_CRATE_ROOT_PACKAGE: LazyLock<Package> = LazyLock::new(|| {
     Package::builder("test_crate", "0.1.0")
         .add_author("Max Mustermann")
@@ -36,6 +40,8 @@ const TEST_CRATE_DIRECT_DEPS: [&str; 6] = [
 fn test_generate_licenses_with_test_crate() {
     use assert2::check;
     use license_fetcher::build::config::{CargoDirective, ConfigBuilder};
+
+    setup();
 
     let config = ConfigBuilder::default()
         .with_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
@@ -70,6 +76,8 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
     use std::fs::read;
 
     use assert2::check;
+
+    setup();
 
     let temp_dir = tempfile::tempdir().unwrap();
     unsafe {
@@ -113,6 +121,8 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
 #[test]
 #[serial]
 fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
+    setup();
+
     let temp_dir = tempfile::tempdir().unwrap();
     unsafe {
         use std::path::PathBuf;
