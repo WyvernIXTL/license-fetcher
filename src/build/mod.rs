@@ -28,14 +28,14 @@
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
 //!     let config: Config = ConfigBuilder::from_build_env()
 //!         .build()
-//!         .expect("Failed to build configuration.");
+//!         .expect("failed to build configuration");
 //!
 //!     // `packages` does not hold any licenses!
 //!     let packages: PackageList = package_list(&config)
-//!         .expect("Failed to fetch metadata.");
+//!         .expect("failed to fetch metadata");
 //!
 //!     // Write packages to out dir to be embedded.
-//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!     packages.write_package_list_to_out_dir().expect("failed to write package list");
 //!
 //!     // Rerun only if one of the following files changed:
 //!     println!("cargo::rerun-if-changed=build.rs");
@@ -56,13 +56,13 @@
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
 //!     let config: Config = ConfigBuilder::from_build_env()
 //!         .build()
-//!         .expect("Failed to build configuration.");
+//!         .expect("failed to build configuration");
 //!
 //!     let packages: PackageList = package_list_with_licenses(&config)
-//!                                     .expect("Failed to fetch metadata or licenses.");
+//!                                     .expect("failed to fetch metadata or licenses");
 //!
 //!     // Write packages to out dir to be embedded.
-//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!     packages.write_package_list_to_out_dir().expect("failed to write package list");
 //!
 //!     // Rerun only if one of the following files changed:
 //!     println!("cargo::rerun-if-changed=build.rs");
@@ -95,7 +95,7 @@
 //! fn create_dummy_file() {
 //!     let out_dir = std::env::var_os("OUT_DIR").expect("OUT_DIR not set");
 //!     let path = PathBuf::from(out_dir).join(OUT_FILE_NAME);
-//!     std::fs::File::create(path).expect("Failed to create dummy file");
+//!     std::fs::File::create(path).expect("failed to create dummy file");
 //! }
 //!
 //! fn main() {
@@ -150,13 +150,13 @@
 //!         Ok(package_list) => println!("{package_list}"),
 //!         Err(UnpackError::Empty) => {
 //!             eprintln!(
-//!                 "Failed to embed license data during build. Please see ... for license data information."
+//!                 "failed to embed license data during build. Please see ... for license data information"
 //!             );
 //!             exit(0); // or exitcode 1 for signaling failure
 //!         }
 //!         Err(err) => {
 //!             eprintln!(
-//!                 "An error during decompression or deserialization of license data has occurred:\n{err}"
+//!                 "an error during decompression or deserialization of license data has occurred:\n{err}"
 //!             );
 //!             exit(1);
 //!         }
