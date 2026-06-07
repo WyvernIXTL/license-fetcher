@@ -105,9 +105,6 @@ pub enum EK {
 /// Error occurring when fetching licenses.
 ///
 /// This error aims to be somewhat recoverable. The docs of [`EK`] (Error Kind) have some tips on recovery.
-///
-/// This error is always returned being wrapped in [`Exn`]. `Exn` stores an human readable error chain with the module and lines attached, where the error stems from.
-/// If you want to debug the error, I advise you not to remove this wrapper.
 #[derive(Clone)]
 pub struct LicenseFetcherError {
     /// Verbose message with error chain to root cause.
