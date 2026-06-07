@@ -122,9 +122,17 @@ impl fmt::Display for LicenseFetcherError {
 impl fmt::Debug for LicenseFetcherError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.kind == EK::Unrecoverable {
-            write!(f, "\n--- {{ UNRECOVERABLE ERROR }} ---\n{}", self.message)
+            write!(
+                f,
+                "\n--- {{ UNRECOVERABLE FETCHER ERROR }} ---\n{}",
+                self.message
+            )
         } else {
-            write!(f, "\n--- {{ RECOVERABLE ERROR }} ---\n{}", self.message)
+            write!(
+                f,
+                "\n--- {{ RECOVERABLE FETCHER ERROR }} ---\n{}",
+                self.message
+            )
         }
     }
 }

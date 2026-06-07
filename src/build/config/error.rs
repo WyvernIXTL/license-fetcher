@@ -100,9 +100,17 @@ impl fmt::Display for ConfigBuilderError {
 impl fmt::Debug for ConfigBuilderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.kind == CEK::Unrecoverable {
-            write!(f, "\n--- {{ UNRECOVERABLE ERROR }} ---\n{}", self.message)
+            write!(
+                f,
+                "\n--- {{ UNRECOVERABLE CONFIG BUILDER ERROR }} ---\n{}",
+                self.message
+            )
         } else {
-            write!(f, "\n--- {{ RECOVERABLE ERROR }} ---\n{}", self.message)
+            write!(
+                f,
+                "\n--- {{ RECOVERABLE CONFIG BUILDER ERROR }} ---\n{}",
+                self.message
+            )
         }
     }
 }
