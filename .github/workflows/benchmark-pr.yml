@@ -15,3 +15,4 @@ jobs:
         with:
           features: "build"
           token: ${{ secrets.GITHUB_TOKEN }}
+          branchName: ${{ github.base_ref }}
