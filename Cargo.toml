@@ -27,7 +27,7 @@ debug = true
 
 [dependencies]
 exn = { version = "0.3.1", optional = true }
-log = { version = "0.4.30", optional = true}
+log = { version = "0.4.32", optional = true}
 lz4_flex = { version = "0.13.1", default-features = false, features = ["checked-decode"]}
 nanoserde = { version = "0.2.1", default-features = false, features = ["std", "json", "binary"] }
 regex-lite = { version = "0.1.9", optional = true }
@@ -39,7 +39,7 @@ arbitrary = { version = "1.4.2", features = ["derive"] }
 arbtest = "0.3.2"
 assert2 = "0.4.0"
 criterion = "0.8.2"
-serial_test = "3.4.0"
+serial_test = "3.5.0"
 simplelog = "0.12.2"
 tempfile = "3.27.0"
 
