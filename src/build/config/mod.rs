@@ -35,6 +35,8 @@
 //! `main.rs`:
 //!
 //! ```
+//! use std::path::PathBuf;
+//!
 //! use license_fetcher::prelude::*;
 //!
 //! fn main() {

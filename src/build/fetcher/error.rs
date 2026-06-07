@@ -92,7 +92,7 @@ pub enum EK {
     /// # use license_fetcher::prelude::*;
     /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
     /// let recovery_config: Config = Config {
-    ///     metadata_config: {
+    ///     metadata_config: MetadataConfig {
     ///         cargo_path: PathBuf::from("cargo"),
     ///         ..your_config.metadata_config
     ///     },

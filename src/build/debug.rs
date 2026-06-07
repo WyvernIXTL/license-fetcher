@@ -11,11 +11,9 @@ use simplelog::{CombinedLogger, Config, WriteLogger};
 static SETUP_ONCE: Once = Once::new();
 
 pub(crate) fn setup_logger() {
-    let log_file_path = PathBuf::from(
-        std::env::var_os("CARGO_TARGET_DIR ")
-            .expect("'CARGO_TARGET_DIR' should be set for the initialization of logger"),
-    )
-    .join("license-fetcher.log");
+    let log_file_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("target")
+        .join("license-fetcher.log");
 
     let log_file = File::create(log_file_path).expect("log file should be creatable");
 

@@ -12,7 +12,9 @@
  * ```
  */
 
-pub use crate::{read_package_list_from_out_dir, Package, PackageList, OUT_FILE_NAME};
+pub use crate::{
+    error::UnpackError, read_package_list_from_out_dir, Package, PackageList, OUT_FILE_NAME,
+};
 
 #[cfg(feature = "build")]
 pub use crate::build::{
