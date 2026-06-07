@@ -250,7 +250,10 @@ impl AsRef<MetadataConfig> for Config {
 fn maybe_cache_path_from_env() -> Option<PathBuf> {
     var_os("OUT_DIR")
         .map(|out_dir| PathBuf::from(out_dir).join(OUT_FILE_NAME))
-        .filter(|path| path.exists())
+        .filter(|path| {
+            path.metadata()
+                .is_ok_and(|metadata| metadata.is_file() && metadata.len() != 0)
+        })
 }
 
 /// Builder for Config struct.
