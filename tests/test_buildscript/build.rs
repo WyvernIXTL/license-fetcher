@@ -1,6 +1,4 @@
-use license_fetcher::build::config::{Config, ConfigBuilder};
-use license_fetcher::build::package_list_with_licenses;
-use license_fetcher::PackageList;
+use license_fetcher::prelude::*;
 
 fn main() {
     // Config with environment variables set by cargo, to fetch licenses at build time.
