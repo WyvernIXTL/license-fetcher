@@ -23,7 +23,7 @@
 //! `src/main.rs`
 //!
 //! ```no_run
-//! use license_fetcher::read_package_list_from_out_dir;
+//! use license_fetcher::prelude::*;
 //! fn main() {
 //!     let package_list = read_package_list_from_out_dir!().unwrap();
 //! }
@@ -33,9 +33,7 @@
 //! `build.rs`
 //!
 //! ```
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::package_list_with_licenses;
-//! use license_fetcher::PackageList;
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
@@ -67,9 +65,7 @@
 //! use std::fs::read_to_string;
 //! use std::concat;
 //!
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::package_list;
-//! use license_fetcher::{PackageList, Package};
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.

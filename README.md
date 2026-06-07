@@ -52,9 +52,7 @@ This library requires you to execute it for fetching licenses in a build script.
 Create a file called `build.rs` in the root of your project and add following contents:
 
 ```rust
-use license_fetcher::build::config::{ConfigBuilder, Config};
-use license_fetcher::build::package_list_with_licenses;
-use license_fetcher::PackageList;
+use license_fetcher::prelude::*;
 
 fn main() {
     // Config with environment variables set by cargo, to fetch licenses at build time.
@@ -81,7 +79,7 @@ fn main() {
 Add following content to your `main.rs`:
 
 ```rust
-use license_fetcher::read_package_list_from_out_dir;
+use license_fetcher::prelude::*;
 
 fn main() {
     let package_list = read_package_list_from_out_dir!().unwrap();

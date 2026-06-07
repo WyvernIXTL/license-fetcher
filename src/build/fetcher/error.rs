@@ -52,7 +52,7 @@ pub enum EK {
     ///
     /// To recover from this error, disable the use of the cache.
     /// ```
-    /// # use crate::build::config::{Config, ConfigBuilder};
+    /// # use license_fetcher::prelude::*;
     /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
     /// let recovery_config: Config = Config {
     ///     cache_path: None,
@@ -70,7 +70,7 @@ pub enum EK {
     ///
     /// You could try to recover from this error by testing different common paths.
     /// ```
-    /// # use crate::build::config::{Config, ConfigBuilder};
+    /// # use license_fetcher::prelude::*;
     /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
     /// let recovery_config: Config = Config {
     ///     // This folder is checked by default when using [`crate::build::config::ConfigBuilder`]
@@ -89,7 +89,7 @@ pub enum EK {
     /// *Maybe* setting the cargo path to `cargo` fixes the issue (I think, I actually encountered this once with `deps` in CI).
     /// ```
     /// # use std::path::PathBuf;
-    /// # use crate::build::config::{Config, ConfigBuilder};
+    /// # use license_fetcher::prelude::*;
     /// # let your_config = ConfigBuilder::from_build_env().build().unwrap();
     /// let recovery_config: Config = Config {
     ///     metadata_config: {

@@ -14,8 +14,8 @@
 //!
 //! `build.rs`:
 //!
-//! ```rs
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! ```
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     let config: Config = ConfigBuilder::from_build_env()
@@ -34,8 +34,8 @@
 //!
 //! `main.rs`:
 //!
-//! ```rs
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
+//! ```
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     let my_path = PathBuf::from(".");
@@ -123,7 +123,7 @@ impl fmt::Display for CargoDirective {
 /// ```
 /// and if your ci also builds your program without lock, then
 /// ```
-/// # use license_fetcher::build::config::CargoDirectiveList;
+/// # use license_fetcher::prelude::*;
 /// let cargo_directives = CargoDirectiveList::default();
 /// ```
 /// or
@@ -142,7 +142,7 @@ impl fmt::Display for CargoDirective {
 /// ```
 /// then be sure to set [`CargoDirective::Locked`] before [`CargoDirective::Default`]:
 /// ```
-/// # use license_fetcher::build::config::{CargoDirectiveList, CargoDirective};
+/// # use license_fetcher::prelude::*;
 /// let cargo_directives = CargoDirectiveList(vec![CargoDirective::Locked, CargoDirective::Default]);
 /// ```
 /// or

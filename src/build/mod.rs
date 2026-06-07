@@ -22,9 +22,7 @@
 //! `build.rs`
 //!
 //! ```
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::package_list;
-//! use license_fetcher::PackageList;
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
@@ -52,9 +50,7 @@
 //! `build.rs`
 //!
 //! ```
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::package_list_with_licenses;
-//! use license_fetcher::PackageList;
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
@@ -87,13 +83,7 @@
 //! ```
 //! use std::{env::VarError, error::Error, path::PathBuf};
 //!
-//! use license_fetcher::{
-//!     OUT_FILE_NAME, PackageList,
-//!     build::{
-//!         config::{Config, ConfigBuilder},
-//!         package_list_with_licenses,
-//!     },
-//! };
+//! use license_fetcher::prelude::*;
 //!
 //! fn fetch_and_embed_licenses() -> Result<(), Box<dyn Error>> {
 //!     let config: Config = ConfigBuilder::from_build_env().build()?;
@@ -153,7 +143,7 @@
 //! ```
 //! use std::process::exit;
 //!
-//! use license_fetcher::{error::UnpackError, read_package_list_from_out_dir};
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     match read_package_list_from_out_dir!() {
