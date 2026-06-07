@@ -52,22 +52,21 @@ This library requires you to execute it for fetching licenses in a build script.
 Create a file called `build.rs` in the root of your project and add following contents:
 
 ```rust
-use license_fetcher::build::config::{ConfigBuilder, Config};
-use license_fetcher::build::package_list_with_licenses;
-use license_fetcher::PackageList;
+use license_fetcher::prelude::*;
 
 fn main() {
     // Config with environment variables set by cargo, to fetch licenses at build time.
     let config: Config = ConfigBuilder::from_build_env()
         .build()
-        .expect("Failed to build configuration.");
+        .expect("failed to build configuration");
 
-    // Fetch metadata and licenses.
-    let packages: PackageList = package_list_with_licenses(&config)
-                                    .expect("Failed to fetch metadata or licenses.");
+    let packages: PackageList =
+        package_list_with_licenses(&config).expect("failed to fetch metadata or licenses");
 
     // Write packages to out dir to be embedded.
-    packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+    packages
+        .write_package_list_to_out_dir()
+        .expect("failed to write package list");
 
     // Rerun only if one of the following files changed:
     println!("cargo::rerun-if-changed=build.rs");
@@ -81,7 +80,7 @@ fn main() {
 Add following content to your `main.rs`:
 
 ```rust
-use license_fetcher::read_package_list_from_out_dir;
+use license_fetcher::prelude::*;
 
 fn main() {
     let package_list = read_package_list_from_out_dir!().unwrap();

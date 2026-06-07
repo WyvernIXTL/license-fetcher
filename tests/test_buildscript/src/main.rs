@@ -1,4 +1,4 @@
-use license_fetcher::read_package_list_from_out_dir;
+use license_fetcher::prelude::*;
 
 fn main() {
     println!("Integration Test");

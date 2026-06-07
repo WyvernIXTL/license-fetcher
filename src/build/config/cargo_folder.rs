@@ -4,56 +4,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{env::var_os, error::Error, fmt, path::PathBuf};
+use std::{env::var_os, path::PathBuf};
 
-use error_stack::{ensure, Report, Result};
+use exn::{ensure, OptionExt, Result};
 
-use crate::build::error::CPath;
+use crate::build::config::Cie;
 
-/// Error dealing with failed attempts to determine the users cargo home folder.
-#[derive(Debug, Clone, Copy)]
-pub enum CargoFolderError {
-    /// failed to find the home directory
-    HomeDirNotFound,
-    /// given or inferred cargo home folder location does not exist
-    DoesNotExist,
-    /// inferred or supplied cargo home folder is not a folder
-    IsNotDir,
-}
-
-impl fmt::Display for CargoFolderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::HomeDirNotFound => write!(f, "failed to find the home directory"),
-            Self::DoesNotExist => write!(
-                f,
-                "given or inferred cargo home folder location does not exist"
-            ),
-            Self::IsNotDir => write!(f, "inferred or supplied cargo home folder is not a folder"),
-        }
-    }
-}
-
-impl Error for CargoFolderError {}
-
-pub fn cargo_folder() -> Result<PathBuf, CargoFolderError> {
+pub(super) fn cargo_folder() -> Result<PathBuf, Cie> {
     let cargo_home: PathBuf;
 
     if let Some(path) = var_os("CARGO_HOME") {
         cargo_home = path.into();
     } else {
-        let home_dir =
-            std::env::home_dir().ok_or(Report::new(CargoFolderError::HomeDirNotFound))?;
+        let home_dir = std::env::home_dir().ok_or_raise(|| {
+            Cie::new("`std::env::home_dir` should return the home directory of the user")
+        })?;
         cargo_home = home_dir.join(".cargo");
     }
 
     ensure!(
         cargo_home.exists(),
-        Report::new(CargoFolderError::DoesNotExist).attach_printable(CPath::from(&cargo_home))
+        Cie::new("cargo home folder should exist at path").with_path(cargo_home)
     );
     ensure!(
         cargo_home.is_dir(),
-        Report::new(CargoFolderError::IsNotDir).attach_printable(CPath::from(&cargo_home))
+        Cie::new("cargo home path should point to a folder").with_path(cargo_home)
     );
 
     Ok(cargo_home)

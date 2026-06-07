@@ -1,10 +1,7 @@
 use std::sync::LazyLock;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use license_fetcher::build::{
-    config::{CargoDirective, Config, ConfigBuilder},
-    package_list,
-};
+use license_fetcher::prelude::*;
 
 static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     ConfigBuilder::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
@@ -16,7 +13,7 @@ static CONFIG: LazyLock<Config> = LazyLock::new(|| {
 fn bench_fetch_licenses(c: &mut Criterion) {
     c.bench_function("package_list_with_licenses", |b| {
         b.iter(|| {
-            let _a = license_fetcher::build::package_list_with_licenses(&*CONFIG);
+            let _a = package_list_with_licenses(&*CONFIG);
         })
     });
 }

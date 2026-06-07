@@ -1,17 +1,17 @@
-// Copyright Adam McKellar 2025
+// Copyright Adam McKellar 2025, 2026
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::env::VarError;
-use std::{env::var_os, ffi::OsStr, path::PathBuf};
+use std::{env::var_os, path::PathBuf};
 
-use error_stack::{Result, ResultExt};
+use exn::{OptionExt, Result};
 
-use crate::build::error::CEnvVar;
+use crate::build::config::error::CEK;
+use crate::build::config::Cie;
 
-use super::{ConfigBuildError, ConfigBuilder};
+use super::ConfigBuilder;
 
 struct MetadataEnv {
     manifest_dir: PathBuf,
@@ -19,20 +19,22 @@ struct MetadataEnv {
 }
 
 impl MetadataEnv {
-    fn new() -> Result<Self, VarError> {
+    fn new() -> Result<Self, Cie> {
         Ok(Self {
-            manifest_dir: path_buf_from_env("CARGO_MANIFEST_DIR")?,
-            cargo_path: path_buf_from_env("CARGO")?,
+            manifest_dir: var_os("CARGO_MANIFEST_DIR")
+                .ok_or_raise(|| {
+                    Cie::new("within a build script the `CARGO_MANIFEST_DIR` env var should be set")
+                        .with_kind(CEK::FailedFromEnvVars)
+                })?
+                .into(),
+            cargo_path: var_os("CARGO")
+                .ok_or_raise(|| {
+                    Cie::new("within a build script the `CARGO` env var should be set")
+                        .with_kind(CEK::FailedFromEnvVars)
+                })?
+                .into(),
         })
     }
-}
-
-fn path_buf_from_env(env: impl AsRef<OsStr>) -> Result<PathBuf, VarError> {
-    let env_value = var_os(&env)
-        .ok_or(VarError::NotPresent)
-        .attach_printable_lazy(|| CEnvVar::from(env))?;
-
-    Ok(PathBuf::from(env_value))
 }
 
 impl ConfigBuilder {
@@ -42,14 +44,14 @@ impl ConfigBuilder {
     /// The environment variables used are set by cargo during build.
     #[must_use]
     pub fn with_build_env(mut self) -> Self {
-        match MetadataEnv::new().change_context(ConfigBuildError::FailedFromEnvVars) {
+        match MetadataEnv::new() {
             Ok(meta) => {
                 self = self
                     .manifest_dir(meta.manifest_dir)
                     .cargo_path(meta.cargo_path);
             }
-            Err(e) => {
-                self.error.join(e);
+            Err(err) => {
+                self.errors.push(err.raise(Cie::new("within a build script the `with_build_env` and `from_build_env` methods should succeed")));
             }
         }
 
@@ -73,13 +75,12 @@ impl ConfigBuilder {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    use crate::build::debug::setup_test;
+    use crate::build::config::error::ConfigBuilderError;
 
     use super::*;
 
     #[test]
-    fn test_config_from_env() -> Result<(), ConfigBuildError> {
-        setup_test();
+    fn test_config_from_env() -> Result<(), ConfigBuilderError> {
         let conf = ConfigBuilder::from_build_env().build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,

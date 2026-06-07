@@ -6,14 +6,14 @@
 
 use std::{collections::HashSet, process::Output};
 
-use error_stack::{Result, ResultExt};
+use exn::{Result, ResultExt};
 
 use crate::build::{
     config::MetadataConfig,
-    metadata::{exec::exec_cargo, PkgListFromCargoMetadataError},
+    fetcher::{error::IE, metadata::exec::exec_cargo},
 };
 
-fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, PkgListFromCargoMetadataError> {
+fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, IE> {
     const ARGUMENTS: &[&str] = &[
         "tree",
         "-e",
@@ -27,14 +27,12 @@ fn exec_cargo_tree(config: &MetadataConfig) -> Result<Output, PkgListFromCargoMe
         "--no-dedupe",
     ];
 
-    exec_cargo(config, &ARGUMENTS).change_context(PkgListFromCargoMetadataError::ExecCargo)
+    exec_cargo(config, &ARGUMENTS).or_raise(|| IE::new("`cargo tree` should execute successfully"))
 }
 
-fn parse_cargo_tree_output(
-    output: Output,
-) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
+fn parse_cargo_tree_output(output: Output) -> Result<HashSet<String>, IE> {
     Ok(String::from_utf8(output.stdout)
-        .change_context(PkgListFromCargoMetadataError::ParseString)?
+        .or_raise(|| IE::new("the output of `cargo tree` should be valid UTF-8"))?
         .lines()
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -43,9 +41,9 @@ fn parse_cargo_tree_output(
         .collect::<HashSet<String>>())
 }
 
-pub fn exec_cargo_tree_and_parse_output(
+pub(super) fn exec_cargo_tree_and_parse_output(
     config: &MetadataConfig,
-) -> Result<HashSet<String>, PkgListFromCargoMetadataError> {
+) -> Result<HashSet<String>, IE> {
     let output = exec_cargo_tree(config)?;
     parse_cargo_tree_output(output)
 }

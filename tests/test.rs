@@ -1,10 +1,14 @@
-// TODO: WTF is this!?
+// ? WTF is this!?
 
 use std::sync::LazyLock;
 
 use assert2::assert;
-use license_fetcher::{Package, OUT_FILE_NAME};
+use license_fetcher::prelude::*;
 use serial_test::serial;
+
+mod common;
+
+use common::setup;
 
 static TEST_CRATE_ROOT_PACKAGE: LazyLock<Package> = LazyLock::new(|| {
     Package::builder("test_crate", "0.1.0")
@@ -37,13 +41,15 @@ fn test_generate_licenses_with_test_crate() {
     use assert2::check;
     use license_fetcher::build::config::{CargoDirective, ConfigBuilder};
 
+    setup();
+
     let config = ConfigBuilder::default()
         .with_path(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test_crate"))
         .cargo_directives([CargoDirective::Locked])
         .build()
         .unwrap();
 
-    let licenses = license_fetcher::build::package_list_with_licenses(&config).unwrap();
+    let licenses = package_list_with_licenses(&config).unwrap();
 
     check!(
         licenses.len() > 0
@@ -70,10 +76,8 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
     use std::fs::read;
 
     use assert2::check;
-    use license_fetcher::{
-        build::{config::ConfigBuilder, package_list_with_licenses},
-        PackageList,
-    };
+
+    setup();
 
     let temp_dir = tempfile::tempdir().unwrap();
     unsafe {
@@ -117,7 +121,7 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
 #[test]
 #[serial]
 fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
-    use license_fetcher::build::{config::ConfigBuilder, package_list_with_licenses};
+    setup();
 
     let temp_dir = tempfile::tempdir().unwrap();
     unsafe {

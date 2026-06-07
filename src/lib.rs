@@ -23,7 +23,7 @@
 //! `src/main.rs`
 //!
 //! ```no_run
-//! use license_fetcher::read_package_list_from_out_dir;
+//! use license_fetcher::prelude::*;
 //! fn main() {
 //!     let package_list = read_package_list_from_out_dir!().unwrap();
 //! }
@@ -33,21 +33,21 @@
 //! `build.rs`
 //!
 //! ```
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::package_list_with_licenses;
-//! use license_fetcher::PackageList;
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
 //!     let config: Config = ConfigBuilder::from_build_env()
 //!         .build()
-//!         .expect("Failed to build configuration.");
+//!         .expect("failed to build configuration");
 //!
-//!     let packages: PackageList = package_list_with_licenses(&config)
-//!                                     .expect("Failed to fetch metadata or licenses.");
+//!     let packages: PackageList =
+//!         package_list_with_licenses(&config).expect("failed to fetch metadata or licenses");
 //!
 //!     // Write packages to out dir to be embedded.
-//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!     packages
+//!         .write_package_list_to_out_dir()
+//!         .expect("failed to write package list");
 //!
 //!     // Rerun only if one of the following files changed:
 //!     println!("cargo::rerun-if-changed=build.rs");
@@ -67,19 +67,17 @@
 //! use std::fs::read_to_string;
 //! use std::concat;
 //!
-//! use license_fetcher::build::config::{ConfigBuilder, Config};
-//! use license_fetcher::build::package_list;
-//! use license_fetcher::{PackageList, Package};
+//! use license_fetcher::prelude::*;
 //!
 //! fn main() {
 //!     // Config with environment variables set by cargo, to fetch licenses at build time.
 //!     let config: Config = ConfigBuilder::from_build_env()
 //!         .build()
-//!         .expect("Failed to build configuration.");
+//!         .expect("failed to build configuration");
 //!
 //!     // `packages` does not hold any licenses!
 //!     let mut packages: PackageList = package_list(&config)
-//!         .expect("Failed to fetch metadata.");
+//!         .expect("failed to fetch metadata");
 //!
 //!     let other_dependency = Package::builder("other dependency", "0.1.0")
 //!         .add_author("Me")
@@ -87,14 +85,14 @@
 //!         .add_license_text(
 //!             "other dependency license",
 //!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
-//!             .expect("Failed reading license of other dependency")
+//!             .expect("failed reading license of other dependency")
 //!         )
 //!         .build();
 //!
 //!     packages.push(other_dependency);
 //!
 //!     // Write packages to out dir to be embedded.
-//!     packages.write_package_list_to_out_dir().expect("Failed to write package list.");
+//!     packages.write_package_list_to_out_dir().expect("failed to write package list");
 //!
 //!     // Rerun only if one of the following files changed:
 //!     println!("cargo::rerun-if-changed=build.rs");
@@ -139,6 +137,9 @@ pub mod error;
 /// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
 pub mod build;
+
+/// Prelude of `license-fetcher`.
+pub mod prelude;
 
 /// The file name used for writing and reading the serialized package list.
 pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";

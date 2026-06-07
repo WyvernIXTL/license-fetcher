@@ -4,77 +4,63 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::{error::Error, fmt, fs::read_dir};
+use std::fs::read_dir;
 
-use error_stack::{ensure, Report};
-use error_stack::{Result, ResultExt};
+use exn::{ensure, OptionExt, Result, ResultExt};
 
-use crate::build::error::CPath;
+use crate::build::config::error::CEK;
 
-use super::{ConfigBuildError, ConfigBuilder, PathBuf};
+use super::{Cie, ConfigBuilder, PathBuf};
 
-/// Error that appears during failed build of config via [`ConfigBuilder::from_path()`].
-#[derive(Debug, Clone, Copy)]
-pub enum FromPathError {
-    /// path supplied either does not exist or this program does not have the permissions to read it
-    PathDoesNotExist,
-    /// `Cargo.toml` manifest not found
-    ManifestNotFound,
-    /// io error
-    Io,
-}
-
-impl fmt::Display for FromPathError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::PathDoesNotExist => write!(f, "path supplied either does not exist or this program does not have the permissions to read it"),
-            Self::ManifestNotFound => write!(f, "`Cargo.toml` manifest not found"),
-            Self::Io => write!(f, "io error"),
-        }
-    }
-}
-
-impl Error for FromPathError {}
-
-fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_path_from_file_path(uncertain_file_path: PathBuf) -> Result<PathBuf, Cie> {
     debug_assert!(uncertain_file_path.is_file());
 
     ensure!(
-        uncertain_file_path
-            .file_name()
-            .ok_or(FromPathError::ManifestNotFound)
-            .attach_printable("Path to file provided has an invalid file name.")
-            .attach_printable_lazy(|| CPath::from(&uncertain_file_path))?
+        uncertain_file_path.file_name().ok_or_raise(|| Cie::new(
+            "path to manifest file should point to a file with a file name not `..`"
+        )
+        .with_path(&uncertain_file_path)
+        .with_kind(CEK::FailedFromPath))?
             == "Cargo.toml",
-        Report::new(FromPathError::ManifestNotFound)
-            .attach_printable("The provided path points to a file that is not 'Cargo.toml'.")
-            .attach_printable(CPath::from(&uncertain_file_path))
+        Cie::new("path to manifest file should point to a file with the name `Cargo.toml`")
+            .with_path(&uncertain_file_path)
+            .with_kind(CEK::FailedFromPath)
     );
 
     Ok(uncertain_file_path)
 }
 
-fn manifest_path_from_dir_path(uncertain_dir_path: &PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_path_from_dir_path(uncertain_dir_path: &PathBuf) -> Result<PathBuf, Cie> {
     debug_assert!(uncertain_dir_path.is_dir());
 
     read_dir(uncertain_dir_path)
-        .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
-        .change_context(FromPathError::Io)?
+        .or_raise(|| {
+            Cie::new("directory with manifest file should be readable")
+                .with_path(uncertain_dir_path)
+                .with_kind(CEK::FailedFromPath)
+        })?
         .filter_map(std::result::Result::ok)
         .find(|e| e.file_type().is_ok_and(|e| e.is_file()) && e.file_name() == "Cargo.toml")
         .map(|e| e.path())
-        .ok_or_else(|| Report::new(FromPathError::ManifestNotFound))
-        .attach_printable_lazy(|| CPath::from(&uncertain_dir_path))
+        .ok_or_raise(|| {
+            Cie::new("manifest file should be in directory")
+                .with_path(uncertain_dir_path)
+                .with_kind(CEK::FailedFromPath)
+        })
 }
 
-fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
+fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, Cie> {
     ensure!(
-        uncertain_path
-            .try_exists()
-            .attach_printable_lazy(|| CPath::from(&uncertain_path))
-            .attach_printable("Failed verifying existence of provided path.")
-            .change_context(FromPathError::Io)?,
-        Report::new(FromPathError::PathDoesNotExist).attach_printable(CPath::from(&uncertain_path))
+        uncertain_path.try_exists().or_raise(|| Cie::new(
+            "path to manifest file or dir should be verifiable to exist or not exist"
+        )
+        .with_path(&uncertain_path)
+        .with_kind(CEK::FailedFromPath))?,
+        Cie::new(
+            "path to manifest file or dir should point to an existing entity (file or folder)"
+        )
+        .with_path(uncertain_path)
+        .with_kind(CEK::FailedFromPath)
     );
 
     let manifest_path = if uncertain_path.is_file() {
@@ -85,8 +71,11 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, FromPathError> {
 
     Ok(manifest_path
         .parent()
-        .ok_or(FromPathError::Io)
-        .attach_printable_lazy(|| CPath::from(&manifest_path))?
+        .ok_or_raise(|| {
+            Cie::new("path to manifest was determined, but path to the parent directory should also be determinable")
+                .with_path(&manifest_path)
+                .with_kind(CEK::FailedFromPath)
+        })?
         .to_path_buf())
 }
 
@@ -97,9 +86,11 @@ impl ConfigBuilder {
     /// Essentially a sanity check.
     #[must_use]
     pub fn with_path(mut self, manifest_path: impl Into<PathBuf>) -> Self {
-        match manifest_dir(manifest_path.into()).change_context(ConfigBuildError::FailedFromPath) {
+        match manifest_dir(manifest_path.into()) {
             Ok(manifest_dir) => self = self.manifest_dir(manifest_dir),
-            Err(e) => self.error.join(e),
+            Err(err) => self
+                .errors
+                .push(err.raise(Cie::new("manifest directory should be determinable"))),
         }
         self
     }
@@ -120,13 +111,12 @@ impl ConfigBuilder {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    use crate::build::debug::setup_test;
+    use crate::build::config::error::ConfigBuilderError;
 
     use super::*;
 
     #[test]
-    fn test_from_path_with_file_path() -> Result<(), ConfigBuildError> {
-        setup_test();
+    fn test_from_path_with_file_path() -> Result<(), ConfigBuilderError> {
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_PATH")).build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,
@@ -141,8 +131,7 @@ mod test {
     }
 
     #[test]
-    fn test_from_path_with_dir_path() -> Result<(), ConfigBuildError> {
-        setup_test();
+    fn test_from_path_with_dir_path() -> Result<(), ConfigBuilderError> {
         let conf = ConfigBuilder::from_path(env!("CARGO_MANIFEST_DIR")).build()?;
         assert_eq!(
             conf.metadata_config.manifest_dir,
