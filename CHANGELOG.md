@@ -11,17 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add text wrapping for crate description and license in display trait.
-- The license texts of a crate are now stored and shown separately.
+- Add text wrapping for package description and license in display trait.
+- The license texts of a package are now stored and shown separately.
 
 ### Changed
 
 - Errors are now standard errors with machine-readable error kinds and verbose stacked error messages.
-  - The verbose message is build on `exn` crate, which is more lightweight than `error-stack`.
+  - The verbose message is build on `exn` package, which is more lightweight than `error-stack`.
   - Public accessible errors are now not dependent on external dependencies, which makes the API more resilient to changes.
 - The `Package` struct now does not have private fields and can be freely constructed and inspected.
 - Replaced the `package!` macro with `PackageBuilder` builder.
-- The `directories` crate is removed in favor of the now stabilized `std::env::home_dir` function.
+- The `directories` package is removed in favor of the now stabilized `std::env::home_dir` function.
 - The `cache` method of the `ConfigBuilder` now requires a path to a cache file.
 - The `package_list` method is moved into the `build` module.
 - The `package_list` method now returns the packages sorted with the first package being the root package.
@@ -58,11 +58,11 @@ The release of v0.9.0 brings a speed-up of compilation compared to v0.8.4. The A
 
 ### Changed
 
-- Removed `thiserror` and `fnv` crate for a small compilation speed-up.
-- Switched from `bincode` to `nanoserde` crate, as the former was abandoned.
+- Removed `thiserror` and `fnv` package for a small compilation speed-up.
+- Switched from `bincode` to `nanoserde` package, as the former was abandoned.
 - Switched back to `lz4_flex` from `miniz_oxide` for a small compilation speed-up.
 - Moved from `serde` and `serde_json` to the much smaller `nanoserde` for a major speed-up of compilation.
-- Turned off `kv` feature of `log` crate. Maybe there is a compilation speed-up?
+- Turned off `kv` feature of `log` package. Maybe there is a compilation speed-up?
 
 
 ## v0.8.4

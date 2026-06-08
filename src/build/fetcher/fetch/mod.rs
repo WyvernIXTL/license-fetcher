@@ -122,7 +122,7 @@ pub(super) fn populate_package_list_licenses(
                             result.join(
                                 err.raise(
                                     IE::new(format!(
-                                        "fetching licenese for crate \"{}\" should succeed",
+                                        "fetching licenese for package \"{}\" should succeed",
                                         &p.package.name
                                     ))
                                     .with_path(e.path()),

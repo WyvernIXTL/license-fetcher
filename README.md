@@ -25,7 +25,7 @@
 
 ## Workings
 
-Crates that are compiled with your program are fetched via `cargo metadata` and `cargo tree`.
+Names of packages that are compiled with your program are fetched via `cargo metadata` and `cargo tree`.
 License texts are read from the `.cargo/registry/src` folder.
 The data is then serialized, compressed and embedded.
 At runtime `license-fetcher` has only very few and lightweight dependencies needed for the
@@ -96,14 +96,14 @@ fn main() {
 
 ## Caveats
 
-`license-fetcher` fetches licenses that are at the root of a crate or in subfolders. This results in some caveats, mainly:
+`license-fetcher` fetches licenses that are at the root of a package or in subfolders. This results in some caveats, mainly:
 
-- Some projects do not upload licenses with their crates. This might happen if a project is split up into many crates.
+- Some projects do not upload licenses with their packages. This might happen if a project is split up into many subpackages.
 - Some wrappers do not attribute the library they are wrapping.
-- Dependencies that are not crates, like dictionaries, are not detected.
+- Dependencies that are not packages, like dictionaries, are not detected.
 
-To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your crates,
-to see what crates license-fetcher fetches.
+To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your packages,
+to see what licenses license-fetcher fetches.
 
 For the latter point there is no workaround, as there is no automated way to detect the use of such dependencies.
 
@@ -121,7 +121,7 @@ A big shout-out!
 - Also retrieves licenses in the build step and embeds them.
 - Can use repo URL to fetch licenses.
 - Can use SPDX to fetch licenses.
-- Smaller and simpler crate.
+- Smaller and simpler package.
 
 #### Cons
 
@@ -167,9 +167,17 @@ These timings are of course for a clean build. For incremental builds setting `c
 in the build script only being run if `Cargo.toml`, `Cargo.lock` or `build.rs` change and build artifacts are of course also cached by cargo.
 
 In conclusion, the build script is fast (0.05s). It is only run if necessary. Compiling `license-fetcher` is also very fast (1.4s for a clean build). 
-As cargo compiles crates in parallel, you'll likely never notice :)
+As cargo compiles packages in parallel, you'll likely never notice :)
 
 
 ## License
 
 This project is licensed under the [MPL 2.0 license](./LICENSE).
+
+## Package vs Crate Terminology
+
+- [Docs about this topic](https://doc.rust-lang.org/book/ch07-01-packages-and-crates.html)
+- [Reddit comment](https://www.reddit.com/r/rust/comments/lvtzri/comment/gpdti5j/)
+
+I often get confused between these two concepts as they are sometimes used interchangeably.
+From what I could gather "package" makes the most sense for license fetcher.

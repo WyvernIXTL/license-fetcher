@@ -6,8 +6,8 @@
 
 //! Fetch licenses of dependencies at build time and embed them into your program.
 //!
-//! `license-fetcher` is a crate for fetching actual license texts from the cargo source directory for
-//! crates that are compiled with your project. It does this in the build step
+//! `license-fetcher` is a package for fetching actual license texts from the cargo source directory for
+//! packages that are compiled with your project. It does this in the build step
 //! in a build script. This means that the heavy dependencies of `license-fetcher`
 //! aren't your dependencies!
 //!
@@ -58,9 +58,9 @@
 //!
 //! **For a more advanced example visit the [`build` module documentation](crate::build).**
 //!
-//! ## Adding Packages that are not Crates
+//! ## Adding Dependencies that are not Packages
 //!
-//! Sometimes we have dependencies that are not crates. For these dependencies `license-fetcher` cannot
+//! Sometimes we have dependencies that are not packages. For these dependencies `license-fetcher` cannot
 //! automatically generate information. These dependencies can be added manually:
 //!
 //! ```
@@ -108,8 +108,7 @@
 //!
 //! ## Error Handling
 //!
-//! During build time, error handling is done via the [`error_stack` crate](https://docs.rs/error-stack/latest/error_stack/).
-//! `error_stack`s `Report`s offer very good debug prints, but are relatively hard to parse or match against.
+//! TODO: mention new errors here
 //!
 //! The [`read_package_list_from_out_dir`] macro on the other hand returns [`UnpackError`], which can be normally handled with
 //! match clauses (see the [`build` module documentation](crate::build) for an example).
@@ -439,7 +438,7 @@ impl PackageBuilder {
     }
 }
 
-/// Holds information of all crates and licenses used for a release build.
+/// Holds information of all packages and licenses used for a release build.
 #[derive(DeBin, Debug, PartialEq, Eq, Clone, Default)]
 #[cfg_attr(feature = "build", derive(nanoserde::SerBin))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -482,7 +481,7 @@ impl fmt::Display for PackageList {
 }
 
 impl PackageList {
-    /// Decompresses and deserializes the crate and license information.
+    /// Decompresses and deserializes the package and license information.
     ///
     /// ## Example
     /// If you intend to embed license information:

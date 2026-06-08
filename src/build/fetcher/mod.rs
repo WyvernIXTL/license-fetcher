@@ -45,7 +45,7 @@ fn sort_package_list(root_package_name: &str, package_vec: &mut [Package]) -> Re
     let root_pos = package_vec
         .iter()
         .position(|e| e.name == root_package_name)
-        .ok_or_raise(|| IE::new("root crate should be part of license metadata"))?;
+        .ok_or_raise(|| IE::new("root package should be part of license metadata"))?;
 
     package_vec.swap(0, root_pos);
     package_vec[1..].sort();
@@ -69,7 +69,7 @@ fn package_list_internal(config: impl AsRef<MetadataConfig>) -> Result<PackageLi
     let mut package_vec: Vec<Package> = package_iter.collect();
 
     sort_package_list(package_root_name.as_str(), &mut package_vec)
-        .or_raise(|| IE::new("crate list should sort"))?;
+        .or_raise(|| IE::new("package list should sort"))?;
 
     Ok(package_vec.into())
 }
@@ -111,7 +111,7 @@ fn package_list_with_licenses_internal(config: impl AsRef<Config>) -> Result<Pac
     package_vec.extend(wrapped_package_vec.into_iter().map(|p| p.package));
 
     sort_package_list(&root_package_name, &mut package_vec)
-        .or_raise(|| IE::new("crate list should sort"))?;
+        .or_raise(|| IE::new("package list should sort"))?;
 
     attach_root_package_license(config.as_ref(), &mut package_vec[0])
         .or_raise(|| IE::new("license should fetch for root package"))?;
