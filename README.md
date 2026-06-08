@@ -25,7 +25,7 @@
 
 ## Workings
 
-Names of packages that are compiled with your program are fetched via `cargo metadata` and `cargo tree`.
+Metadata of packages that are compiled with your program are fetched via `cargo metadata` and `cargo tree`.
 License texts are read from the `.cargo/registry/src` folder.
 The data is then serialized, compressed and embedded.
 At runtime `license-fetcher` has only very few and lightweight dependencies needed for the
