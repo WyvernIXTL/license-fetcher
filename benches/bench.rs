@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use license_fetcher::prelude::*;
 
 static CONFIG: LazyLock<Config> = LazyLock::new(|| {

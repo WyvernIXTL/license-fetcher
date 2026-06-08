@@ -8,8 +8,8 @@ use std::{env::var_os, path::PathBuf};
 
 use exn::{OptionExt, Result};
 
-use crate::build::config::error::CEK;
 use crate::build::config::Cie;
+use crate::build::config::error::CEK;
 
 use super::ConfigBuilder;
 

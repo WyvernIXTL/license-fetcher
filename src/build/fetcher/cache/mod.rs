@@ -6,14 +6,14 @@
 
 use std::{fs::read, path::Path};
 
-use exn::{ensure, Result, ResultExt};
+use exn::{Result, ResultExt, ensure};
 
 use crate::{
+    Package, PackageList,
     build::{
         fetcher::error::{EK, IE},
         fetcher::wrapper::PackageWrapper,
     },
-    Package, PackageList,
 };
 
 pub(super) fn read_package_list_with_tests(cache_file_path: &Path) -> Result<PackageList, IE> {

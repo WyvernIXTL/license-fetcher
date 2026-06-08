@@ -15,7 +15,7 @@ use regex_lite::Regex;
 
 mod src_registry_folders;
 
-use crate::build::fetcher::error::{ErrorJoin, EK, IE};
+use crate::build::fetcher::error::{EK, ErrorJoin, IE};
 use crate::build::fetcher::wrapper::PackageWrapper;
 use src_registry_folders::src_registry_folders;
 

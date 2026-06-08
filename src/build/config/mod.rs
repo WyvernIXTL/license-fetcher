@@ -56,11 +56,11 @@
 use std::{env::var_os, ffi::OsString, fmt, ops::Deref, path::PathBuf};
 
 use cargo_folder::cargo_folder;
-use exn::{ensure, Exn, OptionExt, Result, ResultExt};
+use exn::{Exn, OptionExt, Result, ResultExt, ensure};
 
 use crate::{
-    build::config::error::{Cie, ConfigBuilderError},
     OUT_FILE_NAME,
+    build::config::error::{Cie, ConfigBuilderError},
 };
 
 #[doc(hidden)]

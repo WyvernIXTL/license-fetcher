@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use exn::{ensure, Result, ResultExt};
+use exn::{Result, ResultExt, ensure};
 
 use crate::build::fetcher::error::{EK, IE};
 

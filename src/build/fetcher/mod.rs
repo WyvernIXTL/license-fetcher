@@ -21,15 +21,15 @@ use exn::ResultExt;
 use fetch::license_texts_from_folder;
 use metadata::package_list_impl;
 
+use crate::Package;
+use crate::PackageList;
 use crate::build::config::Config;
 use crate::build::config::MetadataConfig;
 use crate::build::fetcher::cache::populate_with_cache_from_package_list;
 use crate::build::fetcher::cache::read_package_list_with_tests;
-use crate::build::fetcher::error::LicenseFetcherError;
 use crate::build::fetcher::error::IE;
+use crate::build::fetcher::error::LicenseFetcherError;
 use crate::build::fetcher::wrapper::PackageWrapper;
-use crate::Package;
-use crate::PackageList;
 use fetch::populate_package_list_licenses;
 
 fn wrap_package_iter(

@@ -12,7 +12,7 @@ use log::info;
 use lz4_flex::compress_prepend_size;
 use nanoserde::SerBin;
 
-use crate::{build::write::error::WriteError, PackageList, OUT_FILE_NAME};
+use crate::{OUT_FILE_NAME, PackageList, build::write::error::WriteError};
 
 impl PackageList {
     /// Encodes and compresses a [`PackageList`].

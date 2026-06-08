@@ -10,11 +10,11 @@ use std::{
     process::{Command, Output},
 };
 
-use exn::{bail, ensure, Result, ResultExt};
+use exn::{Result, ResultExt, bail, ensure};
 
 use crate::build::{
     config::{CargoDirective, MetadataConfig},
-    fetcher::error::{ErrorJoin, EK, IE},
+    fetcher::error::{EK, ErrorJoin, IE},
 };
 
 fn exec_cargo_single<P, S, I>(
@@ -53,7 +53,10 @@ where
     if output.status.success() {
         Ok(output)
     } else {
-        bail!(IE::new(format!("cargo should execute with status success (0) | directive: \"{cargo_directive}\" | stderr: \"{}\"", String::from_utf8_lossy(&output.stderr))))
+        bail!(IE::new(format!(
+            "cargo should execute with status success (0) | directive: \"{cargo_directive}\" | stderr: \"{}\"",
+            String::from_utf8_lossy(&output.stderr)
+        )))
     }
 }
 
@@ -64,7 +67,9 @@ where
 {
     ensure!(
         !config.cargo_directives.is_empty(),
-        IE::new("cargo directives in config passed to `exec_cargo` should contain at least one directive")
+        IE::new(
+            "cargo directives in config passed to `exec_cargo` should contain at least one directive"
+        )
     );
 
     let mut err_join = ErrorJoin::new(IE::new("cargo should at least succeed with one directive"));

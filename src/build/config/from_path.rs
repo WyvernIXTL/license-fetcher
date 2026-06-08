@@ -6,7 +6,7 @@
 
 use std::fs::read_dir;
 
-use exn::{ensure, OptionExt, Result, ResultExt};
+use exn::{OptionExt, Result, ResultExt, ensure};
 
 use crate::build::config::error::CEK;
 

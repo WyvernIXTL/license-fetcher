@@ -9,11 +9,12 @@ use std::{
     sync::LazyLock,
 };
 
-use exn::{bail, OptionExt, Result, ResultExt};
+use exn::{OptionExt, Result, ResultExt, bail};
 use nanoserde::DeJson;
 use regex_lite::Regex;
 
 use crate::{
+    Package,
     build::{
         config::MetadataConfig,
         fetcher::{
@@ -24,7 +25,6 @@ use crate::{
             },
         },
     },
-    Package,
 };
 
 fn exec_cargo_metadata(config: &MetadataConfig) -> Result<Metadata, IE> {

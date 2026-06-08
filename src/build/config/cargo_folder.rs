@@ -6,7 +6,7 @@
 
 use std::{env::var_os, path::PathBuf};
 
-use exn::{ensure, OptionExt, Result};
+use exn::{OptionExt, Result, ensure};
 
 use crate::build::config::Cie;
 

@@ -13,17 +13,17 @@
  */
 
 pub use crate::{
-    error::UnpackError, read_package_list_from_out_dir, Package, PackageList, OUT_FILE_NAME,
+    OUT_FILE_NAME, Package, PackageList, error::UnpackError, read_package_list_from_out_dir,
 };
 
 #[cfg(feature = "build")]
 pub use crate::build::{
     config::{
-        error::ConfigBuilderError, error::CEK, CargoDirective, CargoDirectiveList, Config,
-        ConfigBuilder, MetadataConfig,
+        CargoDirective, CargoDirectiveList, Config, ConfigBuilder, MetadataConfig, error::CEK,
+        error::ConfigBuilderError,
     },
     fetcher::{
-        error::{LicenseFetcherError, EK},
+        error::{EK, LicenseFetcherError},
         package_list, package_list_with_licenses,
     },
     write::error::WriteError,

@@ -8,6 +8,7 @@ use exn::Result;
 use std::thread::scope;
 
 use crate::{
+    Package,
     build::fetcher::{
         error::{ErrorJoin, IE},
         metadata::{
@@ -15,7 +16,6 @@ use crate::{
             exec_tree::exec_cargo_tree_and_parse_output,
         },
     },
-    Package,
 };
 
 use crate::build::config::MetadataConfig;
@@ -35,7 +35,9 @@ pub(super) fn package_list_impl(
         let cargo_tree_thread_handle = scope.spawn(|| exec_cargo_tree_and_parse_output(config));
 
         let cargo_metadata_thread_result = cargo_metadata_thread_handle.join().map_err(|e| {
-            IE::new(format!("the `cargo metadata` thread should complete without panic | panic message: '{e:?}'"))
+            IE::new(format!(
+                "the `cargo metadata` thread should complete without panic | panic message: '{e:?}'"
+            ))
         })?;
         let cargo_tree_thread_result = cargo_tree_thread_handle.join().map_err(|e| {
             IE::new(format!(
@@ -45,7 +47,9 @@ pub(super) fn package_list_impl(
 
         match (cargo_metadata_thread_result, cargo_tree_thread_result) {
             (Err(cargo_metadata_err), Err(cargo_tree_err)) => {
-                let mut err_join = ErrorJoin::new(IE::new("`cargo metadata` and `cargo tree` should execute successfully and their outputs should parse correctly"));
+                let mut err_join = ErrorJoin::new(IE::new(
+                    "`cargo metadata` and `cargo tree` should execute successfully and their outputs should parse correctly",
+                ));
                 err_join.join(cargo_metadata_err);
                 err_join.join(cargo_tree_err);
                 Err(err_join.err())
