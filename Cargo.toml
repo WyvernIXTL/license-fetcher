@@ -9,15 +9,13 @@ repository = "https://github.com/WyvernIXTL/license-fetcher"
 license = "MPL-2.0"
 keywords = ["license", "embed", "fetch", "about", "find"]
 categories = ["development-tools::build-utils", "parsing"]
-exclude = [
-    "/tests",
-    "/benches",
-    "/img",
-    "/.vscode",
-    "/.zed",
-    "/.github",
-    "/build.rs",
-    "/taskfile.yml",
+include = [
+    "build.rs",
+    "src/**/*",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
 ]
 
 [profile.flame]
