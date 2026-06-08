@@ -80,10 +80,10 @@ fn manifest_dir(uncertain_path: PathBuf) -> Result<PathBuf, Cie> {
 }
 
 impl ConfigBuilder {
-    /// Sets [`manifest_dir`](Self::manifest_dir) from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
+    /// Sets the required `manifest_dir` field from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
-    /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
-    /// Essentially a sanity check.
+    /// This method is almost equivalent to the [`manifest_dir`](Self::manifest_dir) method, with the main difference being
+    /// that [`with_path`](Self::with_path) has many build in checks.
     #[must_use]
     pub fn with_path(mut self, manifest_path: impl Into<PathBuf>) -> Self {
         match manifest_dir(manifest_path.into()) {
@@ -95,10 +95,9 @@ impl ConfigBuilder {
         self
     }
 
-    /// New builder with [`manifest_dir`](Self::manifest_dir) being set from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
+    /// New builder with the required `manifest_dir` field being set from a path to a manifest (`Cargo.toml`) or a directory that contains a manifest.
     ///
-    /// The difference to the aforementioned method is, that this method checks that the directory contains a manifest.
-    /// Essentially a sanity check.
+    /// The [`from_path`](Self::from_path) method uses [`with_path`](Self::with_path) under the hood.
     pub fn from_path(manifest_path: impl Into<PathBuf>) -> Self {
         ConfigBuilder::default().with_path(manifest_path)
     }

@@ -40,7 +40,7 @@ impl MetadataEnv {
 impl ConfigBuilder {
     /// Adds needed values from environment variables to builder.
     ///
-    /// This method is meant to be used from a build script (`build.rs`)!
+    /// This method is meant to be used from within a build script (`build.rs`)!
     /// The environment variables used are set by cargo during build.
     #[must_use]
     pub fn with_build_env(mut self) -> Self {
@@ -60,8 +60,7 @@ impl ConfigBuilder {
 
     /// New builder with needed values being filled in from environment variables.
     ///
-    /// This constructor is meant to be used from a build script (`build.rs`)!
-    /// The environment variables used are set by cargo during build.
+    /// Uses [`with_build_env`](Self::with_build_env) under the hood.
     #[must_use]
     pub fn from_build_env() -> Self {
         ConfigBuilder::default().with_build_env()

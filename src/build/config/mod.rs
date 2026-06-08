@@ -4,12 +4,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-//! This module holds the structs and enums to configure the fetching process.
+//! Configuration for the fetching step.
 //!
-//! ## Build Scripts (`build.rs`)
+//! This module holds the configuration structs for the license fetching step. The [`ConfigBuilder`]
+//! should be used for building this configuration. Depending on whether you want to use `license-fetcher`
+//! in a build script or in an application, the usage differs slightly.
+//!
+//! ## Inside a Build Scripts (`build.rs`)
 //!
 //! If you are using `license-fetcher` from within a build script to fetch licenses for your project,
-//! it is recommended to use [`ConfigBuilder::from_build_env()`], as cargo sets the necessary environment
+//! it is recommended to use the [`ConfigBuilder::from_build_env`] method, as cargo sets the necessary environment
 //! variables during build. [See the docs.](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)
 //!
 //! `build.rs`:
@@ -20,17 +24,17 @@
 //! fn main() {
 //!     let config: Config = ConfigBuilder::from_build_env()
 //!         .build()
-//!         .expect("Failed to build configuration.");
+//!         .expect("building config from build environment variables should succeed");
 //!
 //!     // ...
 //! }
 //! ```
 //!
-//! ## In an Application
+//! ## Inside an Application
 //!
-//! If you are using `license-fetcher` from inside another application to fetch licenses,
+//! If you are using `license-fetcher` from inside an application to fetch licenses,
 //! you'll probably want to fetch licenses for another project.
-//! In this case there exits the [`ConfigBuilder::from_path()`] method.
+//! In this case there exits the [`ConfigBuilder::from_path`] method.
 //!
 //! `main.rs`:
 //!
@@ -44,7 +48,7 @@
 //!
 //!     let config: Config = ConfigBuilder::from_path(my_path)
 //!         .build()
-//!         .expect("Failed loading configuration from path.");
+//!         .expect("building config for manifest path should succeed");
 //!
 //!     // ...
 //! }
@@ -197,13 +201,16 @@ where
 pub struct MetadataConfig {
     /// Path to directory that holds the `Cargo.toml` of the project you wish to fetch the licenses for.
     pub manifest_dir: PathBuf,
-    /// Optional path to `cargo`.
+    /// Path to `cargo` executable.
     ///
-    /// By default the `CARGO` environment variable is used, or if not set `cargo` from path is used.
+    /// If just `cargo` is set, the `PATH` environment variable is queried during fetching.
+    ///
+    /// By default the [`ConfigBuilder`] inferrs this field via the `CARGO` environment variable
+    /// or if not set, defaults to just `cargo`.
     pub cargo_path: PathBuf,
-    /// Set Cargo directives for fetching metadata.
+    /// Cargo directives for fetching metadata.
     pub cargo_directives: CargoDirectiveList,
-    /// Set enabled features used when detecting package metadata.
+    /// Enabled features used when detecting package metadata.
     ///
     /// The format is a comma separated list of features described [here]. (`build,serde,stuff`)
     ///
@@ -280,6 +287,9 @@ pub struct ConfigBuilder {
 
 impl ConfigBuilder {
     /// Sets the manifest directory path.
+    ///
+    /// You should rather ignore this method in favour of the [`from_build_env`](Self::from_build_env)
+    /// or the [`from_path`](Self::from_path) method.
     #[must_use]
     pub fn manifest_dir(mut self, dir: impl Into<PathBuf>) -> Self {
         self.manifest_dir = Some(dir.into());
@@ -287,6 +297,8 @@ impl ConfigBuilder {
     }
 
     /// Sets the cargo executable path.
+    ///
+    /// If not set, the `CARGO` environment variable is queried and `cargo` is set as fallback.
     #[must_use]
     pub fn cargo_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.cargo_path = Some(path.into());
@@ -294,6 +306,9 @@ impl ConfigBuilder {
     }
 
     /// Sets the cargo home directory path
+    ///
+    /// If not set, the `CARGO_HOME_DIR` environment variable is queried and
+    /// on failure the default location `~/.cargo` is set.
     #[must_use]
     pub fn cargo_home_dir(mut self, dir: impl Into<PathBuf>) -> Self {
         self.cargo_home_dir = Some(dir.into());
@@ -301,6 +316,8 @@ impl ConfigBuilder {
     }
 
     /// Sets the cargo directives.
+    ///
+    /// See [`CargoDirectiveList`] for info.
     #[must_use]
     pub fn cargo_directives(mut self, directives: impl Into<CargoDirectiveList>) -> Self {
         self.cargo_directives = Some(directives.into());
@@ -310,7 +327,8 @@ impl ConfigBuilder {
     /// Explicitly set the path to the cache file (license data serialized and compressed in prior runs).
     ///
     /// If not set, the builder defaults to a detection step with environment variables, that sets the
-    /// cache path if this code is run inside a build script. For this purpose [`OUT_DIR`] is queried.
+    /// cache path if this code is run inside a build script and the inferred cache file is not empty.
+    /// For this purpose [`OUT_DIR`] is queried.
     ///
     /// [`OUT_DIR`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
     #[must_use]
@@ -323,7 +341,7 @@ impl ConfigBuilder {
     ///
     /// The format is a comma separated list of features described [here]. (`build,serde,stuff`)
     ///
-    /// If not set and inside a build script (`build.rs`), the builder defaults to features enabled via the [`CARGO_CFG_FEATURE`] environment variable.
+    /// If not set and inside a build script (`build.rs`), the builder defaults to features enabled inferred through the [`CARGO_CFG_FEATURE`] environment variable.
     ///
     /// [`CARGO_CFG_FEATURE`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
     /// [here]: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#feature-selection
@@ -370,7 +388,7 @@ impl ConfigBuilder {
     ///
     /// ## Errors
     ///
-    /// Returns [`ConfigBuilderError`] on failure to build the configuration.
+    /// Returns [`ConfigBuilderError`] on failure.
     pub fn build(self) -> std::result::Result<Config, ConfigBuilderError> {
         self.build_impl().map_err(ConfigBuilderError::from_internal)
     }

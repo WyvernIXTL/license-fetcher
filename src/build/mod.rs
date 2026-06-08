@@ -152,7 +152,6 @@
 //! ```
 //!
 
-/// Configuration structs and builders.
 pub mod config;
 
 /// Functions for fetching metadata and licenses.
