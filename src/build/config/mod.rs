@@ -370,7 +370,7 @@ impl ConfigBuilder {
     ///
     /// ## Errors
     ///
-    /// Returns [`ConfigBuildError`] on failure to build the configuration.
+    /// Returns [`ConfigBuilderError`] on failure to build the configuration.
     pub fn build(self) -> std::result::Result<Config, ConfigBuilderError> {
         self.build_impl().map_err(ConfigBuilderError::from_internal)
     }
