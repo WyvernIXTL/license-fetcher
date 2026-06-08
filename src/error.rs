@@ -14,6 +14,8 @@ pub enum UnpackError {
     /// failed deserialization of embedded decompressed license data
     DecodeError(nanoserde::DeBinErr),
     /// embedded license data is empty
+    ///
+    /// This error occurs, when the file being decompressed and deserialized is empty / has zero bytes.
     Empty,
 }
 

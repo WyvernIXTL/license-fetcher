@@ -8,12 +8,18 @@
 //!
 //! ## Examples
 //!
-//! The examples here are directed for fetching licenses during build time.
-//! They can also applied for use with applications if configured correctly.
+//! The examples here are directed for fetching license data during build time.
 //!
-//! See the [`config` module](crate::build::config).
+//! (`license-fetcher` can also be used for fetching license data at application time.
+//! For this [`ConfigBuilder::from_path`](crate::prelude::ConfigBuilder::from_path) can be used
+//! and functions and methods that depend on build script environment variables will error.)
 //!
-//! ### Fetch Metadata Only
+//! ### Simple Example
+//!
+//! The [documentation of `lib.rs`](crate) contains a simple example.
+//!
+//!
+//! ### Simple Fetch Metadata Only
 //!
 //! If you are not interested in fetching licenses, license-fetcher is able to
 //! only fetch metadata of packages:
@@ -43,39 +49,12 @@
 //! }
 //! ```
 //!
-//!
-//! ### Fetch Metadata and Licenses
-//!
-//! `build.rs`
-//!
-//! ```
-//! use license_fetcher::prelude::*;
-//!
-//! fn main() {
-//!     // Config with environment variables set by cargo, to fetch licenses at build time.
-//!     let config: Config = ConfigBuilder::from_build_env()
-//!         .build()
-//!         .expect("failed to build configuration");
-//!
-//!     let packages: PackageList = package_list_with_licenses(&config)
-//!                                     .expect("failed to fetch metadata or licenses");
-//!
-//!     // Write packages to out dir to be embedded.
-//!     packages.write_package_list_to_out_dir().expect("failed to write package list");
-//!
-//!     // Rerun only if one of the following files changed:
-//!     println!("cargo::rerun-if-changed=build.rs");
-//!     println!("cargo::rerun-if-changed=Cargo.lock");
-//!     println!("cargo::rerun-if-changed=Cargo.toml");
-//! }
-//! ```
-//!
-//! ### Advanced
+//! ### Advanced Example with Leniency
 //!
 //! Most often there is no need to fetch licenses during development.
-//! Also there is the potential issue of the build failing, just because license fetcher did.
+//! Also `license-fetcher` could fail and cause a compilation error.
 //! To counteract these issues, you might want to use environment variables to force the
-//! fetching of licenses in CI and soft fail it when installing from source.
+//! fetching of licenses in CI and soft fail the fetching when installing from source.
 //!
 //! `build.rs`
 //!
@@ -86,8 +65,11 @@
 //!
 //! fn fetch_and_embed_licenses() -> Result<(), Box<dyn Error>> {
 //!     let config: Config = ConfigBuilder::from_build_env().build()?;
+//!
 //!     let packages: PackageList = package_list_with_licenses(config)?;
+//!
 //!     packages.write_package_list_to_out_dir()?;
+//!
 //!     Ok(())
 //! }
 //!
@@ -115,7 +97,7 @@
 //!         Err(VarError::NotPresent) => {
 //!             eprintln!("`LICENSE_FETCHER` not set. Defaulting to fetching licenses.");
 //!             if let Err(err) = fetch_and_embed_licenses() {
-//!                 eprintln!("An error occurred during license fetch:\n{err:?}");
+//!                 eprintln!("Soft fail with dummy file due to error:\n{err:?}");
 //!                 create_dummy_file();
 //!             }
 //!         }
