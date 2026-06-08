@@ -154,20 +154,14 @@ _Display trait included_ 😉
 
 ## Performance
 
-With the advanced example of the docs, where licenses are fetched, compressed and embedded at build time 
-and just printed at runtime in the main, I got these timings with "`cargo b --release --timings`":
+I compiled the basic example with timings (`cargo clean && cargo build --release --timings`) on Linux (openSUSE Leap 16) with the Wild linker:
 
-![cargo timings for v0.10.0](./img/cargo_timinings_v0.10.0.png)
+![cargo timings for v0.10.0](./img/timings-v0.10.0-rc.1-screenshot-8.png)
+
+The package build within 1.1s of which 0.05s where spend on the build script with license fetching. This means that **clean builds** (without cache) will be really fast
+and incremental builds will take up no time at all (~0.05s).
 
 The full report is available in [`img/timings`](./img/timings).
-
-_Please note that these timings are for **v0.10.0**. I used `cargo add --path` and just have not bumped the version yet, as I use `cargo-release` for that._
-
-These timings are of course for a clean build. For incremental builds setting `cargo::rerun-if-changed` like shown in the example above, will result
-in the build script only being run if `Cargo.toml`, `Cargo.lock` or `build.rs` change and build artifacts are of course also cached by cargo.
-
-In conclusion, the build script is fast (0.05s). It is only run if necessary. Compiling `license-fetcher` is also very fast (1.4s for a clean build). 
-As cargo compiles packages in parallel, you'll likely never notice :)
 
 
 ## License

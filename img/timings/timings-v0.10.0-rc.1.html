@@ -184,19 +184,19 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 <td>Fresh units:</td><td>0</td>
 </tr>
 <tr>
-<td>Dirty units:</td><td>23</td>
+<td>Dirty units:</td><td>19</td>
 </tr>
 <tr>
-<td>Total units:</td><td>23</td>
+<td>Total units:</td><td>19</td>
 </tr>
 <tr>
 <td>Max concurrency:</td><td>10 (jobs=16 ncpu=16)</td>
 </tr>
 <tr>
-<td>Build start:</td><td>2026-05-26T12:14:02.569730259Z</td>
+<td>Build start:</td><td>2026-06-08T13:53:18.109733063Z</td>
 </tr>
 <tr>
-<td>Total time:</td><td>1.4s</td>
+<td>Total time:</td><td>1.1s</td>
 </tr>
 <tr>
 <td>rustc:</td><td>rustc 1.95.0 (59807616e 2026-04-14)<br>Host: x86_64-unknown-linux-gnu<br>Target: x86_64-unknown-linux-gnu</td>
@@ -245,17 +245,17 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 
 <tr>
 <td>1.</td>
-<td>regex-lite v0.1.9</td>
-<td>0.5s</td>
-<td>0.4s (84%)</td>
-<td>0.1s (16%)</td>
-<td>default, std, string</td>
+<td>nanoserde v0.2.1</td>
+<td>0.4s</td>
+<td>0.2s (40%)</td>
+<td>0.3s (60%)</td>
+<td>binary, json, std</td>
 </tr>
 
 <tr>
 <td>2.</td>
 <td>nanoserde-derive v0.2.1</td>
-<td>0.5s</td>
+<td>0.4s</td>
 <td></td>
 <td></td>
 <td>binary, default, json</td>
@@ -263,123 +263,78 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 
 <tr>
 <td>3.</td>
-<td>nanoserde v0.2.1</td>
-<td>0.5s</td>
-<td>0.2s (39%)</td>
-<td>0.3s (61%)</td>
-<td>binary, json, std</td>
+<td>regex-lite v0.1.9</td>
+<td>0.4s</td>
+<td>0.3s (85%)</td>
+<td>0.1s (15%)</td>
+<td>default, std, string</td>
 </tr>
 
 <tr>
 <td>4.</td>
-<td>textwrap v0.16.2</td>
-<td>0.4s</td>
-<td>0.2s (58%)</td>
-<td>0.1s (42%)</td>
-<td></td>
+<td>license-fetcher v0.10.0-rc.1</td>
+<td>0.3s</td>
+<td>0.2s (79%)</td>
+<td>0.1s (21%)</td>
+<td>build, default</td>
 </tr>
 
 <tr>
 <td>5.</td>
-<td>license-fetcher v0.9.3 build-script</td>
+<td>textwrap v0.16.2</td>
 <td>0.3s</td>
+<td>0.1s (54%)</td>
+<td>0.1s (46%)</td>
 <td></td>
-<td></td>
-<td>build, default</td>
 </tr>
 
 <tr>
 <td>6.</td>
-<td>license-fetcher v0.9.3 build-script</td>
-<td>0.3s</td>
-<td></td>
-<td></td>
-<td>default</td>
+<td>lz4_flex v0.13.1</td>
+<td>0.2s</td>
+<td>0.1s (50%)</td>
+<td>0.1s (50%)</td>
+<td>checked-decode</td>
 </tr>
 
 <tr>
 <td>7.</td>
-<td>license-fetcher v0.9.3</td>
-<td>0.3s</td>
-<td>0.3s (79%)</td>
-<td>0.1s (21%)</td>
-<td>build, default</td>
-</tr>
-
-<tr>
-<td>8.</td>
-<td>lz4_flex v0.13.1</td>
-<td>0.3s</td>
-<td>0.2s (52%)</td>
-<td>0.2s (48%)</td>
-<td>checked-decode</td>
-</tr>
-
-<tr>
-<td>9.</td>
-<td>textwrap v0.16.2</td>
-<td>0.3s</td>
-<td>0.2s (79%)</td>
-<td>0.1s (21%)</td>
-<td></td>
-</tr>
-
-<tr>
-<td>10.</td>
-<td>error-stack v0.5.0</td>
-<td>0.3s</td>
-<td>0.2s (79%)</td>
-<td>0.1s (21%)</td>
-<td>backtrace, default, std</td>
-</tr>
-
-<tr>
-<td>11.</td>
-<td>semver v1.0.28</td>
+<td>license-fetcher v0.10.0-rc.1</td>
 <td>0.2s</td>
-<td>0.2s (86%)</td>
-<td>0.0s (14%)</td>
-<td>default, std</td>
-</tr>
-
-<tr>
-<td>12.</td>
-<td>license-fetcher v0.9.3</td>
-<td>0.2s</td>
-<td>0.1s (35%)</td>
-<td>0.1s (65%)</td>
+<td>0.1s (33%)</td>
+<td>0.1s (67%)</td>
 <td>default</td>
 </tr>
 
 <tr>
-<td>13.</td>
-<td>lz4_flex v0.13.1</td>
+<td>8.</td>
+<td>textwrap v0.16.2</td>
 <td>0.2s</td>
-<td>0.1s (79%)</td>
-<td>0.0s (21%)</td>
-<td>checked-decode</td>
-</tr>
-
-<tr>
-<td>14.</td>
-<td>rustc_version v0.4.1</td>
-<td>0.2s</td>
-<td>0.1s (72%)</td>
-<td>0.0s (28%)</td>
+<td>0.1s (75%)</td>
+<td>0.0s (25%)</td>
 <td></td>
 </tr>
 
 <tr>
-<td>15.</td>
+<td>9.</td>
 <td>nanoserde v0.2.1</td>
 <td>0.2s</td>
-<td>0.1s (82%)</td>
-<td>0.0s (18%)</td>
+<td>0.1s (81%)</td>
+<td>0.0s (19%)</td>
 <td>binary, json, std</td>
 </tr>
 
 <tr>
-<td>16.</td>
+<td>10.</td>
+<td>lz4_flex v0.13.1</td>
+<td>0.1s</td>
+<td>0.1s (83%)</td>
+<td>0.0s (17%)</td>
+<td>checked-decode</td>
+</tr>
+
+<tr>
+<td>11.</td>
 <td>test-lf v0.1.0 build-script</td>
 <td>0.1s</td>
 <td></td>
@@ -388,16 +343,34 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 </tr>
 
 <tr>
-<td>17.</td>
-<td>log v0.4.30</td>
+<td>12.</td>
+<td>license-fetcher v0.10.0-rc.1 build-script</td>
 <td>0.1s</td>
-<td>0.1s (85%)</td>
-<td>0.0s (15%)</td>
+<td></td>
+<td></td>
+<td>build, default</td>
+</tr>
+
+<tr>
+<td>13.</td>
+<td>license-fetcher v0.10.0-rc.1 build-script</td>
+<td>0.1s</td>
+<td></td>
+<td></td>
+<td>default</td>
+</tr>
+
+<tr>
+<td>14.</td>
+<td>log v0.4.32</td>
+<td>0.1s</td>
+<td>0.1s (89%)</td>
+<td>0.0s (11%)</td>
 <td></td>
 </tr>
 
 <tr>
-<td>18.</td>
+<td>15.</td>
 <td>test-lf v0.1.0 test-lf "bin"</td>
 <td>0.1s</td>
 <td></td>
@@ -406,16 +379,16 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 </tr>
 
 <tr>
-<td>19.</td>
-<td>error-stack v0.5.0 build-script</td>
+<td>16.</td>
+<td>exn v0.3.1</td>
 <td>0.1s</td>
+<td>0.1s (75%)</td>
+<td>0.0s (25%)</td>
 <td></td>
-<td></td>
-<td>backtrace, default, std</td>
 </tr>
 
 <tr>
-<td>20.</td>
+<td>17.</td>
 <td>test-lf v0.1.0 build-script (run)</td>
 <td>0.1s</td>
 <td></td>
@@ -424,17 +397,8 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 </tr>
 
 <tr>
-<td>21.</td>
-<td>error-stack v0.5.0 build-script (run)</td>
-<td>0.0s</td>
-<td></td>
-<td></td>
-<td>backtrace, default, std</td>
-</tr>
-
-<tr>
-<td>22.</td>
-<td>license-fetcher v0.9.3 build-script (run)</td>
+<td>18.</td>
+<td>license-fetcher v0.10.0-rc.1 build-script (run)</td>
 <td>0.0s</td>
 <td></td>
 <td></td>
@@ -442,8 +406,8 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 </tr>
 
 <tr>
-<td>23.</td>
-<td>license-fetcher v0.9.3 build-script (run)</td>
+<td>19.</td>
+<td>license-fetcher v0.10.0-rc.1 build-script (run)</td>
 <td>0.0s</td>
 <td></td>
 <td></td>
@@ -455,7 +419,98 @@ See <a href="https://doc.rust-lang.org/nightly/cargo/reference/timings.html">Doc
 DURATION = 2;
 const UNIT_DATA = [
   {
-    "i": 11,
+    "i": 0,
+    "name": "exn",
+    "version": "0.3.1",
+    "mode": "todo",
+    "target": "",
+    "features": [],
+    "start": 0.08,
+    "duration": 0.08,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.06
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.06,
+          "end": 0.08
+        }
+      ]
+    ]
+  },
+  {
+    "i": 3,
+    "name": "license-fetcher",
+    "version": "0.10.0-rc.1",
+    "mode": "todo",
+    "target": " build-script",
+    "features": [
+      "build",
+      "default"
+    ],
+    "start": 0.08,
+    "duration": 0.09,
+    "unblocked_units": [
+      5
+    ],
+    "unblocked_rmeta_units": [],
+    "sections": null
+  },
+  {
+    "i": 4,
+    "name": "license-fetcher",
+    "version": "0.10.0-rc.1",
+    "mode": "todo",
+    "target": " build-script",
+    "features": [
+      "default"
+    ],
+    "start": 0.08,
+    "duration": 0.09,
+    "unblocked_units": [
+      6
+    ],
+    "unblocked_rmeta_units": [],
+    "sections": null
+  },
+  {
+    "i": 7,
+    "name": "log",
+    "version": "0.4.32",
+    "mode": "todo",
+    "target": "",
+    "features": [],
+    "start": 0.08,
+    "duration": 0.09,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.08
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.08,
+          "end": 0.09
+        }
+      ]
+    ]
+  },
+  {
+    "i": 8,
     "name": "lz4_flex",
     "version": "0.13.1",
     "mode": "todo",
@@ -463,10 +518,247 @@ const UNIT_DATA = [
     "features": [
       "checked-decode"
     ],
-    "start": 0.14,
-    "duration": 0.33,
+    "start": 0.08,
+    "duration": 0.12,
     "unblocked_units": [],
     "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.1
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.1,
+          "end": 0.12
+        }
+      ]
+    ]
+  },
+  {
+    "i": 9,
+    "name": "lz4_flex",
+    "version": "0.13.1",
+    "mode": "todo",
+    "target": "",
+    "features": [
+      "checked-decode"
+    ],
+    "start": 0.08,
+    "duration": 0.22,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.11
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.11,
+          "end": 0.22
+        }
+      ]
+    ]
+  },
+  {
+    "i": 12,
+    "name": "nanoserde-derive",
+    "version": "0.2.1",
+    "mode": "todo",
+    "target": "",
+    "features": [
+      "binary",
+      "default",
+      "json"
+    ],
+    "start": 0.08,
+    "duration": 0.39,
+    "unblocked_units": [
+      10,
+      11
+    ],
+    "unblocked_rmeta_units": [],
+    "sections": null
+  },
+  {
+    "i": 13,
+    "name": "regex-lite",
+    "version": "0.1.9",
+    "mode": "todo",
+    "target": "",
+    "features": [
+      "default",
+      "std",
+      "string"
+    ],
+    "start": 0.08,
+    "duration": 0.39,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.33
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.33,
+          "end": 0.39
+        }
+      ]
+    ]
+  },
+  {
+    "i": 17,
+    "name": "textwrap",
+    "version": "0.16.2",
+    "mode": "todo",
+    "target": "",
+    "features": [],
+    "start": 0.08,
+    "duration": 0.16,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.12
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.12,
+          "end": 0.16
+        }
+      ]
+    ]
+  },
+  {
+    "i": 18,
+    "name": "textwrap",
+    "version": "0.16.2",
+    "mode": "todo",
+    "target": "",
+    "features": [],
+    "start": 0.08,
+    "duration": 0.28,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.15
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.15,
+          "end": 0.28
+        }
+      ]
+    ]
+  },
+  {
+    "i": 5,
+    "name": "license-fetcher",
+    "version": "0.10.0-rc.1",
+    "mode": "run-custom-build",
+    "target": " build-script (run)",
+    "features": [
+      "build",
+      "default"
+    ],
+    "start": 0.18,
+    "duration": 0.0,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": null
+  },
+  {
+    "i": 6,
+    "name": "license-fetcher",
+    "version": "0.10.0-rc.1",
+    "mode": "run-custom-build",
+    "target": " build-script (run)",
+    "features": [
+      "default"
+    ],
+    "start": 0.18,
+    "duration": 0.0,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [],
+    "sections": null
+  },
+  {
+    "i": 10,
+    "name": "nanoserde",
+    "version": "0.2.1",
+    "mode": "todo",
+    "target": "",
+    "features": [
+      "binary",
+      "json",
+      "std"
+    ],
+    "start": 0.47,
+    "duration": 0.16,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [
+      1
+    ],
+    "sections": [
+      [
+        "frontend",
+        {
+          "start": 0.0,
+          "end": 0.13
+        }
+      ],
+      [
+        "codegen",
+        {
+          "start": 0.13,
+          "end": 0.16
+        }
+      ]
+    ]
+  },
+  {
+    "i": 11,
+    "name": "nanoserde",
+    "version": "0.2.1",
+    "mode": "todo",
+    "target": "",
+    "features": [
+      "binary",
+      "json",
+      "std"
+    ],
+    "start": 0.47,
+    "duration": 0.43,
+    "unblocked_units": [],
+    "unblocked_rmeta_units": [
+      2
+    ],
     "sections": [
       [
         "frontend",
@@ -479,49 +771,26 @@ const UNIT_DATA = [
         "codegen",
         {
           "start": 0.17,
-          "end": 0.33
+          "end": 0.43
         }
       ]
     ]
   },
   {
-    "i": 22,
-    "name": "textwrap",
-    "version": "0.16.2",
+    "i": 1,
+    "name": "license-fetcher",
+    "version": "0.10.0-rc.1",
     "mode": "todo",
     "target": "",
-    "features": [],
-    "start": 0.14,
-    "duration": 0.36,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.21
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.21,
-          "end": 0.36
-        }
-      ]
-    ]
-  },
-  {
-    "i": 21,
-    "name": "textwrap",
-    "version": "0.16.2",
-    "mode": "todo",
-    "target": "",
-    "features": [],
-    "start": 0.14,
+    "features": [
+      "build",
+      "default"
+    ],
+    "start": 0.6,
     "duration": 0.29,
-    "unblocked_units": [],
+    "unblocked_units": [
+      15
+    ],
     "unblocked_rmeta_units": [],
     "sections": [
       [
@@ -541,483 +810,73 @@ const UNIT_DATA = [
     ]
   },
   {
-    "i": 17,
-    "name": "semver",
-    "version": "1.0.28",
+    "i": 2,
+    "name": "license-fetcher",
+    "version": "0.10.0-rc.1",
     "mode": "todo",
     "target": "",
     "features": [
-      "default",
-      "std"
+      "default"
     ],
-    "start": 0.14,
-    "duration": 0.22,
+    "start": 0.63,
+    "duration": 0.18,
     "unblocked_units": [],
-    "unblocked_rmeta_units": [
-      16
-    ],
+    "unblocked_rmeta_units": [],
     "sections": [
       [
         "frontend",
         {
           "start": 0.0,
-          "end": 0.19
+          "end": 0.06
         }
       ],
       [
         "codegen",
         {
-          "start": 0.19,
-          "end": 0.22
+          "start": 0.06,
+          "end": 0.18
         }
       ]
     ]
-  },
-  {
-    "i": 5,
-    "name": "license-fetcher",
-    "version": "0.9.3",
-    "mode": "todo",
-    "target": " build-script",
-    "features": [
-      "build",
-      "default"
-    ],
-    "start": 0.14,
-    "duration": 0.35,
-    "unblocked_units": [
-      7
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": null
-  },
-  {
-    "i": 6,
-    "name": "license-fetcher",
-    "version": "0.9.3",
-    "mode": "todo",
-    "target": " build-script",
-    "features": [
-      "default"
-    ],
-    "start": 0.14,
-    "duration": 0.35,
-    "unblocked_units": [
-      8
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": null
   },
   {
     "i": 15,
-    "name": "regex-lite",
-    "version": "0.1.9",
+    "name": "test-lf",
+    "version": "0.1.0",
     "mode": "todo",
-    "target": "",
-    "features": [
-      "default",
-      "std",
-      "string"
-    ],
-    "start": 0.14,
-    "duration": 0.51,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.43
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.43,
-          "end": 0.51
-        }
-      ]
-    ]
-  },
-  {
-    "i": 14,
-    "name": "nanoserde-derive",
-    "version": "0.2.1",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "binary",
-      "default",
-      "json"
-    ],
-    "start": 0.14,
-    "duration": 0.47,
+    "target": " build-script",
+    "features": [],
+    "start": 0.89,
+    "duration": 0.1,
     "unblocked_units": [
-      13,
-      12
+      16
     ],
     "unblocked_rmeta_units": [],
     "sections": null
-  },
-  {
-    "i": 9,
-    "name": "log",
-    "version": "0.4.30",
-    "mode": "todo",
-    "target": "",
-    "features": [],
-    "start": 0.14,
-    "duration": 0.13,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.11
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.11,
-          "end": 0.13
-        }
-      ]
-    ]
-  },
-  {
-    "i": 10,
-    "name": "lz4_flex",
-    "version": "0.13.1",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "checked-decode"
-    ],
-    "start": 0.14,
-    "duration": 0.19,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.15
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.15,
-          "end": 0.19
-        }
-      ]
-    ]
   },
   {
     "i": 16,
-    "name": "rustc_version",
-    "version": "0.4.1",
-    "mode": "todo",
-    "target": "",
-    "features": [],
-    "start": 0.33,
-    "duration": 0.18,
-    "unblocked_units": [
-      1
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.13
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.13,
-          "end": 0.18
-        }
-      ]
-    ]
-  },
-  {
-    "i": 8,
-    "name": "license-fetcher",
-    "version": "0.9.3",
-    "mode": "run-custom-build",
-    "target": " build-script (run)",
-    "features": [
-      "default"
-    ],
-    "start": 0.49,
-    "duration": 0.0,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": null
-  },
-  {
-    "i": 7,
-    "name": "license-fetcher",
-    "version": "0.9.3",
-    "mode": "run-custom-build",
-    "target": " build-script (run)",
-    "features": [
-      "build",
-      "default"
-    ],
-    "start": 0.49,
-    "duration": 0.0,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": null
-  },
-  {
-    "i": 1,
-    "name": "error-stack",
-    "version": "0.5.0",
-    "mode": "todo",
-    "target": " build-script",
-    "features": [
-      "backtrace",
-      "default",
-      "std"
-    ],
-    "start": 0.5,
-    "duration": 0.08,
-    "unblocked_units": [
-      2
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": null
-  },
-  {
-    "i": 2,
-    "name": "error-stack",
-    "version": "0.5.0",
-    "mode": "run-custom-build",
-    "target": " build-script (run)",
-    "features": [
-      "backtrace",
-      "default",
-      "std"
-    ],
-    "start": 0.58,
-    "duration": 0.01,
-    "unblocked_units": [
-      0
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": null
-  },
-  {
-    "i": 0,
-    "name": "error-stack",
-    "version": "0.5.0",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "backtrace",
-      "default",
-      "std"
-    ],
-    "start": 0.59,
-    "duration": 0.28,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [
-      3
-    ],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.22
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.22,
-          "end": 0.28
-        }
-      ]
-    ]
-  },
-  {
-    "i": 12,
-    "name": "nanoserde",
-    "version": "0.2.1",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "binary",
-      "json",
-      "std"
-    ],
-    "start": 0.61,
-    "duration": 0.17,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.14
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.14,
-          "end": 0.17
-        }
-      ]
-    ]
-  },
-  {
-    "i": 13,
-    "name": "nanoserde",
-    "version": "0.2.1",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "binary",
-      "json",
-      "std"
-    ],
-    "start": 0.61,
-    "duration": 0.46,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [
-      4
-    ],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.18
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.18,
-          "end": 0.46
-        }
-      ]
-    ]
-  },
-  {
-    "i": 4,
-    "name": "license-fetcher",
-    "version": "0.9.3",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "default"
-    ],
-    "start": 0.79,
-    "duration": 0.2,
-    "unblocked_units": [],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.07
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.07,
-          "end": 0.2
-        }
-      ]
-    ]
-  },
-  {
-    "i": 3,
-    "name": "license-fetcher",
-    "version": "0.9.3",
-    "mode": "todo",
-    "target": "",
-    "features": [
-      "build",
-      "default"
-    ],
-    "start": 0.81,
-    "duration": 0.34,
-    "unblocked_units": [
-      19
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": [
-      [
-        "frontend",
-        {
-          "start": 0.0,
-          "end": 0.27
-        }
-      ],
-      [
-        "codegen",
-        {
-          "start": 0.27,
-          "end": 0.34
-        }
-      ]
-    ]
-  },
-  {
-    "i": 19,
-    "name": "test-lf",
-    "version": "0.1.0",
-    "mode": "todo",
-    "target": " build-script",
-    "features": [],
-    "start": 1.15,
-    "duration": 0.14,
-    "unblocked_units": [
-      20
-    ],
-    "unblocked_rmeta_units": [],
-    "sections": null
-  },
-  {
-    "i": 20,
     "name": "test-lf",
     "version": "0.1.0",
     "mode": "run-custom-build",
     "target": " build-script (run)",
     "features": [],
-    "start": 1.29,
+    "start": 0.99,
     "duration": 0.05,
     "unblocked_units": [
-      18
+      14
     ],
     "unblocked_rmeta_units": [],
     "sections": null
   },
   {
-    "i": 18,
+    "i": 14,
     "name": "test-lf",
     "version": "0.1.0",
     "mode": "todo",
     "target": " test-lf \"bin\"",
     "features": [],
-    "start": 1.35,
+    "start": 1.04,
     "duration": 0.09,
     "unblocked_units": [],
     "unblocked_rmeta_units": [],
@@ -1026,157 +885,115 @@ const UNIT_DATA = [
 ];
 const CONCURRENCY_DATA = [
   {
-    "t": 0.14,
+    "t": 0.08,
     "active": 10,
     "waiting": 0,
-    "inactive": 13
+    "inactive": 9
   },
   {
-    "t": 0.27,
+    "t": 0.16,
     "active": 9,
     "waiting": 0,
-    "inactive": 13
+    "inactive": 9
   },
   {
-    "t": 0.33,
-    "active": 9,
-    "waiting": 0,
-    "inactive": 12
+    "t": 0.16999999999999998,
+    "active": 6,
+    "waiting": 2,
+    "inactive": 7
   },
   {
-    "t": 0.36,
-    "active": 8,
-    "waiting": 0,
-    "inactive": 12
-  },
-  {
-    "t": 0.43,
-    "active": 7,
-    "waiting": 0,
-    "inactive": 12
-  },
-  {
-    "t": 0.47000000000000003,
+    "t": 0.18,
     "active": 6,
     "waiting": 0,
-    "inactive": 12
+    "inactive": 7
   },
   {
-    "t": 0.49,
+    "t": 0.2,
+    "active": 5,
+    "waiting": 0,
+    "inactive": 7
+  },
+  {
+    "t": 0.24,
     "active": 4,
     "waiting": 0,
-    "inactive": 10
+    "inactive": 7
   },
   {
-    "t": 0.5,
-    "active": 4,
-    "waiting": 0,
-    "inactive": 9
-  },
-  {
-    "t": 0.51,
-    "active": 3,
-    "waiting": 0,
-    "inactive": 9
-  },
-  {
-    "t": 0.58,
-    "active": 3,
-    "waiting": 0,
-    "inactive": 8
-  },
-  {
-    "t": 0.59,
+    "t": 0.3,
     "active": 3,
     "waiting": 0,
     "inactive": 7
   },
   {
-    "t": 0.61,
+    "t": 0.36000000000000004,
+    "active": 2,
+    "waiting": 0,
+    "inactive": 7
+  },
+  {
+    "t": 0.47,
     "active": 4,
     "waiting": 0,
     "inactive": 5
   },
   {
-    "t": 0.65,
-    "active": 3,
-    "waiting": 0,
-    "inactive": 5
-  },
-  {
-    "t": 0.78,
+    "t": 0.47000000000000003,
     "active": 2,
     "waiting": 0,
     "inactive": 5
   },
   {
-    "t": 0.79,
+    "t": 0.6,
     "active": 3,
     "waiting": 0,
     "inactive": 4
   },
   {
-    "t": 0.8099999999999999,
+    "t": 0.63,
     "active": 3,
-    "waiting": 1,
+    "waiting": 0,
     "inactive": 3
   },
   {
     "t": 0.81,
-    "active": 4,
+    "active": 2,
     "waiting": 0,
     "inactive": 3
   },
   {
-    "t": 0.87,
-    "active": 3,
+    "t": 0.8899999999999999,
+    "active": 1,
+    "waiting": 1,
+    "inactive": 2
+  },
+  {
+    "t": 0.89,
+    "active": 2,
     "waiting": 0,
-    "inactive": 3
+    "inactive": 2
+  },
+  {
+    "t": 0.8999999999999999,
+    "active": 1,
+    "waiting": 0,
+    "inactive": 2
   },
   {
     "t": 0.99,
-    "active": 2,
-    "waiting": 0,
-    "inactive": 3
-  },
-  {
-    "t": 1.07,
-    "active": 1,
-    "waiting": 0,
-    "inactive": 3
-  },
-  {
-    "t": 1.15,
-    "active": 2,
-    "waiting": 0,
-    "inactive": 2
-  },
-  {
-    "t": 1.1500000000000001,
-    "active": 1,
-    "waiting": 0,
-    "inactive": 2
-  },
-  {
-    "t": 1.29,
     "active": 1,
     "waiting": 0,
     "inactive": 1
   },
   {
-    "t": 1.34,
-    "active": 0,
-    "waiting": 1,
-    "inactive": 0
-  },
-  {
-    "t": 1.35,
+    "t": 1.04,
     "active": 1,
     "waiting": 0,
     "inactive": 0
   },
   {
-    "t": 1.4400000000000002,
+    "t": 1.1300000000000001,
     "active": 0,
     "waiting": 0,
     "inactive": 0
@@ -1184,40 +1001,28 @@ const CONCURRENCY_DATA = [
 ];
 const CPU_USAGE = [
   [
-    0.253127913,
-    52.51141552511416
+    0.174403672,
+    55.55555555555556
   ],
   [
-    0.361630808,
-    64.40677966101694
+    0.303637588,
+    49.03846153846154
   ],
   [
-    0.471478166,
-    83.78378378378378
+    0.408160896,
+    41.764705882352935
   ],
   [
-    0.574226006,
-    40.625
+    0.59816113,
+    18.48184818481849
   ],
   [
-    0.750097193,
-    28.22299651567944
+    0.817137585,
+    24.431818181818173
   ],
   [
-    0.865051232,
-    31.016042780748663
-  ],
-  [
-    0.997134135,
-    26.06635071090048
-  ],
-  [
-    1.152704827,
-    19.599999999999994
-  ],
-  [
-    1.294516344,
-    9.909909909909913
+    0.993161578,
+    19.230769230769226
   ]
 ];
 // Position of the vertical axis.
