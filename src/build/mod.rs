@@ -4,8 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-//! This module holds functions to fetch metadata and licenses.
-//!
+//! Functions for fetching metadata and licenses and writing license data.
 //!
 //! ## Examples
 //!
@@ -137,7 +136,7 @@
 //! * **Force** (`LICENSE_FETCHER=FORCE`): The build will fail, if license fetcher did not succeed. This will hinder you publishing a binary without attribution of your dependencies.
 //! * **Skip** (`LICENSE_FETCHER=SKIP`): The license fetching step will be skipped.
 //! * **Soft Fail**: If someone installs your software from source via `cargo install`, the build will never fail because of license fetcher.
-//!     On the other hand the embedded license data being empty needs to be handled.
+//!   On the other hand the embedded license data being empty needs to be handled.
 //!
 //! _Handling the dummy file:_
 //! ```

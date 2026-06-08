@@ -11,7 +11,7 @@
 //! in a build script. This means that the heavy dependencies of `license-fetcher`
 //! aren't your dependencies!
 //!
-//! ## Example
+//! ## Simple Example
 //!
 //! Import `license-fetcher` as a normal AND as a build dependency:
 //! ```sh
@@ -81,7 +81,7 @@
 //!
 //!     let other_dependency = Package::builder("other dependency", "0.1.0")
 //!         .add_author("Me")
-//!         .description("A dependency that is not a rust crate.")
+//!         .description("A dependency that is not a rust package.")
 //!         .add_license_text(
 //!             "other dependency license",
 //!             read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/LICENSE"))
@@ -108,7 +108,19 @@
 //!
 //! ## Error Handling
 //!
-//! TODO: mention new errors here
+//! Handling errors in `license-fetcher` is more or less optional. If you work with [`expect`](std::result::Result::expect) and
+//! [`unwrap`](std::result::Result::unwrap), then you might be faced with the possibility of fatal compilation errors.
+//! If you only expect to build your project in CI, this might not be much of a problem. If you expect users to compile your project, especially for uncommon platforms,
+//! your users might face these compilation errors. The [documentation of the `build` module](crate::build) offers and example on how to encounter this conundrum with
+//! a dummy file being written on failure. You could also handle the errors encountered, which the following paragraphs will discuss.
+//!
+//! The [`ConfigBuilder`](crate::prelude::ConfigBuilder) returns on calling the `build` method a result with the [`ConfigBuilderError`](crate::prelude::ConfigBuilderError).
+//! This error contains a human readable verbose backtrace and a machine readable, recoverable error kind ([`CEK`](crate::prelude::CEK)).
+//!
+//! The [`package_list`](crate::prelude::package_list) and [`package_list_with_licenses`](crate::prelude::package_list_with_licenses) functions
+//! return a result with the [`LicenseFetcherError`](crate::prelude::LicenseFetcherError). This error as well has a verbose human readable error message
+//! as well as a machine readable error kind ([`EK`](crate::prelude::EK)).
+//! The documentation of [`EK`](crate::prelude::EK) has multiple examples on how errors can be handled.
 //!
 //! The [`read_package_list_from_out_dir`] macro on the other hand returns [`UnpackError`], which can be normally handled with
 //! match clauses (see the [`build` module documentation](crate::build) for an example).
@@ -133,21 +145,20 @@ use nanoserde::DeBin;
 /// Wrapper around deserialization and decompression errors during unpacking of a serialized and compressed [`PackageList`].
 pub mod error;
 
-/// Functions for fetching metadata and licenses.
 #[cfg(feature = "build")]
 pub mod build;
 
-/// Prelude of `license-fetcher`.
 pub mod prelude;
 
 /// The file name used for writing and reading the serialized package list.
 pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 
-/// Struct holding information like package name, authors and of course license text.
-///
-/// ## Example
+/// Struct holding information like package name, authors and of course license texts.
 ///
 /// It is recommended to build instances of [`Package`] with the [`PackageBuilder`] builder via [`Package::builder()`].
+///
+///
+/// ## Example without Builder
 ///
 /// ```
 /// use license_fetcher::Package;
@@ -314,6 +325,7 @@ impl fmt::Display for Package {
 /// let my_package: Package = Package::builder("test-package", "0.1.0")
 ///     .build();
 ///
+/// // Results in:
 /// assert_eq!(
 ///     my_package,
 ///     Package {
@@ -344,6 +356,7 @@ impl fmt::Display for Package {
 ///     .add_license_text("MIT License", "Permission is hereby granted, ...")
 ///     .build();
 ///
+/// // Results in:
 /// assert_eq!(
 ///     my_package,
 ///     Package {
@@ -509,7 +522,7 @@ impl PackageList {
     }
 }
 
-/// Embed and decode a [`PackageList`], which you expect to be in `$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`, via [`PackageList::from_encoded`].
+/// Embed and decode a [`PackageList`], expected to have been placed in `$OUT_DIR`.
 ///
 /// This macro is only meant to be used in conjunction with [`PackageList::write_package_list_to_out_dir`].
 ///

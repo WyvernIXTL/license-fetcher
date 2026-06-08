@@ -34,7 +34,7 @@ impl PackageList {
         compressed_data
     }
 
-    /// Writes the [`PackageList`] into [`$OUT_DIR/LICENSE-3RD-PARTY.bincode.deflate`](`env!("OUT_DIR")`)
+    /// Writes the [`PackageList`] into `$OUT_DIR/`[`LICENSE-3RD-PARTY.nanoserde.lz4`](crate::OUT_FILE_NAME)
     ///
     /// `$OUT_DIR` is set by cargo during build. This function is meant to be only used inside a build script
     /// and only in conjunction with [`read_package_list_from_out_dir`](crate::read_package_list_from_out_dir).
@@ -43,8 +43,8 @@ impl PackageList {
     ///
     /// ## Errors
     ///
-    /// Returns [`WriteError`] if the license file was failed to be written to the `OUT_DIR` or if more importabntly this function was not called from a build script!
-    /// The reason for the latter variant, [`WriteError::NotBuildScript`], is that this function depends on environment variables set during
+    /// Returns [`WriteError`] if the license file was failed to be written to the `OUT_DIR` or more importantly if this function was not called from a build script!
+    /// The reason for the latter, [`WriteError::NotBuildScript`], is that this function depends on environment variables set during
     /// compilation.
     ///
     pub fn write_package_list_to_out_dir(&self) -> std::result::Result<(), WriteError> {

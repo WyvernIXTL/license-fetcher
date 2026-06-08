@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 /*!
- * The prelude of `license-fetcher`.
+ * Prelude of `license-fetcher`.
  *
  * ```
  * use license_fetcher::prelude::*;
