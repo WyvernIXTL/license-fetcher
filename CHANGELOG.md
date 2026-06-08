@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `package_list` function now may either take `Config`, `&Config`, `MetadataConfig` or `&MetadataConfig` as argument.
 - The `package_list_with_licenses` function now may either take `Config` or `&Config` as argument.
 - Moved to rust edition 2024.
+- Refactor the `build` module into three separate submodules: `config`, `fetcher` and `write`.
 
 
 ## v0.9.3
