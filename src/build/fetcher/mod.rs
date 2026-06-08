@@ -6,7 +6,7 @@
 
 mod cache;
 
-/// Errors that might appear during build.
+/// Errors that might appear during fetching.
 pub mod error;
 
 mod fetch;

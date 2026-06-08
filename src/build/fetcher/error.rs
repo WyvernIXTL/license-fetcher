@@ -42,7 +42,7 @@ impl IE {
     }
 }
 
-/// The kind of error encountered when using `license-fetcher`.
+/// The error kind of [`LicenseFetcherError`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EK {
     /// The error is unrecoverable.
