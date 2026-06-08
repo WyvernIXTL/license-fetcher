@@ -157,5 +157,5 @@ pub mod config;
 /// Functions for fetching metadata and licenses.
 pub mod fetcher;
 
-/// Methods for serializing, compressing and writing of [`PackageList`](crate::PackageList).
+/// [`PackageList`](crate::prelude::PackageList) methods for serializing, compressing and writing license data.
 pub mod write;
