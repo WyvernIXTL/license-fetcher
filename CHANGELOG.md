@@ -13,11 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add text wrapping for crate description and license in display trait.
 - The license texts of a crate are now stored and shown separately.
-- Documentation for all errors.
-
 
 ### Changed
 
+- Errors are now standard errors with machine-readable error kinds and verbose stacked error messages.
+  - The verbose message is build on `exn` crate, which is more lightweight than `error-stack`.
+  - Public accessible errors are now not dependent on external dependencies, which makes the API more resilient to changes.
 - The `Package` struct now does not have private fields and can be freely constructed and inspected.
 - Replaced the `package!` macro with `PackageBuilder` builder.
 - The `directories` crate is removed in favor of the now stabilized `std::env::home_dir` function.
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `package_list` method now returns the packages sorted with the first package being the root package.
 - The `package_list` function now may either take `Config`, `&Config`, `MetadataConfig` or `&MetadataConfig` as argument.
 - The `package_list_with_licenses` function now may either take `Config` or `&Config` as argument.
+- Moved to rust edition 2024.
 
 
 ## v0.9.3
