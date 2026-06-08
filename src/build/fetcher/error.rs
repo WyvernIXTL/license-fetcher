@@ -141,10 +141,10 @@ impl std::error::Error for LicenseFetcherError {}
 
 fn get_error_kind(exn: &Exn<IE>) -> EK {
     fn walk(frame: &Frame) -> Option<EK> {
-        if let Some(err) = frame.error().downcast_ref::<IE>() {
-            if let Some(kind) = err.kind_maybe {
-                return Some(kind);
-            }
+        if let Some(err) = frame.error().downcast_ref::<IE>()
+            && let Some(kind) = err.kind_maybe
+        {
+            return Some(kind);
         }
         frame.children().iter().find_map(walk)
     }
@@ -158,10 +158,10 @@ fn get_message(exn: &Exn<IE>) -> String {
             report.push('\n');
         }
         writeln!(report, "{:>2}: Msg: {}", i, frame.error()).unwrap();
-        if let Some(err) = frame.error().downcast_ref::<IE>() {
-            if let Some(path) = &err.path_maybe {
-                writeln!(report, "    Pth: {}", path.display()).unwrap();
-            }
+        if let Some(err) = frame.error().downcast_ref::<IE>()
+            && let Some(path) = &err.path_maybe
+        {
+            writeln!(report, "    Pth: {}", path.display()).unwrap();
         }
         writeln!(report, "    Loc: {}", frame.location()).unwrap();
         for child in frame.children() {
@@ -212,7 +212,9 @@ impl ErrorJoin {
 
     pub(super) fn err(self) -> Exn<IE> {
         if self.errors.is_empty() {
-            Exn::new(IE::new("`ErrorJoin` should always be handled. `err` method was called even though join does not contain other errors."))
+            Exn::new(IE::new(
+                "`ErrorJoin` should always be handled. `err` method was called even though join does not contain other errors.",
+            ))
         } else {
             Exn::raise_all(self.root_err, self.errors)
         }

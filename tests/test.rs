@@ -113,8 +113,8 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher() {
                 .all(|dep_name| read_packages[1..].iter().any(|d| d.name == *dep_name))
     );
 
-    std::env::remove_var("OUT_DIR");
-    std::env::remove_var("CARGO_MANIFEST_DIR");
+    // std::env::remove_var("OUT_DIR");
+    // std::env::remove_var("CARGO_MANIFEST_DIR");
 }
 
 #[cfg(feature = "build")]
@@ -150,6 +150,6 @@ fn test_fetching_and_serialization_from_env_var_license_fetcher_use_cache() {
 
     assert!(packages == packages2);
 
-    std::env::remove_var("OUT_DIR");
-    std::env::remove_var("CARGO_MANIFEST_DIR");
+    // std::env::remove_var("OUT_DIR");
+    // std::env::remove_var("CARGO_MANIFEST_DIR");
 }

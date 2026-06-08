@@ -119,10 +119,10 @@ impl std::error::Error for ConfigBuilderError {}
 
 fn get_error_kind(exn: &Exn<Cie>) -> CEK {
     fn walk(frame: &Frame) -> Option<CEK> {
-        if let Some(err) = frame.error().downcast_ref::<Cie>() {
-            if let Some(kind) = err.kind_maybe {
-                return Some(kind);
-            }
+        if let Some(err) = frame.error().downcast_ref::<Cie>()
+            && let Some(kind) = err.kind_maybe
+        {
+            return Some(kind);
         }
         frame.children().iter().find_map(walk)
     }
@@ -136,10 +136,10 @@ fn get_message(exn: &Exn<Cie>) -> String {
             report.push('\n');
         }
         writeln!(report, "{:>2}: Msg: {}", i, frame.error()).unwrap();
-        if let Some(err) = frame.error().downcast_ref::<Cie>() {
-            if let Some(path) = &err.path_maybe {
-                writeln!(report, "    Pth: {}", path.display()).unwrap();
-            }
+        if let Some(err) = frame.error().downcast_ref::<Cie>()
+            && let Some(path) = &err.path_maybe
+        {
+            writeln!(report, "    Pth: {}", path.display()).unwrap();
         }
         writeln!(report, "    Loc: {}", frame.location()).unwrap();
         for child in frame.children() {
