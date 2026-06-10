@@ -1,0 +1,16 @@
+name: Find MSRV
+
+on:
+  workflow_dispatch:
+
+jobs:
+  find_msrv:
+    name: Find MSRV
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-binstall
+      - run: cargo binstall --version 0.18.4 --no-confirm cargo-msrv
+      - run: cargo msrv find -- cargo check -F build,serde --lib
