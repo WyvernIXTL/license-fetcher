@@ -183,13 +183,30 @@ pub const OUT_FILE_NAME: &str = "LICENSE-3RD-PARTY.nanoserde.lz4";
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Package {
+    /// The name of the package.
     pub name: String,
+    /// The version of the package.
     pub version: String,
+    /// Vector of authors of the package.
     pub authors: Vec<String>,
+    /// The description of the package.
     pub description: Option<String>,
+    /// The homepage URL of the package.
     pub homepage: Option<String>,
+    /// The repository URL of the package.
     pub repository: Option<String>,
+    /// The SPDX license expression of the package.
+    ///
+    /// See the [manifest documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields)
+    /// for more detail.
     pub license_identifier: Option<String>,
+    /// Vector of name-license-text pairs.
+    ///
+    /// The first element will be displayed as name and the second element as license text.
+    ///
+    /// [`package_list_with_licenses`](crate::prelude::package_list_with_licenses)
+    /// will populate the first element with the relative path to the license file and the second element
+    /// with the content of the license file.
     pub license_texts: Vec<(String, String)>,
 }
 
@@ -421,7 +438,7 @@ impl PackageBuilder {
         self
     }
 
-    /// Set the SPDX license identifier of the package.
+    /// Set the SPDX license identifier or the SPDX license expression of the package.
     #[must_use]
     pub fn license_identifier(mut self, license_identifier: impl Into<String>) -> Self {
         self.0.license_identifier = Some(license_identifier.into());
