@@ -11,6 +11,5 @@ jobs:
       - uses: actions/checkout@v6
       - uses: taiki-e/install-action@v2
         with:
-          tool: cargo-binstall
-      - run: cargo binstall --version 0.18.4 --no-confirm cargo-msrv
+          tool: cargo-msrv
       - run: cargo msrv find -- cargo check -F build,serde --lib

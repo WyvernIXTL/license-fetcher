@@ -36,3 +36,12 @@ jobs:
 
       - name: Run Tests, Checks and Try Build Docs
         run: task --parallel test:check test:integration test:clippy test:fmt doc
+
+  check-msrv:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-msrv
+      - run: cargo msrv verify -- cargo check -F build,serde --lib
