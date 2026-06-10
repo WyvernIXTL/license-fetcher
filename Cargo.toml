@@ -17,6 +17,8 @@ include = [
     "README.md",
     "CHANGELOG.md"
 ]
+rust-version = "1.88.0"
+
 
 [profile.flame]
 inherits = "bench"
