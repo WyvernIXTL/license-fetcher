@@ -82,6 +82,13 @@ tasks:
     cmds:
       - cargo clippy --all-targets --all-features
 
+  msrv:
+    desc: Verify/Check MSRV
+    alias:
+      - m
+    cmds:
+      - cargo msrv verify -- cargo check -F build,serde --lib
+
   # ---------------------------------- Bench --------------------------------- #
 
   setup:test-crate:
