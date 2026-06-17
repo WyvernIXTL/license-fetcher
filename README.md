@@ -10,8 +10,9 @@
 [![lib.rs link](https://badgen.net/badge/lib.rs/lib.rs/purple?label)](https://lib.rs/crates/license-fetcher)
 [![dependency status](https://deps.rs/repo/github/WyvernIXTL/license-fetcher/status.svg)](https://deps.rs/repo/github/WyvernIXTL/license-fetcher)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/WyvernIXTL/license-fetcher/test.yml?branch=main)](https://github.com/WyvernIXTL/license-fetcher/actions/workflows/test.yml)
-<!--[![GitHub Actions Workflow Status All](https://badgen.net/github/checks/WyvernIXTL/license-fetcher/main)](https://github.com/WyvernIXTL/license-fetcher/actions)-->
 [![codecov](https://codecov.io/gh/WyvernIXTL/license-fetcher/graph/badge.svg?token=FUBAIYFXSP)](https://codecov.io/gh/WyvernIXTL/license-fetcher)
+
+<!--[![GitHub Actions Workflow Status All](https://badgen.net/github/checks/WyvernIXTL/license-fetcher/main)](https://github.com/WyvernIXTL/license-fetcher/actions)-->
 
 </div>
 
