@@ -119,8 +119,8 @@ _Display trait included_ 😉
 
 `license-fetcher` fetches licenses that are at the root of a package or in subfolders. This results in some caveats, mainly:
 
-- Some projects do not upload licenses with their packages. This might happen if a project is split up into many subpackages.
-- Some wrappers do not attribute the library they are wrapping.
+- Some projects do not publish license files with their packages. This might happen if a project is split up into many subpackages.
+- Some wrappers do not sufficiently attribute the library they are wrapping.
 - Dependencies that are not packages, like dictionaries, are not detected.
 
 To work around the former points, it is advisable to use [`flicense --stats .`](https://github.com/WyvernIXTL/flicense-rs) on your packages,
