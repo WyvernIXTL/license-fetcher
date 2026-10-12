@@ -96,6 +96,25 @@ fn main() {
 **I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html). Take a look!**
 
 
+## Performance
+
+I compiled the basic example with timings (`cargo clean && cargo build --release --timings`) on Linux (openSUSE Leap 16) with the Wild linker:
+
+![cargo timings for v0.10.0](./img/timings-v0.10.0-rc.1-screenshot-8.png)
+
+The package build within 1.1s of which 0.05s where spend on the build script with license fetching. This means that **clean builds** (without cache) will be really fast
+and incremental builds will take up no time at all (~0.05s if `Cargo.toml`, `Cargo.lock` or `build.rs` are changed, else 0s).
+
+The full report is available in [`img/timings`](./img/timings).
+
+
+## Screenshots
+
+_Display trait included_ 😉
+
+![Screenshot](./img/example_print_v0.10.0.png)
+
+
 ## Caveats
 
 `license-fetcher` fetches licenses that are at the root of a package or in subfolders. This results in some caveats, mainly:
@@ -146,24 +165,6 @@ A big shout-out!
 - Is not a library to access said data but rather a command line tool.
   You need to keep the license file up to date (via CI for example).
 - If you export and embed the license data as JSON, you need to handle compression, validation and display of it yourself.
-
-
-## Screenshots
-
-_Display trait included_ 😉
-
-![Screenshot](./img/example_print_v0.10.0.png)
-
-## Performance
-
-I compiled the basic example with timings (`cargo clean && cargo build --release --timings`) on Linux (openSUSE Leap 16) with the Wild linker:
-
-![cargo timings for v0.10.0](./img/timings-v0.10.0-rc.1-screenshot-8.png)
-
-The package build within 1.1s of which 0.05s where spend on the build script with license fetching. This means that **clean builds** (without cache) will be really fast
-and incremental builds will take up no time at all (~0.05s).
-
-The full report is available in [`img/timings`](./img/timings).
 
 
 ## License
