@@ -150,7 +150,7 @@ A big shout-out!
 - Uses the LGPL-3.0 license. 
   This means that your code also needs to be licenses LGPL-3.0 or compatible as rust links statically by default.
 - Has many large dependencies and thus compiles slower.
-- No option to disable fetching via git.
+- No option to disable fetching via git, which makes each run painfully slow.
 - Does not differentiate between dependencies for build and runtime, leading to larger executables with more dependencies.
 
 ### [`cargo-about`](https://github.com/EmbarkStudios/cargo-about)
