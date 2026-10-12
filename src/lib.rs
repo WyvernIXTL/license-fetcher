@@ -111,7 +111,7 @@
 //! Handling errors in `license-fetcher` is more or less optional. If you work with [`expect`](std::result::Result::expect) and
 //! [`unwrap`](std::result::Result::unwrap), then you might be faced with the possibility of fatal compilation errors.
 //! If you only expect to build your project in CI, this might not be much of a problem. If you expect users to compile your project, especially for uncommon platforms,
-//! your users might face these compilation errors. The [documentation of the `build` module](crate::build) offers and example on how to encounter this conundrum with
+//! your users might face these compilation errors. The [documentation of the `build` module](crate::build) offers an example on how to encounter this conundrum with
 //! a dummy file being written on failure. You could also handle the errors encountered, which the following paragraphs will discuss.
 //!
 //! The [`ConfigBuilder`](crate::prelude::ConfigBuilder) returns on calling the `build` method a result with the [`ConfigBuilderError`](crate::prelude::ConfigBuilderError).
