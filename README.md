@@ -103,7 +103,7 @@ I compiled the basic example with timings (`cargo clean && cargo build --release
 ![cargo timings for v0.10.0](./img/timings-v0.10.0-rc.1-screenshot-8.png)
 
 The package build within 1.1s of which 0.05s where spend on the build script with license fetching. This means that **clean builds** (without cache) will be really fast
-and incremental builds will take up no time at all (~0.05s if `Cargo.toml`, `Cargo.lock` or `build.rs` are changed, else 0s).
+and incremental builds will take up no time at all (~0.05s if the build script is run, else 0s).
 
 The full report is available in [`img/timings`](./img/timings).
 
