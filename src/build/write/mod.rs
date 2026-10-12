@@ -53,7 +53,7 @@ impl PackageList {
         let path =
             PathBuf::from(var_os("OUT_DIR").ok_or(WriteError::NotBuildScript)?).join(OUT_FILE_NAME);
 
-        info!("Writing to file: {}", &path.display());
+        info!("Writing to file: {}", path.display());
         write(path, compressed_data).map_err(WriteError::Write)?;
 
         Ok(())

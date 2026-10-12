@@ -96,7 +96,7 @@ pub(super) fn populate_package_list_licenses(
     ));
 
     for src_folder in src_folder_iterator {
-        info!("src folder: {}", &src_folder.display());
+        info!("src folder: {}", src_folder.display());
 
         read_dir(&src_folder)
             .or_raise(|| {
@@ -113,7 +113,7 @@ pub(super) fn populate_package_list_licenses(
                     .get_mut(folder_name.as_ref())
                     .map(|p| (e, p))
                 {
-                    info!("Fetching license for: {}", &p.package.name);
+                    info!("Fetching license for: {}", p.package.name);
 
                     match license_texts_from_folder(&e.path()) {
                         Ok(res) => p.package.license_texts = res,
@@ -123,7 +123,7 @@ pub(super) fn populate_package_list_licenses(
                                 err.raise(
                                     IE::new(format!(
                                         "fetching licenese for package \"{}\" should succeed",
-                                        &p.package.name
+                                        p.package.name
                                     ))
                                     .with_path(e.path()),
                                 ),
