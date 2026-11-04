@@ -15,7 +15,7 @@ include = [
     "Cargo.toml",
     "LICENSE",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
 ]
 rust-version = "1.88.0"
 
@@ -27,17 +27,25 @@ debug = true
 
 [dependencies]
 exn = { version = "0.3.1", optional = true }
-log = { version = "0.4.32", optional = true}
-lz4_flex = { version = "0.13.1", default-features = false, features = ["checked-decode"]}
-nanoserde = { version = "0.2.1", default-features = false, features = ["std", "json", "binary"] }
+log = { version = "0.4.35", optional = true }
+lz4_flex = { version = "0.14.0", default-features = false, features = [
+    "checked-decode",
+    "safe-decode",
+    "alloc",
+] }
+nanoserde = { version = "0.2.1", default-features = false, features = [
+    "std",
+    "json",
+    "binary",
+] }
 regex-lite = { version = "0.1.9", optional = true }
-serde = { version = "1.0.228", features = ["derive"], optional = true }
-textwrap = { version = "0.16.2", default-features = false }
+serde = { version = "1.0.229", features = ["derive"], optional = true }
+textwrap = { version = "0.16.4", default-features = false }
 
 [dev-dependencies]
-arbitrary = { version = "1.4.2", features = ["derive"] }
+arbitrary = { version = "1.5.0", features = ["derive"] }
 arbtest = "0.3.2"
-assert2 = "0.4.0"
+assert2 = "0.4.1"
 criterion = "0.8.2"
 serial_test = "3.5.0"
 simplelog = "0.12.2"
@@ -45,7 +53,7 @@ tempfile = "3.27.0"
 
 [features]
 default = []
-build = [ "dep:log", "dep:regex-lite", "dep:exn"]
+build = ["dep:log", "dep:regex-lite", "dep:exn"]
 serde = ["dep:serde"]
 
 [[bench]]
