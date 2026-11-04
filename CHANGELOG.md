@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set safe decode feature for `lz4_flex`.
 - Bumped other packages with [`cargo-edit`](https://github.com/killercup/cargo-edit).
 
+### Fixed
+
+- Fixed warnings due to new lints.
+- Typo in documentation.
+
 
 ## v0.10.1 - 2026-06-10
 
