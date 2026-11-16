@@ -89,8 +89,10 @@ fn main() {
 }
 ```
 
+Now test your program by running `cargo run`. Et voilà!
 
-### Setup With Leniency
+
+### Advanced Setup With Leniency
 
 **I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html#advanced-example-with-leniency). Take a look!**
 
