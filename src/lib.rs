@@ -41,8 +41,8 @@
 //!         .build()
 //!         .expect("failed to build configuration");
 //!
-//!     let packages: PackageList =
-//!         package_list_with_licenses(&config).expect("failed to fetch metadata or licenses");
+//!     let packages: PackageList = package_list_with_licenses(&config)
+//!         .expect("failed to fetch metadata and licenses");
 //!
 //!     // Write packages to out dir to be embedded.
 //!     packages
@@ -75,9 +75,8 @@
 //!         .build()
 //!         .expect("failed to build configuration");
 //!
-//!     // `packages` does not hold any licenses!
-//!     let mut packages: PackageList = package_list(&config)
-//!         .expect("failed to fetch metadata");
+//!     let mut packages: PackageList = package_list_with_licenses(&config)
+//!         .expect("failed to fetch metadata and licenses");
 //!
 //!     let other_dependency = Package::builder("other dependency", "0.1.0")
 //!         .add_author("Me")

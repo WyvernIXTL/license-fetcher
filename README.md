@@ -35,13 +35,12 @@ decompression, deserialization and pretty print of the license data.
 
 ## Usage
 
-Here is a small rundown how to use this library for fetching licenses during build time.
+Here is a short rundown how to use this library for fetching licenses during build time.
 Though fetching licenses at runtime is also supported. See the [docs](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html).
 
 ### Include Dependency
 
-> [!WARNING]
-> Include this library as build dependency and as normal dependency!
+Include this library as build dependency and as normal dependency:
 
 ```
 cargo add --build --features build license-fetcher
@@ -50,8 +49,8 @@ cargo add license-fetcher
 
 ### Build Script
 
-This library requires you to execute it for fetching licenses in a build script.
-Create a file called `build.rs` in the root of your project and add following contents:
+For fetching licenses during build time, this library requires you to execute it in a build script.
+Create a file called **`build.rs`** in the root of your project and add following contents:
 
 ```rust
 use license_fetcher::prelude::*;
@@ -62,8 +61,8 @@ fn main() {
         .build()
         .expect("failed to build configuration");
 
-    let packages: PackageList =
-        package_list_with_licenses(&config).expect("failed to fetch metadata or licenses");
+    let mut packages: PackageList = package_list_with_licenses(&config)
+        .expect("failed to fetch metadata and licenses");
 
     // Write packages to out dir to be embedded.
     packages
@@ -79,7 +78,7 @@ fn main() {
 
 ### Main
 
-Add following content to your `main.rs`:
+Add following content to your **`main.rs`**:
 
 ```rust
 use license_fetcher::prelude::*;
@@ -91,9 +90,9 @@ fn main() {
 ```
 
 
-### Much Better Setup With Leniency
+### Setup With Leniency
 
-**I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html). Take a look!**
+**I added really great copy-pasta examples in the [`build` module documentation](https://docs.rs/license-fetcher/latest/license_fetcher/build/index.html#advanced-example-with-leniency). Take a look!**
 
 
 ## Performance
